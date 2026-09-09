@@ -10,6 +10,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # gitleaks diffs the pushed range; a shallow checkout lacks the parent commit
+          # and the resulting git stderr fails the whole scan
+          fetch-depth: 0
 
       - name: Shellcheck
         run: |
