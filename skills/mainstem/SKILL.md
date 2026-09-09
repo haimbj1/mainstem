@@ -153,8 +153,13 @@ in the configured `dataDir`.
 
 ## Setup (`/mainstem setup`)
 
-Run this as a conversation, not a config-file edit, every time the developer invokes
-`/mainstem setup` (first run or a re-run to change answers).
+**First-run guard: before anything else, on EVERY invocation of this skill, check that a config
+file exists at one of the resolution paths (`$MS_CONFIG`, `~/.config/mainstem/config.json`,
+`<repo>/config.local.json`). No config means the board is not set up — do not collect, do not
+query the server: start this setup conversation instead, whatever the user asked for.**
+
+Run setup as a conversation, not a config-file edit, every time the developer invokes
+`/mainstem setup` (first run or a re-run to change answers) — or automatically per the guard above.
 
 1. **Doctor pass.** Run `scripts/ms_doctor.sh`. Report every `MISSING`/`missing` line in plain
    language: what breaks without it, and the exact install command from the script's own output.
