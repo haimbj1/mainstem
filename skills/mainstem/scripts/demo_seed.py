@@ -24,7 +24,9 @@ def _proc(dt):
 
 def write_demo_data(data_dir):
     os.makedirs(data_dir, exist_ok=True)
-    work_root = load_config()["workRoot"]
+    # a fixed fictional root, never the real config: demo pages get published (docs
+    # screenshots, the Pages demo), and a real workRoot embeds the local username
+    work_root = "/home/demo/work"
     app_dir = os.path.join(work_root, "demo-app")
     widgets_dir = os.path.join(work_root, "demo-app-widgets")
 
