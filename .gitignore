@@ -1,0 +1,13 @@
+config.local.json
+data/
+*.log
+__pycache__/
+*.pyc
+.build_stamp
+server.pid
+
+# Working artifacts of this port's own build process — these necessarily quote the private
+# source's literal names/paths/org strings for reference and must never enter the tree.
+docs/superpowers/plans/
+.superpowers/
+local/

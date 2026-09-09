@@ -1,0 +1,2128 @@
+<title>MainStem</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#F4F5F3; --surface:#FFFFFF; --surface-2:#EDEFEC; --line:#D9DDD8; --line-strong:#B9BFB7;
+  --ink:#151A1E; --ink-2:#3F474D; --muted:#6E777D; --faint:#9AA2A7;
+  --accent:#B87A17; --accent-ink:#8A5A0E; --accent-soft:#F6E9CF;
+  --good:#2F8A57; --good-soft:#DDF0E4; --warn:#B8731F; --warn-soft:#F7E8D2; --crit:#C2433A; --crit-soft:#F8DEDB; --info:#3572B8; --info-soft:#DDE8F6;
+  --sel:#FFF4DC; --shadow:0 1px 2px rgba(20,26,30,.06),0 6px 20px rgba(20,26,30,.05);
+  --f-display:"IBM Plex Sans Condensed",system-ui,sans-serif; --f-body:"IBM Plex Sans",system-ui,sans-serif; --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0F1418; --surface:#161C21; --surface-2:#1D242A; --line:#26303740; --line:#28323A; --line-strong:#3A464F;
+  --ink:#E8ECEE; --ink-2:#C2CACF; --muted:#8A959C; --faint:#5F6B73;
+  --accent:#E0A03A; --accent-ink:#F0BC66; --accent-soft:#3A2D14;
+  --good:#4FB477; --good-soft:#173324; --warn:#E39A3B; --warn-soft:#3A2A12; --crit:#E2645A; --crit-soft:#3E1B18; --info:#6AA5E8; --info-soft:#17293D;
+  --sel:#2A2417; --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
+}}
+:root[data-theme="dark"]{
+  --bg:#0F1418; --surface:#161C21; --surface-2:#1D242A; --line:#28323A; --line-strong:#3A464F;
+  --ink:#E8ECEE; --ink-2:#C2CACF; --muted:#8A959C; --faint:#5F6B73;
+  --accent:#E0A03A; --accent-ink:#F0BC66; --accent-soft:#3A2D14;
+  --good:#4FB477; --good-soft:#173324; --warn:#E39A3B; --warn-soft:#3A2A12; --crit:#E2645A; --crit-soft:#3E1B18; --info:#6AA5E8; --info-soft:#17293D;
+  --sel:#2A2417; --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 var(--f-body);-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+a:hover{text-decoration:underline}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+button:focus-visible,a:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+code,.mono{font-family:var(--f-mono);font-size:12.5px}
+.num{font-variant-numeric:tabular-nums}
+
+.pdraw{margin:8px 0}.pdraw summary{cursor:pointer;font-size:12.5px;color:var(--muted)}.pdfile{margin:8px 0 0;white-space:pre-wrap;font:12px/1.5 var(--f-mono);color:var(--ink-2);background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:10px;max-height:320px;overflow:auto}
+/* ---- top bar ---- */
+.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.top-in{max-width:1480px;margin:0 auto;padding:10px 20px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.brand{font-family:var(--f-display);font-weight:700;font-size:17px;letter-spacing:.01em;display:flex;align-items:center;gap:10px}
+.brand{padding-right:2px}
+.brand-sep{width:1px;align-self:stretch;background:var(--line);margin:2px 8px}
+.brand .dot{width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.clock{font-family:var(--f-mono);font-size:13px;color:var(--ink-2)}
+.stamp{font-size:12px;color:var(--muted)}
+.stamp.stale{color:var(--warn)}
+#refresh.pending,#qw-rerun.pending{border-color:var(--accent);color:var(--accent-ink);animation:spin-hint 1.2s linear infinite}
+@keyframes spin-hint{0%{opacity:1}50%{opacity:.55}100%{opacity:1}}
+@media (prefers-reduced-motion:reduce){#refresh.pending,#qw-rerun.pending{animation:none}}
+.nav{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap}
+.nav button{padding:5px 9px;border-radius:6px;font-family:var(--f-display);font-weight:600;font-size:13px;color:var(--ink-2);display:flex;gap:6px;align-items:center}
+.nav button:hover{background:var(--surface-2)}
+.nav button .k{font-family:var(--f-mono);font-size:10.5px;color:var(--faint);border:1px solid var(--line);border-radius:4px;padding:0 4px}
+.nav button .c{font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+.search{display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:7px;padding:4px 8px;min-width:230px}
+.search input{border:0;background:none;color:var(--ink);font:inherit;width:100%;outline:none}
+.search .k{font-family:var(--f-mono);font-size:10.5px;color:var(--faint);border:1px solid var(--line);border-radius:4px;padding:0 4px}
+
+.wrap{max-width:1480px;margin:0 auto;padding:14px 20px 60px}
+
+/* ---- brief ---- */
+.brief{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:start;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:10px;padding:10px 16px;margin-bottom:12px;box-shadow:var(--shadow)}
+.brief .lbl{font-family:var(--f-display);font-weight:700;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent-ink);padding-top:3px;white-space:nowrap}
+.brief .txt{font-size:14.5px;line-height:1.4;font-weight:500;text-wrap:pretty}
+.brief .txt p{margin:0}
+.brief .txt p+p{margin-top:2px;font-weight:400;color:var(--ink-2)}
+.brief .mail{margin-top:6px;padding-top:6px;border-top:1px dashed var(--line);font-size:13px;font-weight:400;color:var(--ink-2)}
+.brief .mail b{font-family:var(--f-display);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-right:6px}
+/* Per-panel refresh only means something when the local server can run a collector. */
+body:not([data-local]) [data-refresh]{display:none}
+/* A published read-only snapshot hides every control that could send a write. */
+body[data-readonly] [data-write]{display:none}
+[data-refresh]{font-family:var(--f-mono)}
+.btn.model{border-color:var(--warn,#b58a2e);color:var(--warn,#b58a2e)}
+.btn.danger{margin-left:auto;border-color:var(--crit,#c0392b);color:var(--crit,#c0392b);background:transparent}
+.btn.danger:hover{background:var(--crit,#c0392b);color:#fff}
+select.chip.sel{appearance:none;-webkit-appearance:none;padding-right:18px;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:right 9px top 55%,right 5px top 55%;background-size:4px 4px;background-repeat:no-repeat;cursor:pointer}
+.toolgap{flex:0 0 1px;align-self:stretch;background:var(--line,#333);margin:0 6px}
+[data-refresh].pending{border-color:var(--accent);color:var(--accent-ink);animation:spin-hint 1.2s linear infinite}
+.tk-agg{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:9px 14px;border-bottom:1px solid var(--line);background:var(--surface-2)}
+.tk-agg .g{font-family:var(--f-display);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-right:2px}
+.tk-agg .g+.g{margin-left:8px}
+.brief .when{font-family:var(--f-mono);font-size:11.5px;color:var(--muted);white-space:nowrap;padding-top:3px}
+
+/* ---- now strip ---- */
+.now{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin-bottom:12px}
+@media (max-width:1100px){.now{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:680px){.now{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 11px;box-shadow:var(--shadow);position:relative;overflow:hidden;min-width:0}
+.tile .lbl{font-family:var(--f-display);font-weight:600;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.tile .val{font-family:var(--f-display);font-weight:700;font-size:21px;line-height:1.1;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tile .sub{font-size:12px;color:var(--muted);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile.crit .val{color:var(--crit)} .tile.warn .val{color:var(--warn)} .tile.good .val{color:var(--good)} .tile.info .val{color:var(--info)}
+.tile.next .val{font-size:14px;line-height:1.25;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.tile .bar{position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent)}
+
+.tile.link{cursor:pointer;transition:border-color .15s,transform .15s}
+.tile.link:hover{border-color:var(--accent);transform:translateY(-1px)}
+.tile .go{position:absolute;right:10px;top:10px;color:var(--faint);font-size:12px}
+.selbar{display:none;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);background:var(--accent-soft);flex-wrap:wrap}
+.selbar.show{display:flex}
+.selbar b{font-family:var(--f-display)}
+.drawer{display:none;border-top:1px solid var(--line);padding:12px 14px;background:var(--surface-2)}
+.drawer.show{display:block}
+.drawer pre{margin:8px 0;white-space:pre-wrap;font:12px/1.5 var(--f-mono);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px;max-height:220px;overflow:auto}
+.drawer .warn-txt{color:var(--warn);font-size:12.5px}
+td.chk,th.chk{width:34px;text-align:center;padding-left:12px;padding-right:0}
+input[type=checkbox]{accent-color:var(--accent);width:15px;height:15px;cursor:pointer}
+tr.checked td{background:var(--sel)}
+.ask{display:grid;grid-template-columns:1fr auto;gap:10px;padding:14px}
+.ask textarea{width:100%;min-height:74px;resize:vertical;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font:13px/1.45 var(--f-body);padding:9px 11px}
+.ask .side{display:flex;flex-direction:column;gap:6px;justify-content:flex-end;min-width:150px}
+.ask .status{font-size:12px;color:var(--muted)}
+.req{display:grid;grid-template-columns:auto 1fr auto;gap:10px;padding:10px 14px;border-top:1px solid var(--line);align-items:start}
+.req .txt{white-space:pre-wrap}
+.req .reply{margin-top:6px;font-size:13px;color:var(--ink-2);border-left:2px solid var(--accent);padding-left:9px;white-space:pre-wrap}
+.req.done{opacity:.6}
+
+/* ---- sections ---- */
+section{margin-top:18px}
+.sec-h{display:flex;align-items:baseline;gap:12px;margin-bottom:10px;flex-wrap:wrap}
+.sec-h h2{font-family:var(--f-display);font-weight:700;font-size:19px;margin:0;letter-spacing:.005em;text-wrap:balance}
+.sec-h .cnt{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.sec-h .hint{font-size:12.5px;color:var(--muted)}
+.p-h .hint{font-size:12px;color:var(--muted);margin-left:8px;cursor:help}
+.sec-h .tools{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:12px;color:var(--ink-2);background:var(--surface)}
+.chip:hover{border-color:var(--line-strong)}
+.chip.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-ink)}
+.btn{border:1px solid var(--line);border-radius:7px;padding:5px 10px;font-size:12.5px;background:var(--surface);color:var(--ink-2);display:inline-flex;gap:6px;align-items:center}
+.btn:hover{border-color:var(--line-strong);background:var(--surface-2)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#1A1206;font-weight:600}
+.btn.primary:hover{filter:brightness(1.06)}
+
+/* ---- queue ---- */
+.queue{background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);overflow:hidden}
+.q-row{display:grid;grid-template-columns:38px minmax(0,1fr) auto;gap:10px;padding:6px 12px 6px 10px;border-top:1px solid var(--line);align-items:center;position:relative}
+.q-row:first-child{border-top:0}
+.q-row.sel{background:var(--sel)}
+.q-row.done{opacity:.45}
+.q-row .stripe{position:absolute;left:0;top:0;bottom:0;width:3px}
+.sev-crit .stripe{background:var(--crit)} .sev-warn .stripe{background:var(--warn)} .sev-info .stripe{background:var(--info)} .sev-low .stripe{background:var(--line-strong)}
+.score{font-family:var(--f-mono);font-size:12px;color:var(--muted);text-align:right}
+.score b{display:block;font-size:14px;color:var(--ink);font-weight:500}
+/* one-line queue row: title, short reason, at most two pills */
+.q-line{display:flex;gap:8px;align-items:baseline;min-width:0;white-space:nowrap}
+.q-line .t{font-weight:500;min-width:0;flex:0 1 auto;overflow:hidden;text-overflow:ellipsis}
+.q-line .act{color:var(--muted);font-size:12.5px;min-width:0;flex:1 1 auto;overflow:hidden;text-overflow:ellipsis}
+.q-line .act::before{content:'\2192\00a0';color:var(--accent);font-weight:600}
+.q-side{opacity:0;transition:opacity .12s}
+.q-row:hover .q-side,.q-row.sel .q-side,.q-row:focus-within .q-side{opacity:1}
+@media (hover:none){.q-side{opacity:1}}
+.dots{border:1px solid var(--line);border-radius:6px;padding:1px 8px;font-size:13px;line-height:20px;color:var(--muted);background:var(--surface)}
+.dots:hover{border-color:var(--accent);color:var(--accent-ink);background:var(--accent-soft)}
+.q-main{min-width:0}
+.q-title{font-weight:500;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.q-title a{text-decoration:none}
+.q-title a:hover{text-decoration:underline}
+.q-sub{font-size:12.5px;color:var(--muted);margin-top:2px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.q-act{margin-top:5px;font-size:13px;color:var(--ink-2);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.q-act .arrow{color:var(--accent);font-weight:600}
+.q-side{display:flex;gap:4px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.ico{width:28px;height:28px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;color:var(--muted);border:1px solid transparent}
+.ico:hover{background:var(--surface-2);border-color:var(--line);color:var(--ink)}
+.ico svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+/* decision strip */
+.dec{border:1px solid var(--line);border-radius:6px;padding:3px 9px;font-family:var(--f-display);font-weight:600;font-size:12px;letter-spacing:.01em;color:var(--ink-2);background:var(--surface)}
+.dec:hover{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-ink)}
+.dec.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-ink)}
+.decform{margin-top:8px;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.decform .lbl{font-family:var(--f-display);font-weight:600;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.decform input{border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);font:13px/1.4 var(--f-body);padding:5px 8px}
+.decform input.who{width:180px}
+.decform input.free{flex:1;min-width:170px}
+.decform .cancel{font-size:12px;color:var(--muted);cursor:pointer}
+.pendbar{position:fixed;bottom:18px;right:18px;z-index:45;display:none;gap:10px;align-items:center;background:var(--surface);border:1px solid var(--accent);border-radius:10px;padding:8px 12px;font-size:13px;box-shadow:var(--shadow)}
+.pendbar.show{display:flex}
+.pendbar b{font-family:var(--f-display)}
+.logrow{grid-template-columns:56px 76px 1fr auto;align-items:start}
+.logrow .t{white-space:normal;overflow:visible}
+.logrow>.pill{justify-self:start}
+
+/* merged tickets list (Jira + quick-win verdicts) */
+.tk-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;padding:6px 14px;border-top:1px solid var(--line);align-items:center}
+.tk-row:first-child{border-top:0}
+.tk-row:hover{background:var(--surface-2)}
+.tk-row.decided{opacity:.45}
+.tk-line{display:flex;gap:8px;align-items:baseline;min-width:0;white-space:nowrap}
+.tk-line .sm{min-width:0;flex:1 1 auto;overflow:hidden;text-overflow:ellipsis}
+.tk-row .r{display:flex;gap:5px;align-items:center;justify-content:flex-end}
+/* compact pending approvals: ref, what, session, age, two buttons */
+.pd-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;padding:7px 14px;border-top:1px solid var(--line);align-items:center}
+.pd-row:first-child{border-top:0}
+.pd-row:hover{background:var(--surface-2)}
+.pd-row.decided{opacity:.45}
+/* quick-win detail, shown in the drawer */
+.conf{font-size:11.5px;color:var(--muted)}
+.qw-reason{font-size:12.5px;color:var(--muted);margin-top:4px}
+#dr-body .q-act{display:block;margin-top:6px}
+#dr-body .q-act .arrow{margin-right:6px}
+#dr-body .e{font-size:12px;color:var(--ink-2);margin-top:6px;padding-left:9px;border-left:2px solid var(--line)}
+#dr-body .plan{font-size:12.5px;color:var(--ink-2);margin-top:6px;padding-left:9px;border-left:2px solid var(--accent);white-space:pre-wrap}
+
+/* pills */
+.pill{display:inline-flex;align-items:center;gap:5px;border-radius:5px;padding:1px 7px;font-size:11.5px;font-weight:500;font-family:var(--f-display);letter-spacing:.02em;line-height:18px;white-space:nowrap}
+.pill.src{background:var(--surface-2);color:var(--ink-2)}
+.pill.good{background:var(--good-soft);color:var(--good)} .pill.warn{background:var(--warn-soft);color:var(--warn)} .pill.crit{background:var(--crit-soft);color:var(--crit)} .pill.info{background:var(--info-soft);color:var(--info)}
+.pill.neutral{background:var(--surface-2);color:var(--muted)}
+.pill.accent{background:var(--accent-soft);color:var(--accent-ink)}
+.key{font-family:var(--f-mono);font-size:12px;color:var(--ink-2)}
+.cmd{font-family:var(--f-mono);font-size:11.5px;background:var(--surface-2);border:1px solid var(--line);border-radius:5px;padding:1px 7px;color:var(--ink-2);cursor:pointer;display:inline-flex;gap:6px;align-items:center;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cmd:hover{border-color:var(--line-strong);color:var(--ink)}
+.cmd.copied{border-color:var(--good);color:var(--good)}
+
+/* offline review card */
+.rvcard{margin:8px 0 4px;padding:10px 12px;border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:8px;background:var(--surface-2)}
+.rvcard .rvh{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.rvcard .sum{font-size:13px;color:var(--ink-2);white-space:pre-wrap;margin:7px 0 2px}
+.rvcard .lbl{font-family:var(--f-display);font-weight:600;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:10px 0 2px}
+.rvcard table{font-size:12.5px}
+.rvcard th,.rvcard td{padding:5px 8px}
+.rvcard td.iss{white-space:normal;min-width:240px}
+.rvcard .draftrow{display:flex;gap:8px;align-items:flex-start;border-top:1px solid var(--line);padding:6px 0}
+.rvcard .draftrow details{flex:1;min-width:0}
+.rvcard .draftrow summary{cursor:pointer;list-style:none;display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:12.5px}
+.rvcard .draftrow summary::-webkit-details-marker{display:none}
+.rvcard .pst{font-size:11.5px;color:var(--muted);display:flex;gap:4px;align-items:center;white-space:nowrap;padding-top:1px}
+.rvcard .draft{white-space:pre-wrap;font:12px/1.5 var(--f-mono);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:8px;margin:6px 0 0;overflow-x:auto}
+textarea.draft{display:block;width:100%;box-sizing:border-box;min-height:64px;resize:vertical;color:var(--ink)}
+textarea.draft:focus{outline:none;border-color:var(--accent)}
+.drbtns{display:flex;gap:6px;margin-top:6px}
+.dsave{border-color:var(--accent);color:var(--accent-ink)}
+.draftrow .iss{display:block;margin:6px 0 2px;font-size:12.5px;color:var(--ink);font-weight:500;
+  padding:6px 9px;border-radius:6px;background:var(--surface-2);border-left:3px solid var(--muted)}
+.draftrow .iss.crit{background:color-mix(in srgb, #cf222e 10%, var(--surface-2));border-left-color:#cf222e}
+.draftrow .iss.warn{background:color-mix(in srgb, #bf8700 12%, var(--surface-2));border-left-color:#bf8700}
+.draftrow.nodraft{display:flex;gap:8px;align-items:baseline;padding:4px 0}
+.draftrow.nodraft .iss{flex:1;margin:0}
+.ex{border:1px solid var(--line);border-radius:6px;margin:6px 0 0;overflow-x:auto;background:var(--surface)}
+.ex-h{display:block;font-size:11px;color:var(--muted);padding:4px 8px;border-bottom:1px solid var(--line);background:var(--surface-2);text-decoration:none}
+a.ex-h:hover{color:var(--accent-ink)}
+.exl{display:flex;font:11.5px/1.6 var(--f-mono);white-space:pre}
+.exl .exn{width:44px;flex:none;text-align:right;padding-right:8px;color:var(--muted);user-select:none}
+.exl .exm{width:14px;flex:none;user-select:none;color:var(--muted)}
+.exl .exc{flex:1;padding-right:8px}
+.exl.add{background:color-mix(in srgb, #2da44e 12%, transparent)}
+.exl.add .exm{color:#2da44e}
+.exl.del{background:color-mix(in srgb, #cf222e 12%, transparent)}
+.exl.del .exm{color:#cf222e}
+.exl.tgt{background:color-mix(in srgb, var(--accent) 16%, transparent)}
+.exl.tgt .exn{color:var(--accent-ink);font-weight:700}
+.rvcard ul{margin:2px 0 0;padding-left:18px;font-size:12.5px;color:var(--ink-2)}
+.rvcard .decform{margin-top:10px;background:var(--surface)}
+.rvcard .none{font-size:12.5px;color:var(--muted)}
+.row.rvdim{opacity:.45}
+.rvcard .thr{border-top:1px solid var(--line);padding:7px 0}
+.rvcard .thr .thh{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.rvcard .thr .txt{font-size:12.5px;color:var(--ink);white-space:pre-wrap;margin-top:3px}
+.rvcard .thr .reply{margin-top:6px;font-size:12.5px;color:var(--ink-2);border-left:2px solid var(--accent);padding-left:9px;white-space:pre-wrap}
+
+/* ---- session jump buttons ---- */
+a.dec{display:inline-flex;align-items:center;gap:6px;text-decoration:none}
+a.dec:hover{text-decoration:none;border-color:var(--accent);background:var(--accent-soft);color:var(--accent-ink)}
+.sessbtn::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--info);flex:none}
+.sessbtn.new::before{background:var(--faint)}
+.sessbtn .nm{max-width:210px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ---- pending approvals ---- */
+.pdcard{border-top:1px solid var(--line);padding:11px 14px}
+.pdcard:first-child{border-top:0}
+.pdcard.decided{opacity:.45}
+.pdh{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pdh .what{font-weight:500}
+.pdh .r{margin-left:auto;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.pdpre{font-size:12.5px;color:var(--muted);margin-top:6px;white-space:pre-wrap}
+.pdsec{border-top:1px solid var(--line);padding:7px 0}
+.pdsh{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.pdsh label{display:flex;gap:7px;align-items:center;min-width:0;font-size:12.5px;cursor:pointer}
+.pdsh .cmd{margin-left:auto}
+.pdq{font-size:12.5px;color:var(--muted);border-left:2px solid var(--line);padding-left:9px;margin:5px 0}
+.pdq.pdr{color:var(--ink);border-left-color:var(--accent)}
+.pdlbl{font-family:var(--f-display);font-weight:600;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-top:7px}
+.pdmeta{font-size:11.5px;color:var(--muted)}
+.pdp{font-size:12.5px;margin:5px 0}
+.pdcard .decform{margin-top:10px}
+
+/* ---- top tabs ---- */
+.tabs{display:flex;gap:3px;margin-left:auto;flex-wrap:wrap}
+.tabs button{padding:5px 11px;border-radius:7px;font-family:var(--f-display);font-weight:600;font-size:13.5px;color:var(--muted);display:flex;gap:7px;align-items:center;border:1px solid transparent}
+.tabs button:hover{background:var(--surface-2);color:var(--ink-2)}
+.tabs button.on{background:var(--surface);border-color:var(--line);color:var(--ink);box-shadow:var(--shadow)}
+.tabs button .k{font-family:var(--f-mono);font-size:10.5px;color:var(--faint);border:1px solid var(--line);border-radius:4px;padding:0 4px}
+.tabs button .c{font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+.tabs button.on .c{color:var(--accent-ink)}
+
+/* Only the active tab is displayed. The DOM keeps every section, so every
+   render function still has its container and the live reads still land. */
+#brief,#now,section{display:none}
+body[data-tab="home"] #s-queue,body[data-tab="home"] #s-pending,
+body[data-tab="reviews"] #s-reviews,body[data-tab="reviews"] #s-log,body[data-tab="reviews"] #s-ask,
+body[data-tab="tickets"] #s-tickets,
+body[data-tab="work"] #s-efforts,body[data-tab="work"] #s-work,
+body[data-tab="log"] #s-log,body[data-tab="log"] #s-ask,
+body[data-tab="more"] #s-comms,body[data-tab="more"] #s-notes,body[data-tab="more"] #s-artifacts{display:block}
+body[data-tab="home"] #brief{display:grid}
+body[data-tab="home"] #now{display:grid}
+body[data-tab="home"] #s-queue{margin-top:0}
+body[data-tab="reviews"] #s-reviews,body[data-tab="tickets"] #s-tickets,body[data-tab="work"] #s-efforts,
+body[data-tab="log"] #s-log,body[data-tab="more"] #s-comms{margin-top:0}
+body[data-tab="reviews"] #p-reviews .p-b,body[data-tab="tickets"] #p-tickets .p-b{max-height:none}
+#p-prs .p-b{max-height:none}
+
+/* ---- right drawer: detail never grows the list underneath ---- */
+.dr-scrim{position:fixed;inset:0;background:rgba(0,0,0,.30);z-index:55;opacity:0;pointer-events:none;transition:opacity .15s}
+body[data-drawer-open] .dr-scrim{opacity:1;pointer-events:auto}
+#drawer-right{position:fixed;top:0;right:0;bottom:0;width:min(900px,96vw);max-width:96vw;z-index:60;background:var(--surface);border-left:1px solid var(--line);box-shadow:var(--shadow);display:flex;flex-direction:column;transform:translateX(103%);transition:transform .18s ease;visibility:hidden}
+body[data-drawer-open] #drawer-right{transform:none;visibility:visible}
+@media (prefers-reduced-motion:reduce){#drawer-right{transition:none}}
+#drawer-right .dr-h{display:flex;gap:10px;align-items:center;padding:11px 14px;border-bottom:1px solid var(--line);flex:none}
+#drawer-right .dr-h h3{margin:0;font-family:var(--f-display);font-size:15px;min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#dr-body{overflow:auto;padding:12px 14px;flex:1;min-height:0}
+#dr-body table{table-layout:fixed;width:100%}
+#dr-body td,#dr-body th{white-space:normal;word-break:break-word;overflow-wrap:anywhere}
+#dr-body .rvcard{margin:0;border-left-width:3px}
+#dr-body .pdcard{border-top:0;padding:0}
+#dr-body .decform{flex-wrap:wrap}
+#dr-body .q-title{white-space:normal}
+#dr-body .dr-sec{font-family:var(--f-display);font-weight:600;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:12px 0 4px}
+
+/* ---- panels grid ---- */
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);overflow:hidden;grid-column:span 6;min-width:0}
+.panel.wide{grid-column:span 12}
+.panel.third{grid-column:span 4}
+@media (max-width:1100px){.panel,.panel.third{grid-column:span 12}}
+.p-h{display:flex;align-items:baseline;gap:10px;padding:12px 14px 8px;border-bottom:1px solid var(--line)}
+.p-h h3{margin:0;font-family:var(--f-display);font-weight:700;font-size:15px}
+.p-h .cnt{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.p-h .tools{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.p-b{max-height:520px;overflow:auto}
+.row{display:grid;gap:10px;padding:9px 14px;border-top:1px solid var(--line);align-items:center}
+.row:first-child{border-top:0}
+.row:hover{background:var(--surface-2)}
+.row .t{font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .s{font-size:12px;color:var(--muted);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .r{display:flex;gap:5px;align-items:center;justify-content:flex-end;flex-wrap:wrap}
+.age{font-family:var(--f-mono);font-size:11.5px;color:var(--muted);white-space:nowrap}
+.age.old{color:var(--warn)} .age.veryold{color:var(--crit)}
+.ss-line{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:3px}
+.ss-line .ss-doing{color:var(--ink-2)}
+.ss-line.ss-note .ss-doing{color:var(--muted)}
+.ss-line .pill{font-size:11px}
+
+/* efforts table */
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{font-family:var(--f-display);font-weight:600;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:left;padding:8px 12px;border-bottom:1px solid var(--line);white-space:nowrap;position:sticky;top:0;background:var(--surface)}
+td{padding:8px 12px;border-top:1px solid var(--line);vertical-align:top}
+tr:hover td{background:var(--surface-2)}
+td.mono{color:var(--ink-2)}
+.tbl-wrap{overflow-x:auto}
+.live{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--faint);margin-right:5px;vertical-align:middle}
+.live.busy{background:var(--good);box-shadow:0 0 0 3px var(--good-soft);animation:pulse 1.6s infinite}
+.live.shell{background:var(--info)}
+.live.idle{background:var(--faint)}
+@keyframes pulse{0%{box-shadow:0 0 0 0 var(--good-soft)}70%{box-shadow:0 0 0 5px transparent}100%{box-shadow:0 0 0 0 transparent}}
+@media (prefers-reduced-motion:reduce){.live.busy{animation:none}}
+
+/* calendar */
+.cal{display:flex;flex-direction:column}
+.ev{display:grid;grid-template-columns:110px 1fr auto;gap:10px;padding:9px 14px;border-top:1px solid var(--line);align-items:center}
+.ev:first-child{border-top:0}
+.ev .when{font-family:var(--f-mono);font-size:12px;color:var(--ink-2)}
+.ev.past{opacity:.45}
+.ev.soon{background:var(--accent-soft)}
+.ev .prep{font-size:12px;color:var(--muted)}
+
+/* notes drawer */
+.note{border-top:1px solid var(--line);padding:9px 14px}
+.note:first-child{border-top:0}
+.note summary{cursor:pointer;display:flex;gap:10px;align-items:baseline;list-style:none}
+.note summary::-webkit-details-marker{display:none}
+.note summary .t{font-weight:500}
+.note pre{margin:8px 0 0;white-space:pre-wrap;font:12px/1.5 var(--f-mono);color:var(--ink-2);background:var(--surface-2);padding:10px;border-radius:8px;max-height:280px;overflow:auto}
+
+/* toast + help */
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:50}
+.toast.show{opacity:1}
+.help{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:40}
+.help.show{display:flex}
+.help .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px 22px;max-width:520px;width:92%;box-shadow:var(--shadow)}
+.help h3{margin:0 0 10px;font-family:var(--f-display)}
+.help table{font-size:13px} .help td{padding:4px 8px;border:0}
+.help .k{font-family:var(--f-mono);border:1px solid var(--line);border-radius:4px;padding:0 5px;font-size:12px}
+.empty{padding:18px 14px;color:var(--muted);font-size:13px}
+.standup{white-space:pre-wrap;font:12.5px/1.5 var(--f-mono);background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:12px;max-height:360px;overflow:auto;margin-top:10px;display:none}
+.standup.show{display:block}
+footer{margin-top:40px;font-size:12px;color:var(--muted);display:flex;gap:16px;flex-wrap:wrap}
+</style>
+
+<div class="top"><div class="top-in">
+  <div class="brand"><span class="dot"></span><span id="brand-name">MainStem</span></div>
+  <button class="chip" data-write id="jump-master" title="Open the master session in iTerm2">⌥ master</button>
+  <span class="brand-sep" aria-hidden="true"></span>
+  <div class="clock" id="clock"></div>
+  <div class="stamp" id="stamp"></div>
+  <span class="stamp" id="cc-usage" title=""></span>
+  <button class="chip" id="zoom-out" title="Smaller text (this browser only)">A−</button>
+  <button class="chip" id="zoom-in" title="Larger text (this browser only)">A+</button>
+  <button class="btn" data-write id="refresh" title="Ask the master session to re-collect everything and rewrite the brief">↻ Refresh</button>
+  <div class="search"><span>⌕</span><input id="q" placeholder="Filter this tab…" aria-label="Filter"><span class="k">/</span></div>
+  <nav class="tabs" id="tabs"></nav>
+  <button class="btn danger" data-write id="rotate-master" title="Retire the master session and boot a fresh one in the same tab (or launch one if none is running). Not a data refresh — this resets the master's context.">♻ New master</button>
+</div></div>
+
+<div class="wrap">
+  <div class="brief" id="brief"></div>
+  <div class="now" id="now"></div>
+
+  <!-- tab: home -->
+  <section id="s-queue">
+    <div class="sec-h">
+      <h2>Decide now</h2>
+      <span class="cnt" id="q-cnt"></span>
+      <span class="hint">The top of one ranked list. <b>j/k</b> move &#183; <b>o</b> open &#183; <b>1</b> do &#183; <b>2</b> delegate &#183; <b>3</b> drop &#183; <b>4</b> defer &#183; <b>c</b> copy command &#183; <b>&#8901;&#8901;&#8901;</b> everything else</span>
+      <div class="tools">
+        <button class="chip on" data-f="all">All</button>
+        <button class="chip" data-f="pr">PRs</button>
+        <button class="chip" data-f="review">Reviews</button>
+        <button class="chip" data-f="jira">Jira</button>
+        <button class="chip" data-f="meetings">Meetings</button>
+        <button class="chip" data-f="inbox">Inbox</button>
+        <button class="chip" data-f="repo">Repos</button>
+        <button class="chip" id="q-showall" title="Show every ranked item, not just the top ten">Show all</button>
+        <button class="chip" id="show-done">Show done</button>
+        <button class="btn" id="standup-btn" title="Copy a status summary for the sync">Standup text</button>
+      </div>
+    </div>
+    <div class="queue" id="queue"></div>
+    <pre class="standup" id="standup"></pre>
+  </section>
+
+  <section id="s-pending">
+    <div class="sec-h">
+      <h2>Pending approvals</h2>
+      <span class="cnt" id="pd-cnt"></span>
+      <span class="hint">A session drafted text it will not post until you say so. <b>Approve</b> sends every drafted reply; <b>Open</b> shows the draft so you can untick, reject or ask.</span>
+    </div>
+    <div class="panel wide" id="p-pending"></div>
+  </section>
+
+  <!-- tab: reviews -->
+  <section id="s-reviews">
+    <div class="sec-h">
+      <h2>Reviews</h2>
+      <span class="cnt" id="rv-cnt"></span>
+      <span class="hint">Pull requests waiting on me. Click <b>Review</b> to read the offline review in the drawer and act on it.</span>
+    </div>
+    <div class="panel wide" id="p-reviews"></div>
+  </section>
+
+  <!-- tab: tickets -->
+  <section id="s-tickets">
+    <div class="sec-h">
+      <h2>Tickets</h2>
+      <span class="cnt" id="qw-cnt"></span>
+      <span class="hint" id="qw-hint"></span>
+      <div class="tools">
+        <button class="btn" data-write data-refresh="jira" title="Re-fetch open Jira tickets from the REST API — free, no model">&#8635; Refresh tickets · free</button>
+        <span class="toolgap"></span>
+        <button class="chip on" data-tkf="all">All</button>
+        <button class="chip" data-tkf="quick_win">Quick wins</button>
+        <button class="chip" data-tkf="stale">Stale</button>
+        <button class="chip" data-tkf="progress">In progress</button>
+        <button class="chip" data-tkf="review">Review ready</button>
+        <button class="chip" id="qw-show">Show decided</button>
+        <button class="btn model" data-write id="qw-rerun" title="Runs a Sonnet agent over code, PRs and notes — costs ~30–70k tokens">✦ Quick-win analysis · ~50k</button>
+      </div>
+    </div>
+    <div class="panel wide" id="p-tickets"></div>
+  </section>
+
+  <!-- tab: work -->
+  <section id="s-efforts">
+    <div class="sec-h"><h2>Efforts</h2><span class="cnt" id="e-cnt"></span><span class="hint">Worktree &#10231; session &#10231; PR &#10231; ticket, joined by branch. Stale rows are candidates to remove.</span>
+      <div class="tools"><button class="chip on" data-ef="active">Active</button><button class="chip" data-ef="all">All worktrees</button>
+        <button class="chip" data-write data-refresh="worktrees" title="Re-scan the worktrees (local server)">&#8635;</button></div></div>
+    <div class="panel wide">
+      <div class="selbar" id="selbar"><b><span id="sel-n">0</span> selected</b>
+        <button class="btn" data-wa="delete">Delete worktrees&#8230;</button>
+        <button class="btn" data-wa="push">Push branches&#8230;</button>
+        <button class="btn" data-wa="ask">Ask Claude about these</button>
+        <button class="chip" data-wa="clear">Clear</button></div>
+      <div class="drawer" id="drawer"></div>
+      <div class="tbl-wrap"><table id="efforts"></table></div></div>
+  </section>
+
+  <!-- Sessions and PRs stack vertically: side-by-side forced horizontal scrolling. -->
+  <section id="s-work"><div class="grid" style="grid-template-columns:1fr">
+    <div class="panel" id="p-prs"></div>
+    <div class="panel" id="p-agents"></div>
+  </div></section>
+
+  <!-- tab: log (and, with the ask box, tab: reviews) -->
+  <section id="s-log">
+    <div class="sec-h"><h2>Decision log</h2><span class="cnt" id="l-cnt"></span><span class="hint">Every Do / Delegate / Drop / Defer you sent, and what the master session did with it.</span>
+      <div class="tools"><button class="chip" id="log-rvonly" title="Show only decisions about code reviews">Review only</button><button class="btn" id="log-standup" title="Copy the last 24 hours of decisions as plain text">Copy as standup</button></div></div>
+    <div class="panel wide" id="p-log"></div>
+  </section>
+
+  <section id="s-ask">
+    <div class="sec-h"><h2>Ask the master session</h2><span class="cnt" id="r-cnt"></span><span class="hint">Send saves a new version of this page; the master Claude session wakes up, acts, and republishes with a reply. Every request and its reply stays below.</span></div>
+    <div class="panel wide">
+      <div class="ask">
+        <textarea id="ask-txt" placeholder="e.g. Delete the 4 stale demo-app worktrees &#183; Draft a reply to Alex about the partner zip &#183; Which PR should I merge first and why?"></textarea>
+        <div class="side"><button class="btn primary" data-write id="ask-send">Send to Claude</button><span class="status" id="ask-status">checking link&#8230;</span></div>
+      </div>
+      <div id="requests"></div>
+    </div>
+  </section>
+
+  <!-- tab: more -->
+  <section id="s-comms"><div class="grid">
+    <div class="panel" id="p-cal"></div>
+  </div></section>
+
+  <section id="s-notes">
+    <div class="sec-h"><h2>Session notes</h2><span class="cnt" id="n-cnt"></span><span class="hint">~/.claude/sessions/*.md &#8212; the handoff each session leaves behind</span></div>
+    <div class="panel wide" id="p-notes"></div>
+  </section>
+
+  <section id="s-artifacts">
+    <div class="sec-h"><h2>Artifacts</h2><span class="cnt" id="a-cnt"></span><span class="hint">Published pages &#8212; mine first, then the ones shared with me.</span></div>
+    <div class="panel wide" id="p-artifacts"></div>
+  </section>
+
+  <footer>
+    <span>Regenerate: <code>/mainstem</code> in the master session (<code id="workroot-txt"></code>).</span>
+    <span>Done/snoozed state lives in this browser only.</span>
+    <span>Session links use <code>ms://</code> &#8594; the jump helper app &#8212; see README.</span>
+    <span><button class="btn" id="reset">Reset done/snoozed</button></span>
+    <span><button class="btn" id="help-btn">Keys ?</button></span>
+  </footer>
+</div>
+
+<div class="dr-scrim" id="dr-scrim"></div>
+<aside id="drawer-right" aria-hidden="true" aria-label="Detail">
+  <div class="dr-h"><h3 id="dr-title"></h3><button class="btn" id="dr-close" title="Close (Esc)">&#10005;</button></div>
+  <div id="dr-body"></div>
+</aside>
+
+<div class="pendbar" id="pendbar"></div>
+<datalist id="dg-who"></datalist>
+<div class="toast" id="toast"></div>
+<div class="help" id="help"><div class="card"><h3>Keyboard</h3><table>
+<tr><td><span class="k">&#8679;1</span>&#8230;<span class="k">&#8679;6</span></td><td>Switch tab: Home &#183; Reviews &#183; Tickets &#183; Sessions &amp; work &#183; Log &#183; More. The tab is remembered and written to the URL (<code>#home #reviews #tickets #work #log #more</code>)</td></tr>
+<tr><td><span class="k">r</span></td><td>Toggle Reviews &#8646; Home</td></tr>
+<tr><td><span class="k">j</span> / <span class="k">k</span></td><td>Next / previous item in Decide now</td></tr>
+<tr><td><span class="k">o</span> or <span class="k">Enter</span></td><td>Open the item's link</td></tr>
+<tr><td><span class="k">1</span> <span class="k">2</span> <span class="k">3</span> <span class="k">4</span></td><td>Decide: Do &#183; Delegate &#183; Drop &#183; Defer. Delegate, Drop and Defer open their form in the drawer</td></tr>
+<tr><td><span class="k">c</span></td><td>Copy the item's shell command</td></tr>
+<tr><td><span class="k">/</span></td><td>Filter the lists on this tab</td></tr>
+<tr><td><span class="k">&#8901;&#8901;&#8901;</span></td><td>Opens the drawer on the right: the full decision strip, review cards, draft bodies, quick-win evidence. The list underneath never moves. <span class="k">Esc</span> or a click outside closes it</td></tr>
+<tr><td>Decide now</td><td>Shows the top 10 by default. <b>Show all</b> in the section header opens the whole ranked list and is remembered</td></tr>
+<tr><td>Session button</td><td><b>Go to session</b> opens the Claude session that already owns the row; <b>Start session</b> opens a new iTerm2 tab in the right directory and starts Claude with a briefing prompt. Both go through <code>ms://</code> &#8594; Claude Jump.app</td></tr>
+<tr><td>Pending approvals</td><td>Drafts a session wrote and will not post until you approve them. <b>Approve</b> sends them all; <b>Open</b> shows the draft so you can untick a section, reject or ask</td></tr>
+<tr><td><span class="k">?</span></td><td>This help &#183; <span class="k">Esc</span> closes</td></tr>
+</table></div></div>
+
+<script type="text/plain" id="tpl">/*__TPL__*/</script>
+<script>
+const DATA = /*__DATA__*/null;
+DATA.requests ||= [];
+DATA.artifacts ||= [];
+DATA.pending ||= [];
+/* The plugin can hand a different owner to the same page. */
+const CONFIG = (typeof window !== 'undefined' && window.CONFIG) || {};
+const LIVE = { email: CONFIG.email ?? '' };
+DATA.jira ||= []; DATA.calendar ||= []; DATA.gmail ||= []; DATA.not_baked ||= [];
+const notBaked = k => DATA.not_baked.includes(k);
+/* Local mode: the page is served by ms_server.py on the loopback address, so a
+   request is an HTTP POST that runs a script — no artifact publish, no model. */
+const LOCAL = location.hostname === '127.0.0.1' || location.hostname === 'localhost';
+/* Published read-only snapshot: baked into DATA.config by build.py's readonly=True path. */
+const READONLY = !!(DATA.config && DATA.config.readonly);
+if (READONLY) document.body.dataset.readonly = '1';
+const NOW = new Date();
+const ME = (DATA.config && DATA.config.githubLogin) || '';
+const $ = (s, el=document) => el.querySelector(s);
+if (DATA.config && DATA.config.brand) {
+  document.title = DATA.config.brand;
+  const bn = $('#brand-name'); if (bn) bn.textContent = DATA.config.brand;
+}
+{ const wr = $('#workroot-txt'); if (wr) wr.textContent = (DATA.config && DATA.config.workRoot) || '~/work'; }
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const hrs = iso => (NOW - new Date(iso)) / 36e5;
+const days = iso => hrs(iso) / 24;
+function ageText(iso){ if(!iso) return ''; const h=hrs(iso); if(h<1) return `${Math.max(1,Math.round(h*60))}m`; if(h<48) return `${Math.round(h)}h`; const d=Math.round(h/24); if(d<60) return `${d}d`; return `${Math.round(d/30)}mo`; }
+function ageCls(iso, warnD=3, critD=10){ const d=days(iso); return d>critD?'age veryold':d>warnD?'age old':'age'; }
+const repoShort = r => (r||'').replace(/^[^/]+\//, '');
+const store = { get(k,d){ try{ const v=localStorage.getItem('cc:'+k); return v?JSON.parse(v):d; }catch{ return d; } }, set(k,v){ try{ localStorage.setItem('cc:'+k, JSON.stringify(v)); }catch{} } };
+/* One screen answers "what do I do now"; every other view is one tab away.
+   The active tab lives in localStorage and in the URL hash, so a bookmark and a
+   reload both land where you left off. #reviews keeps the old bookmark alive. */
+const TABS = [['1','Home','home'],['2','Reviews','reviews'],['3','Tickets','tickets'],['4','Sessions & work','work'],['5','Log','log'],['6','More','more']];
+const TAB_IDS = TABS.map(t => t[2]);
+const hashTab = h => { const k = String(h || '').replace(/^#/, ''); return k === 'all' ? 'home' : (TAB_IDS.includes(k) ? k : ''); };
+let tab = hashTab(location.hash) || (TAB_IDS.includes(store.get('tab','')) ? store.get('tab','') : 'home');
+document.body.dataset.tab = tab;
+if (LOCAL) document.body.dataset.local = '1';
+let reviewsMode = tab === 'reviews';
+let logRvOnly = reviewsMode;
+let done = store.get('done', {}), snoozed = store.get('snoozed', {});
+for (const k in snoozed) if (new Date(snoozed[k]) < NOW) delete snoozed[k];
+store.set('snoozed', snoozed);
+function toast(m){ const t=$('#toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),1600); }
+function copy(text){ navigator.clipboard?.writeText(text).then(()=>toast('Copied: '+text.slice(0,60)), ()=>toast('Copy failed')); }
+const ICON = {
+  open:'<svg viewBox="0 0 24 24"><path d="M14 3h7v7M21 3l-9 9M10 5H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5"/></svg>',
+  copy:'<svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>',
+};
+
+/* ---------- right drawer ----------
+   Detail opens here instead of expanding inline, so no list ever grows under the
+   pointer. The cards are built by the same functions as before; only the
+   container changed. */
+let drawerCtx = null;
+const drawerOpen = () => !!document.body.dataset.drawerOpen;
+function openDrawer(title, html, ctx){
+  drawerCtx = ctx || null;
+  $('#dr-title').textContent = title || '';
+  $('#dr-body').innerHTML = html;
+  document.body.dataset.drawerOpen = '1';
+  $('#drawer-right').setAttribute('aria-hidden', 'false');
+  $('#dr-body').scrollTop = 0;
+}
+function closeDrawer(){
+  if (!drawerOpen()) { drawerCtx = null; return; }
+  delete document.body.dataset.drawerOpen;
+  $('#drawer-right').setAttribute('aria-hidden', 'true');
+  $('#dr-body').innerHTML = '';
+  drawerCtx = null; rvOpenQ = null; rvOpenP = null; formState = null; qwForm = null;
+}
+$('#dr-close').addEventListener('click', () => { closeDrawer(); renderQueue(); renderTickets(); renderReviews(); });
+$('#dr-scrim').addEventListener('click', () => { closeDrawer(); renderQueue(); renderTickets(); renderReviews(); });
+$('#dr-body').addEventListener('input', e => {
+  const ta = e.target.closest('textarea[data-dredit]'); if (!ta) return;
+  const b = ta.closest('details')?.querySelector(`[data-dsave="${CSS.escape(ta.dataset.dredit)}"]`);
+  if (b) b.hidden = false;
+});
+$('#dr-body').addEventListener('click', e => {
+  if (e.target.closest('a')) return; // links keep their own routing
+  const b = e.target.closest('button, .cancel'); if (!b) return;
+  if (b.dataset.cmd) { copy(b.dataset.cmd); b.classList.add('copied'); setTimeout(()=>b.classList.remove('copied'),1200); return; }
+  if (b.dataset.copyDraft) { rvCopyDraft(b.closest('.rvcard').dataset.rvcard, b.dataset.copyDraft); return; }
+  if (b.dataset.dsave) { const c = b.closest('.rvcard'); rvSaveDraft(c.dataset.rvcard, b.dataset.dsave, c); toast('Draft saved to the review file'); return; }
+  if (b.dataset.rva) { const c = b.closest('.rvcard'); rvSend(c.dataset.rvcard, b.dataset.rva, c); return; }
+  if (b.dataset.rv) { openReviewDrawer(b.dataset.rv); return; }
+  if (b.dataset.pdcopy) { const c = b.closest('.pdcard'); const p = PEND.find(x => x.id === c.dataset.pdcard);
+    const sec = p && pdSplit(p.body).secs.find(x => x.n === b.dataset.pdcopy); if (sec) copy(sec.raw.join('\n')); return; }
+  if (b.dataset.pda) { const c = b.closest('.pdcard'); pdSend(c.dataset.pdcard, b.dataset.pda, c); return; }
+  if (b.dataset.qchip) { b.closest('.decform').querySelector('[data-qf="until"]').value = b.dataset.qchip; return; }
+  if (b.dataset.qsend) { qwSubmit(b.closest('.decform')); return; }
+  if (b.dataset.qdec) { const it = QWI.find(x => x.key === b.dataset.qkey); if (!it) return;
+    if (b.dataset.qdec === 'do' || b.dataset.qdec === 'close') { qwDecide(it, b.dataset.qdec, {}); return; }
+    openQwDrawer(it.key, b.dataset.qdec); return; }
+  if (b.dataset.chip) { b.closest('.decform').querySelector('[data-df="until"]').value = b.dataset.chip; return; }
+  if (b.dataset.dsend) { submitForm(b.closest('.decform')); return; }
+  if (b.dataset.dec) { openDecision(b.dataset.id, b.dataset.dec); return; }
+  if (b.classList.contains('cancel')) { closeDrawer(); renderQueue(); renderTickets(); return; }
+});
+$('#dr-body').addEventListener('keydown', e => {
+  if (e.key === 'Escape') { e.stopPropagation(); closeDrawer(); renderQueue(); renderTickets(); renderReviews(); return; }
+  if (e.key !== 'Enter') return;
+  const card = e.target.closest?.('.rvcard');
+  if (card) { e.preventDefault(); e.stopPropagation(); const k = e.target.dataset?.rvf;
+    if (k === 'question') rvSend(card.dataset.rvcard, 'review_question', card);
+    else if (k === 'why') rvSend(card.dataset.rvcard, 'skip_review', card); return; }
+  const pd = e.target.closest?.('.pdcard');
+  if (pd) { e.preventDefault(); e.stopPropagation(); const k = e.target.dataset?.pdf;
+    if (k === 'why') pdSend(pd.dataset.pdcard, 'reject', pd);
+    else if (k === 'question') pdSend(pd.dataset.pdcard, 'ask', pd); return; }
+  const f = e.target.closest?.('.decform'); if (!f) return;
+  e.preventDefault(); e.stopPropagation();
+  if (f.querySelector('[data-qf]')) qwSubmit(f); else submitForm(f);
+});
+
+/* ---------- offline reviews (~/.claude/reviews/active → reviews.json) ---------- */
+const RV = DATA.reviews || {};
+/* Every review I hold, requested or not. A review can start from a GitHub review
+   request OR from an explicit ask in any Claude session (Slack-announced stacks,
+   /pr-review-queue intakes). Those have no request row, so they used to be
+   invisible here while their review file sat on disk. Synthesize a row per
+   orphan review so the panel is the union, never a subset. */
+const RR_REQUESTED = new Set(DATA.review_requests.map(r => r.url));
+const orgOfUrl = u => (String(u || '').match(/github\.com\/([^/]+)\//) || [])[1] || '';
+const RV_ONLY = Object.values(RV).filter(v => v.url && !RR_REQUESTED.has(v.url)).map(v => ({
+  url: v.url,
+  number: v.pr,
+  title: String(v.title || '').replace(/^"|"$/g, ''),
+  author: { login: v.author || 'unknown' },
+  repository: { nameWithOwner: String(v.repo || '').includes('/') ? v.repo : (orgOfUrl(v.url) ? orgOfUrl(v.url) + '/' + (v.repo || '') : (v.repo || '')) },
+  direct: v.request === 'me' || v.request === 'direct',
+  isDraft: false,
+  createdAt: v.opened || v.last_reviewed || v.mtime,
+  updatedAt: v.mtime,
+  rvOnly: true,
+}));
+const RR_ALL = [...DATA.review_requests, ...RV_ONLY];
+const rrProv = r => r.provenance || (r.direct ? 'direct' : 'team');
+let rvDec = store.get('rv', {}), rvOpenQ = null, rvOpenP = null;
+/* localStorage is per-origin, so a new port/browser forgets which reviews were decided.
+   The request history knows: seed decided-state from completed review decisions once. */
+if (!Object.keys(rvDec).length) {
+  const RV_DECISIONS = new Set(['approve','approve_with_comments','request_changes','post_findings','skip_review','close_stale']);
+  (DATA.requests || []).forEach(r => {
+    const d = (r.extra || {}).decision || r.decision;
+    if (r.kind === 'decision' && RV_DECISIONS.has(d) && r.status === 'done' && (r.targets || [])[0])
+      rvDec[r.targets[0]] = d;
+  });
+  if (Object.keys(rvDec).length) store.set('rv', rvDec);
+}
+for (const u in rvDec) if (rvDec[u] === 'review_question') delete rvDec[u]; store.set('rv', rvDec);
+/* thread of everything I sent about one PR, and which replies this browser has seen */
+let rvSeen = store.get('seen', {});
+const rvThreadOf = url => DATA.requests.filter(r => r.item?.url === url).sort((a,b)=>new Date(a.when)-new Date(b.when));
+const rvNewReplies = url => rvThreadOf(url).filter(r => r.reply && !rvSeen[r.id]);
+const rvReviewReq = () => DATA.requests.filter(r => r.item?.src === 'review' || r.decision === 'review_question');
+function rvMarkSeen(url){ const n = rvNewReplies(url); if (!n.length) return; n.forEach(r => rvSeen[r.id] = true); store.set('seen', rvSeen); }
+const RV_V = { 'approve':['good','approved ✓ offline'], 'approve-with-comments':['good','approve · with comments'], 'request-changes':['crit','changes requested'], 'needs-discussion':['warn','needs discussion'], 'skip-bot':['neutral','bot · skip'], 'pending':['neutral','reviewed · pending'] };
+const RV_DEPTH = { 'read-code':['🔍 read the code','crit'], 'skim-diff':['👀 skim the diff','warn'], 'decide-here':['✅ decide from here','good'] };
+function depthPill(url){
+  const rv = RV[url], d = rv && RV_DEPTH[rv.depth];
+  if (!d) return '';
+  return `<span class="pill ${d[1]}" title="${esc(rv.depth_why || 'reviewer’s depth call')}">${d[0]}</span>`;
+}
+const RV_DEC = { approve:['Approved','good'], approve_with_comments:['Approved + comments','good'], request_changes:['Changes requested','crit'], post_findings:['Comments posted','info'], review_question:['Question sent','warn'], skip_review:['Review skipped','neutral'], close_stale:['Closed · no answer','crit'] };
+/* "still relevant?" nudge comments — nudges.json */
+const NUDGE = DATA.nudges || null;
+const TODAY = `${NOW.getFullYear()}-${String(NOW.getMonth()+1).padStart(2,'0')}-${String(NOW.getDate()).padStart(2,'0')}`;
+const nudgeOf = url => (NUDGE?.prs || []).find(p => p.url === url) || null;
+const nudgeDue = () => !!NUDGE?.close_after && TODAY >= NUDGE.close_after;
+function nudgePill(url){
+  const n = nudgeOf(url); if (!n) return '';
+  const lbl = `nudged ${ageText(NUDGE.posted)}${NUDGE.close_after?` · close ${esc(NUDGE.close_after)}`:''}`;
+  const cls = nudgeDue() ? 'warn' : 'neutral';
+  const p = n.comment ? `<a class="pill ${cls}" href="${esc(n.comment)}" target="_blank" rel="noopener" title="Open the nudge comment">${lbl}</a>` : `<span class="pill ${cls}">${lbl}</span>`;
+  return p + (n.replied ? '<span class="pill info" title="the author answered or pushed after the nudge">author replied</span>' : '');
+}
+const SEV_RANK = { critical:0, high:1, important:1, med:2, medium:2, low:3, minor:3, nit:4, info:5, positive:6 };
+const sevRank = s => SEV_RANK[String(s||'').toLowerCase()] ?? 7;
+const sevCls = s => { const r = sevRank(s); return r<=1 ? 'crit' : r===2 ? 'warn' : 'neutral'; };
+const rvVerdict = v => RV_V[v] || ['neutral', v && !/^(null|n\/a|)$/i.test(String(v)) ? 'reviewed · '+v : 'reviewed'];
+const rvTitle = rv => String(rv.title||'').replace(/^["']+|["']+$/g,'');
+const rvBlank = v => !v || /^(none|null|n\/a|-|\[\s*\])$/i.test(String(v).trim());
+const rvTopSev = rv => (rv.findings||[]).map(f=>f.sev).sort((a,b)=>sevRank(a)-sevRank(b))[0] || '';
+const rvDraftSev = (rv,id) => ((rv.findings||[]).find(f=>String(f.n)===String(id).replace(/\D/g,'')) || {}).sev || '';
+/* A PR whose base branch is another open PR's head is stacked: the child's diff is measured
+   against the parent, so the parent must be reviewed (and merged) first. */
+const STACK = (() => {
+  const all = [...DATA.my_prs, ...DATA.review_requests].filter(p => p.url && p.headRefName);
+  const byRepoHead = {}; all.forEach(p => { byRepoHead[`${p.repository?.nameWithOwner}|${p.headRefName}`] = p; });
+  const m = {};
+  all.forEach(p => {
+    const base = p.baseRefName;
+    if (!base || ['main','master','dev','develop'].includes(base)) return;
+    const parent = byRepoHead[`${p.repository?.nameWithOwner}|${base}`];
+    if (!parent || parent.url === p.url) return;
+    (m[p.url] ||= {}).parent = parent;
+    ((m[parent.url] ||= {}).children ||= []).push(p);
+  });
+  return m;
+})();
+const RR_DRAFT = new Set(DATA.review_requests.filter(r => r.isDraft).map(r => r.url));
+const RV_QUEUED = new Set(DATA.requests.filter(r => r.kind === 'review_pr' && r.status === 'pending').flatMap(r => r.targets || []));
+const GH_MY_REVIEW = {}; DATA.review_requests.forEach(r => { if (r.my_review) GH_MY_REVIEW[r.url] = r.my_review; });
+const GH_RS = { APPROVED:['✓ approved on GitHub','good'], CHANGES_REQUESTED:['✗ changes requested on GitHub','crit'], COMMENTED:['commented on GitHub','neutral'], DISMISSED:['review dismissed','warn'] };
+const POSTED = new Set(['approved','changes-requested','comments-posted']);
+function waitPill(url){
+  const rv = RV[url]; if (!rv || !POSTED.has(rv.status)) return '';
+  if (rv.live_head && rv.last_head_sha && !rv.live_head.startsWith(rv.last_head_sha) && !rv.last_head_sha.startsWith(rv.live_head))
+    return `<span class="pill crit" title="The author pushed after your review — the ball is back with you">author pushed — re-review</span>`;
+  return `<span class="pill info" title="You posted your review (${esc(rv.status)}) — nothing to do until the author responds">⏳ waiting on author</span>`;
+}
+function ghReviewPill(url){
+  // Live GitHub state when the PR is still in the request list; else the posted
+  // status recorded in the review file the moment the verdict went out.
+  const posted = { approved:'APPROVED', 'changes-requested':'CHANGES_REQUESTED' }[RV[url]?.status];
+  const st = GH_RS[GH_MY_REVIEW[url] || posted]; if (!st) return '';
+  return `<span class="pill ${st[1]}" title="Your submitted review state on GitHub">${st[0]}</span>`;
+}
+function stackPills(url){
+  const st = STACK[url]; if (!st) return '';
+  let h = '';
+  if (st.parent) h += `<a class="pill warn" href="${esc(st.parent.url)}" target="_blank" rel="noopener" title="Stacked PR: its diff is against #${st.parent.number}, not the default branch — review #${st.parent.number} first">⧉ on #${st.parent.number}</a>`;
+  if (st.children) h += st.children.map(c => `<a class="pill neutral" href="${esc(c.url)}" target="_blank" rel="noopener" title="#${c.number} is stacked on this PR — merging this first keeps that diff honest">⧉ base of #${c.number}</a>`).join('');
+  return h;
+}
+function rvPills(url){
+  const rv = RV[url], dec = rvDec[url] && (RV_DEC[rvDec[url]] || ['sent','neutral']);
+  const decp = dec ? `<span class="pill ${dec[1]}">${dec[0]}</span>` : '';
+  const news = rvNewReplies(url);
+  const nrp = news.length ? (() => {
+    const last = news[news.length - 1];
+    const lbl = (RV_DEC[last.decision] || [last.kind === 'review_question' ? 'answered' : 'agent update'])[0];
+    const gist = (last.reply || '').replace(/\s+/g, ' ').slice(0, 70);
+    return `<span class="pill accent" title="${esc(last.reply || '')} — open the review card to mark it seen">⟲ ${esc(lbl)}: ${esc(gist)}${(last.reply||'').length > 70 ? '…' : ''}</span>`;
+  })() : '';
+  const dft = (RR_DRAFT.has(url) ? `<span class="pill neutral" title="Draft PR — the author is not asking for review yet; reviewing it now wastes time and tokens">✎ draft</span>` : '')
+    + (RV_QUEUED.has(url) ? `<span class="pill warn" title="The review agent is queued or running on this PR — the verdict replaces this pill">⌛ review running</span>` : '');
+  if (!rv) return dft + waitPill(url) + ghReviewPill(url) + stackPills(url) + `<span class="pill neutral" title="no offline review file for this PR yet">not reviewed</span>`
+    + (LOCAL ? `<button class="pill model" data-write data-rvrun="${esc(url)}" title="Run the offline review agent on this PR — ~150k tokens">✦ review</button>` : '')
+    + `${nudgePill(url)}${decp}${nrp}`;
+  const v = rvVerdict(rv.verdict), n = (rv.findings||[]).length, top = rvTopSev(rv);
+  return dft + depthPill(url) + waitPill(url) + ghReviewPill(url) + stackPills(url) + `<button class="pill ${v[0]}" data-rv="${esc(url)}" title="Show the offline review">${esc(v[1])}</button>`
+    + (n ? `<button class="pill mono ${sevCls(top)}" data-rv="${esc(url)}" title="highest severity: ${esc(top)}">${n} finding${n===1?'':'s'}</button>` : '')
+    + nudgePill(url) + decp + nrp;
+}
+function rvThread(url){
+  const ts = rvThreadOf(url);
+  if (!ts.length) return '';
+  return `<div class="lbl">Thread</div>` + ts.map(r => {
+    const d = RV_DEC[r.decision] || DECS[r.decision] || QW_DEC[r.decision] || PD_DEC[r.decision] || (r.decision ? ['sent','neutral'] : [r.kind, 'src']);
+    const txt = r.question || r.why || r.note || r.text;
+    return `<div class="thr"><div class="thh"><span class="age" title="${esc(r.when)}">${ageText(r.when)}</span><span class="pill ${d[1]}">${esc(d[0])}</span>${r.status==='needs_confirmation'?'<span class="pill warn">needs your OK</span>':r.reply?'':'<span class="pill warn">pending</span>'}</div>
+      <div class="txt">${esc(txt)}</div>${r.reply?`<div class="reply">${esc(r.reply)}</div>`:''}${r.status==='needs_confirmation'?`<div style="margin-top:6px;display:flex;gap:6px"><button class="btn" data-write data-confirm="${esc(r.id)}">Confirm</button><button class="chip" data-write data-deny="${esc(r.id)}">Deny</button></div>`:''}</div>`;
+  }).join('');
+}
+function rvCard(rv, title){
+  const url = rv.url, v = rvVerdict(rv.verdict), fs = rv.findings || [];
+  const hdr = `<div class="rvh"><span class="pill ${v[0]}">${esc(v[1])}</span>${rv.size?`<span class="pill neutral mono">${esc(rv.size)}</span>`:''}`
+    + `${rv.last_reviewed?`<span class="age" title="${esc(rv.last_reviewed)}">reviewed ${ageText(rv.last_reviewed)} ago</span>`:''}`
+    + `${rvBlank(rv.depends_on)?'':`<span class="pill info">depends on ${esc(rv.depends_on)}</span>`}`
+    + `${rv.path?`<button class="cmd" data-cmd="${esc(rv.path)}" title="Copy the file path — file:// links do not open from a published page">${ICON.copy}path</button>`:''}</div>`;
+  const sum = rv.summary ? `<div class="sum">${esc(rv.summary)}</div>` : '';
+  const tbl = fs.length ? '' : `<div class="lbl">Findings</div><div class="none">No findings.</div>`;
+  const drafts = rv.drafts || [];
+  /* the finding's code, like a GitHub review card: diff-colored rows, target highlighted,
+     header links to that file in the PR's Files-changed view */
+  const excerptHtml = d => {
+    const ex = d.excerpt; if (!ex || !ex.code) return '';
+    let n = ex.start;
+    const rows = ex.code.split('\n').map(l => {
+      const mark = ex.diff ? l[0] : ' ';
+      const txt = ex.diff ? l.slice(1) : l;
+      const del = mark === '-';
+      const num = del ? '' : n;
+      const tgt = !del && n === ex.target;
+      if (!del) n++;
+      const cls = del ? ' del' : mark === '+' ? ' add' : '';
+      return `<div class="exl${cls}${tgt?' tgt':''}"><span class="exn">${num}</span><span class="exm">${ex.diff?esc(mark):''}</span><span class="exc">${esc(txt)}</span></div>`;
+    }).join('');
+    const hdr = d.file_url
+      ? `<a class="ex-h mono" href="${esc(d.file_url)}" target="_blank" rel="noopener" title="Open this file in the PR's Files-changed view on GitHub">${esc(d.loc)} ↗</a>`
+      : `<div class="ex-h mono">${esc(d.loc)}</div>`;
+    return `<div class="ex">${hdr}${rows}</div>`;
+  };
+  /* one merged section: each finding is a card that carries its issue text, code and draft.
+     Cards start expanded — you collapse what you have dealt with. */
+  const draftByN = {}; drafts.forEach(d => draftByN[String(d.id).replace(/^F/,'')] = d);
+  const fCard = f => {
+    const d = draftByN[String(f.n)];
+    if (!d) return `<div class="draftrow nodraft"><span class="pill ${sevCls(f.sev)}">${esc(f.sev)}</span> <span class="mono">${esc(f.loc)}</span><span class="iss">${esc(f.issue)}</span><span class="age">${esc(f.status)}</span></div>`;
+    return `<div class="draftrow"><label class="pst"><input type="checkbox" data-draft="${esc(d.id)}"${sevRank(f.sev)<=2?' checked':''}> post</label>
+      <details open><summary><span class="mono">${esc(d.id)} · ${esc(d.loc)}</span><span class="pill ${sevCls(f.sev)}">${esc(f.sev)}</span><span class="age">${esc(f.status)}</span></summary>
+      <div class="iss ${sevCls(f.sev)}">${esc(f.issue)}</div>${excerptHtml(d)}<textarea class="draft" data-dredit="${esc(d.id)}" spellcheck="false">${esc(d.text)}</textarea><div class="drbtns"><button class="cmd" data-copy-draft="${esc(d.id)}">${ICON.copy}Copy</button><button class="cmd dsave" data-write data-dsave="${esc(d.id)}" hidden>Save edit</button></div></details></div>`;
+  };
+  const covered = new Set(fs.map(f => String(f.n)));
+  const orphans = drafts.filter(d => !covered.has(String(d.id).replace(/^F/,''))).map(d => {
+    const sev = rvDraftSev(rv, d.id);
+    return `<div class="draftrow"><label class="pst"><input type="checkbox" data-draft="${esc(d.id)}"${sevRank(sev)<=2?' checked':''}> post</label>
+      <details open><summary><span class="mono">${esc(d.id)} · ${esc(d.loc)}</span>${sev?`<span class="pill ${sevCls(sev)}">${esc(sev)}</span>`:''}</summary>
+      ${excerptHtml(d)}<textarea class="draft" data-dredit="${esc(d.id)}" spellcheck="false">${esc(d.text)}</textarea><div class="drbtns"><button class="cmd" data-copy-draft="${esc(d.id)}">${ICON.copy}Copy</button><button class="cmd dsave" data-write data-dsave="${esc(d.id)}" hidden>Save edit</button></div></details></div>`;
+  });
+  const dh = (fs.length || drafts.length)
+    ? `<div class="lbl">Inline comment drafts</div>` + fs.map(fCard).join('') + orphans.join('')
+    : '';
+  const qs = (rv.questions||[]).length ? `<div class="lbl">Questions</div><ul>${rv.questions.map(q=>`<li>${esc(q)}</li>`).join('')}</ul>` : '';
+  const acts = `<div class="decform">
+    ${sessBtnPR(url, rvTitle(rv), '')}
+    <button class="dec" data-write data-rva="approve" title="Approve on GitHub in your name — Claude confirms with you first">Approve</button>
+    <button class="dec" data-write data-rva="approve_with_comments" title="Post the selected drafts as inline comments, then approve">Approve + post selected</button>
+    <button class="dec" data-write data-rva="request_changes" title="Post the selected drafts and request changes">Request changes</button>
+    <button class="dec" data-write data-rva="post_findings" title="Post the selected drafts only — no verdict yet">Post drafts only</button>
+    <input class="free" data-rvf="question" placeholder="ask the review agent one question…"><button class="dec" data-write data-rva="review_question" title="Claude answers in the Decision log — no GitHub write">Ask agent</button>
+    <input class="free" data-rvf="why" placeholder="skip because…"><button class="dec" data-write data-rva="skip_review" title="Drop the review — Claude removes you as reviewer">Skip</button>
+    ${nudgeDue() && nudgeOf(url) ? `<button class="dec" data-write data-rva="close_stale" title="The nudge comment got no answer — close the PR">Close (no answer)</button>` : ''}</div>`;
+  return `<div class="rvcard" data-rvcard="${esc(url)}" data-rvtitle="${esc(title||('#'+rv.pr+' '+rvTitle(rv)))}">${hdr}${sum}${tbl}${dh}${qs}${acts}${rvThread(url)}</div>`;
+}
+function rvLine(a, t, ids, q, why){
+  const n = ids.length, c = `${n} inline comment${n===1?'':'s'} (${ids.join(', ')})`;
+  if (a==='approve') return `Approve ${t}. Post no comments.`;
+  if (a==='approve_with_comments') return `Approve ${t}. Post ${c}.`;
+  if (a==='request_changes') return `Request changes on ${t}. Post ${c}.`;
+  if (a==='post_findings') return `Post ${c} on ${t}. Give no verdict yet.`;
+  if (a==='review_question') return `Question about the review of ${t}: ${q}`;
+  if (a==='close_stale') return `Close ${t}. ${why}`;
+  return `Skip the review of ${t}. ${why}`;
+}
+function rvCopyDraft(url, id){
+  const ta = document.querySelector(`textarea[data-dredit="${CSS.escape(id)}"]`);
+  if (ta) return copy(ta.value);
+  const d = (RV[url]?.drafts||[]).find(x=>x.id===id); if (d) copy(d.text);
+}
+/* an inline draft edit lands in the review .md via the server — the file is what gets posted */
+function rvSaveDraft(url, id, card){
+  const ta = card.querySelector(`textarea[data-dredit="${CSS.escape(id)}"]`);
+  const rv = RV[url];
+  if (!ta || !rv || !ta.value.trim()) return;
+  const d = (rv.drafts||[]).find(x=>x.id===id);
+  if (d && d.text === ta.value.trim()) return;
+  if (d) d.text = ta.value.trim();
+  publishRequests([newReq('edit_draft', `Edit draft ${id} of #${rv.pr}`, [url], { review_path: rv.path || '', draft: id, text: ta.value.trim() })]);
+  const b = card.querySelector(`[data-dsave="${CSS.escape(id)}"]`); if (b) b.hidden = true;
+}
+function rvSend(url, action, card){
+  const rv = RV[url]; if (!rv || !card) return;
+  // unsaved inline edits must reach the .md before the server reads it to post
+  [...card.querySelectorAll('textarea[data-dredit]')].forEach(ta => rvSaveDraft(url, ta.dataset.dredit, card));
+  const ids = [...card.querySelectorAll('input[data-draft]:checked')].map(i=>i.dataset.draft);
+  const val = k => card.querySelector(`[data-rvf="${k}"]`)?.value.trim() || '';
+  const q = val('question');
+  const why = action==='close_stale' ? (val('why') || 'No answer to the still-relevant comment in 7 days.') : val('why');
+  if ((action==='request_changes' || action==='post_findings') && !ids.length) { toast('Select at least one draft first'); return; }
+  if (action==='review_question' && !q) { toast('Type the question first'); return; }
+  if (action==='skip_review' && !why) { toast('Say why you skip it'); return; }
+  const t = card.dataset.rvtitle || `#${rv.pr} ${rvTitle(rv)}`;
+  const extra = { decision:action, item:{ id:'review:'+url, src:'review', title:t, url }, drafts:ids, review_path:rv.path || '' };
+  if (action==='review_question') extra.question = q;
+  if (action==='skip_review' || action==='close_stale') extra.why = why;
+  // A question is not a decision: the row must stay in the working list until a real verdict.
+  if (action !== 'review_question') { rvDec[url] = action; store.set('rv', rvDec); }
+  queueDecision(newReq('decision', rvLine(action, t, ids, q, why), [url], extra));
+  closeDrawer();
+  renderQueue(); renderReviews(); renderLog(); renderTabs();
+}
+/* the review card renders into the drawer — the list behind it never moves */
+function openReviewDrawer(url){
+  const rv = RV[url]; if (!rv) return;
+  rvMarkSeen(url); rvOpenQ = rvOpenP = url;
+  const rr = DATA.review_requests.find(r => r.url === url);
+  const title = rr ? `#${rr.number} ${rr.title}` : `#${rv.pr} ${rvTitle(rv)}`;
+  openDrawer(title, rvCard(rv, title), { kind:'review', url });
+  renderQueue(); renderReviews(); renderNow();
+}
+
+/* ---------- joins ---------- */
+const wtByBranch = {};
+DATA.worktrees.forEach(w => { if (w.branch) wtByBranch[w.remote + '#' + w.branch] = w; });
+const sessByCwd = {};
+DATA.sessions.forEach(s => (sessByCwd[s.cwd] ||= []).push(s));
+const notesByWt = {};
+DATA.notes.forEach(n => {
+  const m = n.head.match(/worktree:\s*(\S+)/); const b = n.head.match(/branch:\s*([^\s(]+)/);
+  DATA.worktrees.forEach(w => { if ((m && m[1] === w.path) || (b && w.branch && b[1] === w.branch) || n.head.includes(w.path)) (notesByWt[w.path] ||= []).push(n); });
+});
+const jiraByKey = {};
+function reindexJira(){ for (const k in jiraByKey) delete jiraByKey[k]; DATA.jira.forEach(j => { jiraByKey[j.key] = j; }); }
+reindexJira();
+const prByBranch = {};
+DATA.my_prs.forEach(p => prByBranch[p.repository.nameWithOwner + '#' + p.headRefName] = p);
+const TICKET_ALT = DATA.config.ticketPattern || null;
+const TICKETS_IN_RE = TICKET_ALT ? new RegExp(`\\b(?:${TICKET_ALT})-\\d+\\b`, 'g') : null;
+const ticketsIn = txt => TICKETS_IN_RE ? [...new Set((txt.match(TICKETS_IN_RE) || []))] : [];
+
+/* ---------- live session status (session_status.json) ---------- */
+const SS = DATA.session_status || {};
+const prUrlByNum = {};
+[...DATA.my_prs, ...DATA.review_requests].forEach(p => { if (p.number && !prUrlByNum[p.number]) prUrlByNum[p.number] = p.url; });
+const JIRA_KEY = TICKET_ALT ? new RegExp(`^(?:${TICKET_ALT})-\\d+$`) : null;
+const JIRA_KEY_PREFIX = TICKET_ALT ? new RegExp(`^(?:${TICKET_ALT})-\\d+\\b`) : null;
+/* no jiraHost configured → no valid link to build; callers must treat null as "render plain text" */
+const jiraLink = key => DATA.config.jiraHost ? `https://${DATA.config.jiraHost}/browse/${key}` : null;
+const jiraJqlLink = jql => DATA.config.jiraHost ? `https://${DATA.config.jiraHost}/issues?jql=${jql}` : null;
+/* a reply may carry noise around the ref ("#862 merged") — keep the token, keep the raw text as the tooltip */
+const ssToken = r => { const t = String(r ?? '').trim();
+  const m = t.match(/^#(\d+)\b/) || (JIRA_KEY_PREFIX && t.match(JIRA_KEY_PREFIX)); return m ? m[0] : t; };
+const ssBlocked = st => st && st.blocked && !/^(none|-|no|n\/a)$/i.test(String(st.blocked).trim()) ? String(st.blocked).trim() : '';
+function ssRefPill(raw){
+  const full = String(raw ?? '').trim(), t = ssToken(full);
+  if (!t || t === '-') return '';
+  const tip = full === t ? '' : ` title="${esc(full)}"`;
+  const pr = t.match(/^#(\d+)$/);
+  if (pr) { const u = prUrlByNum[pr[1]];
+    return u ? `<a class="pill neutral mono" href="${esc(u)}" target="_blank" rel="noopener" title="${esc(full === t ? 'open the pull request' : full)}">${esc(t)}</a>`
+             : `<span class="pill neutral mono" title="${esc(full === t ? 'no matching open PR in this board' : full)}">${esc(t)}</span>`; }
+  if (JIRA_KEY && JIRA_KEY.test(t)) return jiraLink(t) ? `<a class="pill neutral mono" href="${esc(jiraLink(t))}" target="_blank" rel="noopener"${tip}>${esc(t)}</a>` : `<span class="pill neutral mono"${tip}>${esc(t)}</span>`;
+  return `<span class="pill neutral mono"${tip}>${esc(t)}</span>`;
+}
+/* normalized ref (#919 · TICKET-123 · branch · repo) -> session names */
+const refIndex = {};
+function ssIndex(k, name){ const kk = String(k ?? '').trim().toLowerCase(); if (!kk || kk === '-') return;
+  (refIndex[kk] ||= []); if (!refIndex[kk].includes(name)) refIndex[kk].push(name); }
+Object.entries(SS).forEach(([name, st]) => {
+  (st.refs || []).forEach(r => { ssIndex(r, name); ssIndex(ssToken(r), name);
+    const q = String(r).match(/#\d+$/); if (q) ssIndex(q[0], name); });
+  ssIndex(st.repo, name);
+});
+const ssFor = k => refIndex[String(k ?? '').trim().toLowerCase()] || [];
+function ssPill(names){ if (!names || !names.length) return '';
+  return `<span class="pill info" title="a live Claude session reports work on this">session${names.length>1?'s':''}: ${esc(names.join(', '))}</span>`; }
+function ssNamesForItem(it){
+  const out = new Set();
+  const txt = String(it.title || '');
+  (txt.match(/#\d+/g) || []).forEach(t => ssFor(t).forEach(n => out.add(n)));
+  ticketsIn(txt).forEach(t => ssFor(t).forEach(n => out.add(n)));
+  if (it.key) ssFor(it.key).forEach(n => out.add(n));
+  const cd = String(it.cmd || '').match(/^cd\s+(\S+)/);
+  if (cd) (sessByCwd[cd[1]] || []).forEach(x => out.add(x.name));
+  return [...out];
+}
+function ssLine(name){
+  const st = SS[name];
+  if (!st) return '<div class="ss-line"><span class="age" title="this session did not answer the status ping and has no handoff note">no status</span></div>';
+  const note = st.source === 'note';
+  const bl = ssBlocked(st);
+  const h = st.when ? hrs(st.when) : null;
+  return `<div class="ss-line${note?' ss-note':''}"><span class="ss-doing">${esc(st.doing || '—')}</span>`
+    + (st.refs || []).map(ssRefPill).join('')
+    + (bl ? `<span class="pill crit">blocked: ${esc(bl)}</span>` : '')
+    + (st.when ? `<span class="age ${h>2?'old':''}" title="${esc(st.when)} · ${note?'from the session handoff note':'answered the status ping'}">synced ${ageText(st.when)}</span>` : '')
+    + '</div>';
+}
+
+/* ---------- session buttons (ms:// → Claude Jump.app → iTerm2) ---------- */
+const SESS_BY_NAME = {};
+DATA.sessions.forEach(s => { SESS_BY_NAME[s.name] = s; });
+const CLONE_BY_REMOTE = {};
+DATA.worktrees.forEach(w => { if (w.kind === 'clone' && w.remote && !CLONE_BY_REMOTE[w.remote]) CLONE_BY_REMOTE[w.remote] = w; });
+const WORK_DIR = DATA.config.workRoot || '';
+function sessJump(s){
+  const tmux = (s.tmux || '').split(':')[0];
+  return `ms://session?name=${encodeURIComponent(s.name)}&cwd=${encodeURIComponent(s.cwd)}&tmux=${encodeURIComponent(tmux)}&sid=${encodeURIComponent(s.sessionId || '')}&tty=${encodeURIComponent(s.tty || '')}`;
+}
+/* One session owns a row: it reports the ref, or it sits in the row's worktree.
+   The worktree match wins — several /work sessions may quote the same PR. */
+function sessFind(refs, wtPath){
+  const names = new Set();
+  (refs || []).filter(Boolean).forEach(r => ssFor(r).forEach(n => names.add(n)));
+  const live = [...names].map(n => SESS_BY_NAME[n]).filter(Boolean);
+  if (wtPath) {
+    const here = live.find(s => s.cwd === wtPath) || (sessByCwd[wtPath] || [])[0];
+    if (here) return here;
+  }
+  return live[0] || null;
+}
+const pdirOf = (remote, branch) => (branch && remote && wtByBranch[remote + '#' + branch]?.path) || CLONE_BY_REMOTE[remote]?.path || WORK_DIR;
+const oneLine = s => String(s ?? '').replace(/\s+/g, ' ').trim();
+const clampPrompt = s => { const t = oneLine(s); return t.length > 400 ? t.slice(0, 397) + '...' : t; };
+const startUrl = (dir, prompt) => `ms://start?cwd=${encodeURIComponent(dir)}&prompt=${encodeURIComponent(clampPrompt(prompt))}`;
+const TIP_GO = 'Opens that Claude session in iTerm2 (ms:// → Claude Jump.app)';
+const TIP_NEW = 'Opens a new iTerm2 tab in this directory and starts Claude there (ms:// → Claude Jump.app)';
+/* An editor-hosted session (Zed ACP, VS Code) has no iTerm tab, so a jump would only open a stray shell. */
+function sessBtnFor(s){
+  if (s.host) return `<span class="dec sessbtn" title="This session runs inside ${esc(s.host)} — switch to that window">In ${esc(s.host)} · <span class="nm">${esc(s.name)}</span></span>`;
+  /* background/agent sessions have no controlling terminal — there is no tab to jump to. */
+  if ((s.kind || 'background') !== 'interactive') return `<span class="dec sessbtn" title="This session has no controlling terminal to jump to"><span class="nm">${esc(s.name)}</span></span>`;
+  return `<a class="dec sessbtn" data-write href="${esc(sessJump(s))}" title="${TIP_GO}">Go to session · <span class="nm">${esc(s.name)}</span></a>`;
+}
+function sessBtn(s, dir, prompt){
+  if (s) return sessBtnFor(s);
+  return `<a class="dec sessbtn new" data-write href="${esc(startUrl(dir, prompt))}" title="${TIP_NEW}">Start session</a>`;
+}
+const prNumOf = url => (String(url).match(/\/pull\/(\d+)/) || [])[1] || '';
+const prRemoteOf = url => (String(url).match(/github\.com\/([^/]+\/[^/]+)\/pull\//) || [])[1] || '';
+function sessBtnPR(url, title, branch){
+  const n = prNumOf(url), remote = prRemoteOf(url);
+  const wt = branch && remote ? wtByBranch[remote + '#' + branch] : null;
+  /* a repo-qualified ref wins — "#6" alone can name a PR in any repo */
+  const s = (n ? sessFind([repoShort(remote) + '#' + n], wt?.path) : null) || sessFind(n ? ['#' + n] : [], wt?.path);
+  const prompt = `Continue PR #${n} "${oneLine(title).replace(/^#\d+\s*/, '')}" ${url}. Repo ${remote}. `
+    + `Offline review: ${RV[url]?.path || 'none'}. Session notes: ~/.claude/sessions/. `
+    + `Start by summarizing the PR state and the open review threads.`;
+  return sessBtn(s, pdirOf(remote, branch), prompt);
+}
+function sessBtnJira(key, summary){
+  const link = jiraLink(key);
+  const prompt = `Work on ${key} "${oneLine(summary)}"${link ? ' ' + link : ''}. `
+    + `Read the quick-win plan (quickwins.json) in your configured data directory if present. Start by proposing a plan.`;
+  return sessBtn(sessFind([key], null), WORK_DIR, prompt);
+}
+function sessBtnWt(path, branch){
+  return sessBtn(sessFind([branch], path), path || WORK_DIR, `Continue work in this worktree (branch ${branch || 'detached'}). Summarize state first.`);
+}
+function sessBtnItem(it){
+  if (it.src === 'pr' || it.src === 'review') return sessBtnPR(it.url, it.title, it.branch);
+  if (it.src === 'jira' && it.key) return sessBtnJira(it.key, it.title.replace(/^\S+\s*/, ''));
+  if (it.src === 'repo' && it.wtPath) return sessBtnWt(it.wtPath, it.branch);
+  return '';
+}
+function sessBtnSession(name){
+  const s = SESS_BY_NAME[name];
+  return s ? sessBtnFor(s)
+           : `<span class="pill neutral" title="that session is no longer live">${esc(name || 'unknown session')} · not live</span>`;
+}
+
+/* ---------- pending approvals (pending.json + the inlined draft file) ---------- */
+const PEND = DATA.pending || [];
+const PD_DEC = { approve_pending:['Replies approved','good'], reject_pending:['Replies rejected','crit'], pending_question:['Question sent','warn'] };
+let pdDec = store.get('pend', {});
+const pdOpen = () => PEND.filter(p => p.status === 'pending');
+const pdByUrl = {};
+pdOpen().forEach(p => { if (p.url) (pdByUrl[p.url] ||= []).push(p); });
+const pdByKey = {}; PEND.forEach(p => (p.keys||[]).forEach(k => (pdByKey[k] ||= []).push(p)));
+function pdPill(url){
+  return (pdByUrl[url] || pdByKey[url] || []).filter(p => !pdDec[p.id])
+    .map(p => `<a class="pill accent" href="#home" title="a session is holding this draft until you approve it">pending approval · ${esc(p.what)}</a>`).join('');
+}
+/* markdown-lite: the draft files are written by hand, so parse only what they use */
+function pdSplit(body){
+  const pre = [], secs = [];
+  let cur = null;
+  for (const raw of String(body || '').split('\n')) {
+    const h = raw.match(/^##\s+(.*)$/);
+    if (h) { cur = { n: (h[1].match(/^(\d+)\./) || [])[1] || String(secs.length + 1), head: h[1].replace(/^\d+\.\s*/, ''), lines: [], raw: [raw] }; secs.push(cur); continue; }
+    if (cur) { cur.lines.push(raw); cur.raw.push(raw); } else pre.push(raw);
+  }
+  return { pre, secs };
+}
+function pdLines(lines){
+  let html = '', quote = [], inReply = false;
+  const flush = () => { if (quote.length) { html += `<div class="pdq${inReply ? ' pdr' : ''}">${quote.map(esc).join('<br>')}</div>`; quote = []; } };
+  for (const raw of lines) {
+    const l = raw.replace(/\s+$/, '');
+    if (/^>\s?/.test(l)) { quote.push(l.replace(/^>\s?/, '')); continue; }
+    flush();
+    if (!l.trim() || /^-{3,}$/.test(l)) continue;
+    const cm = l.match(/^Comment id:\s*(\S+)\s*[—\-]+\s*(https?:\/\/\S+)/);
+    if (cm) { html += `<div class="pdmeta">comment <a class="mono" href="${esc(cm[2])}" target="_blank" rel="noopener">${esc(cm[1])}</a></div>`; continue; }
+    if (/^Reply:\s*$/i.test(l)) { inReply = true; html += '<div class="pdlbl">Reply</div>'; continue; }
+    html += `<p class="pdp">${esc(l)}</p>`;
+  }
+  flush();
+  return html;
+}
+
+/* A pending item whose file is not a draft-replies document (a review .md, a script, a design doc):
+   show it as a collapsed file preview instead of parsing it as sections. */
+function pdRaw(p){
+  const raw = String(p.body || '').replace(/^---[\s\S]*?---\s*/, '');
+  const lines = raw.split('\n'); const shown = lines.slice(0, 80).join('\n');
+  const more = lines.length > 80 ? `\n… ${lines.length - 80} more lines` : '';
+  return `<details class="pdraw"><summary><span class="mono">${esc((p.path||'').replace((DATA.config.workRoot||'')+'/','~/'))}</span> · ${lines.length} lines · not a draft document, shown as-is</summary><pre class="pdfile">${esc(shown + more)}</pre></details>`;
+}
+/* the full draft — checkboxes, reject and ask — lives in the drawer */
+function pdCardHtml(p){
+  const { pre, secs } = pdSplit(p.body);
+  const took = pdDec[p.id], dp = took && (PD_DEC[{ approve:'approve_pending', reject:'reject_pending', ask:'pending_question' }[took]] || ['sent','neutral']);
+  const head = `<div class="pdh"><span class="pill accent mono">${esc(p.ref)}</span><span class="what">${esc(p.what)}</span>`
+    + `<span class="pill neutral">from ${esc(p.session || '—')}</span><span class="age" title="${esc(p.when || '')}">${esc(ageText(p.when))}</span>`
+    + `${dp ? `<span class="pill ${dp[1]}">${dp[0]}</span>` : ''}`
+    + `<span class="r">${sessBtnSession(p.session)}${p.url ? `<a class="dec" href="${esc(p.url)}" target="_blank" rel="noopener" title="Open the pull request">Open ${esc(p.ref)}</a>` : ''}`
+    + `${p.path ? `<button class="cmd" data-cmd="${esc(p.path)}" title="Copy the draft file path">${ICON.copy}path</button>` : ''}</span></div>`;
+  const intro = pre.filter(l => l.trim() && !/^#\s/.test(l) && !/^-{3,}$/.test(l)).map(l => esc(l)).join('\n');
+  const body = secs.length
+    ? secs.map(sc => `<div class="pdsec"><div class="pdsh"><label><input type="checkbox" data-pdsec="${esc(sc.n)}" checked><b>${esc(sc.n)}.</b> <span class="mono">${esc(sc.head)}</span></label>`
+        + `<button class="cmd" data-pdcopy="${esc(sc.n)}" title="Copy this section">${ICON.copy}Copy</button></div>${pdLines(sc.lines)}</div>`).join('')
+    : pdRaw(p);
+  const acts = `<div class="decform">
+    <button class="dec" data-write data-pda="approve" title="Tell the session to post the ticked replies in your name">Approve selected</button>
+    <input class="free" data-pdf="why" placeholder="reject because…"><button class="dec" data-write data-pda="reject" title="Nothing gets posted — the session gets the reason">Reject</button>
+    <input class="free" data-pdf="question" placeholder="ask the drafting session one question…"><button class="dec" data-write data-pda="ask" title="The answer comes back in the Decision log — nothing is posted">Ask session</button></div>`;
+  return `<div class="pdcard ${took ? 'decided' : ''}" data-pdcard="${esc(p.id)}">${head}${(intro && secs.length) ? `<div class="pdpre">${intro}</div>` : ''}${body}${acts}</div>`;
+}
+function openPendingDrawer(id){
+  const p = PEND.find(x => x.id === id); if (!p) return;
+  openDrawer(`${p.ref} · ${p.what}`, pdCardHtml(p), { kind:'pending', id });
+}
+/* one compact line per approval: ref · what · session · age · Approve / Open */
+function renderPending(){
+  const open = pdOpen();
+  const q = query.toLowerCase();
+  const vis = open.filter(p => !q || `${p.ref} ${p.what} ${p.session || ''}`.toLowerCase().includes(q));
+  $('#pd-cnt').textContent = `${open.length} pending`;
+  if (!vis.length) { $('#p-pending').innerHTML = '<div class="empty">Nothing waiting on you.</div>'; return; }
+  $('#p-pending').innerHTML = vis.map(p => {
+    const took = pdDec[p.id], dp = took && (PD_DEC[{ approve:'approve_pending', reject:'reject_pending', ask:'pending_question' }[took]] || ['sent','neutral']);
+    return `<div class="pd-row ${took ? 'decided' : ''}" data-pdrow="${esc(p.id)}">
+      <div class="tk-line"><span class="pill accent mono">${esc(p.ref)}</span><span class="sm">${esc(p.what)}</span>
+        <span class="pill neutral">from ${esc(p.session || '—')}</span>
+        <span class="age" title="${esc(p.when || '')}">${esc(ageText(p.when))}</span>
+        ${dp ? `<span class="pill ${dp[1]}">${dp[0]}</span>` : ''}</div>
+      <div class="r"><button class="dec" data-write data-pdapprove="${esc(p.id)}" title="Post every drafted reply as written">Approve</button>
+        <button class="dec" data-pdopen="${esc(p.id)}" title="Read the draft, untick a section, reject or ask">Open</button></div>
+    </div>`;
+  }).join('');
+}
+/* card === null means the compact Approve button: every section goes out */
+function pdSend(id, action, card){
+  const p = PEND.find(x => x.id === id); if (!p || (action !== 'approve' && !card)) return;
+  const secs = pdSplit(p.body).secs;
+  const sel = card ? [...card.querySelectorAll('input[data-pdsec]:checked')].map(i => Number(i.dataset.pdsec)) : secs.map(x => Number(x.n));
+  const val = k => card?.querySelector(`[data-pdf="${k}"]`)?.value.trim() || '';
+  let line, extra;
+  if (action === 'approve') {
+    if (card && !sel.length) { toast('Tick at least one reply first'); return; }
+    line = secs.length ? `Approve ${sel.length}/${secs.length} replies on ${p.ref}` : `Approve the draft on ${p.ref}`;
+    extra = { decision:'approve_pending', pending_id:p.id, selected:sel, session:p.session };
+  } else if (action === 'reject') {
+    const why = val('why'); if (!why) { toast('Say why you reject it'); return; }
+    line = `Reject the draft replies on ${p.ref} — ${why}`;
+    extra = { decision:'reject_pending', pending_id:p.id, why };
+  } else {
+    const question = val('question'); if (!question) { toast('Type the question first'); return; }
+    line = `Question for ${p.session} about the ${p.ref} drafts: ${question}`;
+    extra = { decision:'pending_question', pending_id:p.id, question, session:p.session };
+  }
+  extra.item = { id:'pending:' + p.id, src:'pending', title:`${p.ref} · ${p.what}`, url:p.url || '' };
+  pdDec[p.id] = action; store.set('pend', pdDec);
+  queueDecision(newReq('decision', line, p.url ? [p.url] : [], extra));
+  closeDrawer();
+  renderPending(); renderQueue(); renderReviews(); renderLog(); renderTabs();
+}
+$('#p-pending').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.pdopen) { openPendingDrawer(b.dataset.pdopen); return; }
+  if (b.dataset.pdapprove) { pdSend(b.dataset.pdapprove, 'approve', null); return; }
+});
+
+/* ---------- queue items ---------- */
+const items = [];
+function add(it){ it.id = it.id || (it.src + ':' + it.title); items.push(it); }
+
+DATA.my_prs.forEach(p => {
+  const ci = p.commits.nodes[0]?.commit.statusCheckRollup?.state;
+  const humans = p.reviews.nodes.filter(r => !['claude','claude[bot]','github-actions'].includes(r.author?.login));
+  const approved = humans.some(r => r.state === 'APPROVED');
+  const changes = humans.some(r => r.state === 'CHANGES_REQUESTED');
+  let score = 40, act = '', sev = 'info', state = [];
+  if (p.mergeable === 'CONFLICTING') { score = 88; sev='crit'; act = 'Rebase — branch conflicts with base'; state.push(['crit','conflicts']); }
+  else if (ci === 'FAILURE' || ci === 'ERROR') { score = 85; sev='crit'; act = 'Fix CI'; state.push(['crit','CI red']); }
+  else if (changes) { score = 80; sev='warn'; act = 'Address review comments'; state.push(['warn','changes requested']); }
+  else if (approved) { score = 75; sev='good'; act = 'Merge — approved and green'; state.push(['good','approved']); }
+  else if (p.isDraft) { score = 30; sev='low'; act = 'Draft — finish or mark ready'; state.push(['neutral','draft']); }
+  else if (humans.length === 0) { const d = days(p.updatedAt); score = 45 + Math.min(25, d * 6); sev = d > 2 ? 'warn' : 'info'; act = d > 1 ? `No human review for ${ageText(p.updatedAt)} — ping a reviewer` : 'Waiting for review'; state.push(['info','awaiting review']); }
+  if (ci === 'SUCCESS') state.push(['good','CI ✓']);
+  const wt = wtByBranch[p.repository.nameWithOwner + '#' + p.headRefName];
+  add({ src:'pr', cat:'pr', sev, score, title:`#${p.number} ${p.title}`, url:p.url, sub:`${repoShort(p.repository.nameWithOwner)} · ${p.headRefName} · +${p.additions}/−${p.deletions}`, act, state, when:p.updatedAt,
+        branch:p.headRefName, wtPath:wt?.path || '',
+        cmd: wt ? `cd ${wt.path}` : `gh pr checkout ${p.number} -R ${p.repository.nameWithOwner}` });
+});
+
+DATA.review_requests.filter(r => r.direct).forEach(r => {
+  const d = days(r.updatedAt), created = days(r.createdAt || r.updatedAt);
+  const bot = /Update Submodule/i.test(r.title);
+  const stale = created > 45;
+  let score = bot ? 35 : stale ? 38 : 52 + Math.min(30, created * 2.5);
+  if (r.isDraft) score -= 20;
+  const sev = stale ? 'low' : score >= 75 ? 'crit' : score >= 60 ? 'warn' : 'info';
+  add({ src:'review', cat:'review', sev, score, title:`#${r.number} ${r.title}`, url:r.url, sub:`${repoShort(r.repository.nameWithOwner)} · by ${r.author.login} · open ${ageText(r.createdAt||r.updatedAt)}`,
+        act: bot ? 'Rubber-stamp submodule bump' : stale ? `Stale ${Math.round(created)}d — ask the author if still wanted, or dismiss` : created > 7 ? `Review or hand off — waiting ${Math.round(created)}d` : 'Review', state: bot?[['neutral','bot']]:stale?[['neutral','stale']]:[], when:r.updatedAt,
+        cmd:`gh pr checkout ${r.number} -R ${r.repository.nameWithOwner}` });
+});
+
+function buildJiraItems(){
+DATA.jira.forEach(j => {
+  const pri = { Highest:35, High:25, Medium:10, Low:0 }[j.priority] || 0;
+  let score = 35 + pri, act = '', sev = 'info', state = [];
+  const st = j.status.replace(/^[^\w]+/, '').trim();
+  if (/Stuck|Blocked/.test(j.status)) { score += 25; sev='crit'; act = 'Unblock or re-plan — stuck'; state.push(['crit', st]); }
+  else if (/Review/.test(j.status)) { score += 15; sev='warn'; act = 'Push the review to close it'; state.push(['warn', st]); }
+  else if (/Progress/.test(j.status)) { state.push(['info', st]); act = days(j.updated) > 14 ? `No update for ${ageText(j.updated)} — still real?` : 'In progress'; if (days(j.updated) > 14) { score += 10; sev='warn'; } }
+  else { state.push(['neutral', st]); act = days(j.updated) > 60 ? `Untouched ${ageText(j.updated)} — close or schedule` : 'Not started'; sev='low'; }
+  add({ src:'jira', cat:'jira', sev, score, title:`${j.key} ${j.summary}`, url:jiraLink(j.key), sub:`${j.project} · ${j.type} · ${j.priority||'no priority'} · updated ${ageText(j.updated)}`, act, state, when:j.updated, key:j.key });
+});
+}
+
+function buildCalItems(){
+DATA.calendar.forEach(e => {
+  if (e.organizer !== LIVE.email) return; // only meetings I scheduled need a decision from me
+  const h = hrs(e.start) * -1; if (h < -0.5 || h > 72) return;
+  const soon = h < 3;
+  add({ src:'cal', cat:'meetings', sev: soon?'warn':'info', score: soon ? 82 - h*4 : 30, title: e.title, url:e.url, sub:`${fmtWhen(e.start)} · ${e.organizer.split('@')[0]}${e.rsvp==='needsAction'?' · not answered':''}`, act: soon ? 'Prep — see related items in Calendar panel' : (e.rsvp==='needsAction'?'Answer the invite':'Scheduled'), state: e.rsvp==='needsAction'?[['warn','RSVP']]:[], when:e.start });
+});
+}
+
+function buildMailItems(){
+DATA.gmail.filter(m => m.important && m.kind!=='github').forEach(m => add({ src:'mail', cat:'inbox', sev:'info', score:50, title:m.subject, sub:`${m.from} · ${ageText(m.when)}`, act:m.note||'Read', state:[['neutral','mail']], when:m.when, url:'https://mail.google.com/mail/u/0/#inbox' }));
+[].forEach(m => add({ src:'mail', cat:'review', sev:'warn', score:62, title:m.subject, sub:`${m.from} · ${ageText(m.when)}`, act:m.note, state:[['warn','stale']], when:m.when, url:'https://github.com/notifications' }));
+}
+
+buildJiraItems(); buildCalItems(); buildMailItems();
+
+DATA.worktrees.forEach(w => {
+  if (!w.remote) return;
+  const live = sessByCwd[w.path]?.length;
+  if (w.ahead > 0 && !live) add({ src:'repo', cat:'repo', sev:'warn', score:58, title:`${w.name}: ${w.ahead} unpushed commit${w.ahead>1?'s':''}`, sub:`${w.branch} · last ${w.last_rel}`, act:'Push or drop — unpushed work with no live session', state:[['warn','unpushed']], when:w.last_iso, wtPath:w.path, branch:w.branch, cmd:`cd ${w.path} && git log --oneline @{u}..` });
+  else if (w.dirty > 0 && !live && days(w.last_iso) > 14 && w.kind !== 'clone') add({ src:'repo', cat:'repo', sev:'low', score:22, title:`${w.name}: ${w.dirty} dirty file${w.dirty>1?'s':''}, idle ${w.last_rel}`, sub:w.branch, act:'Stash, commit, or delete the worktree', state:[['neutral','dirty']], when:w.last_iso, cmd:`cd ${w.path} && git status --short` });
+});
+
+function fmtWhen(iso){ const d=new Date(iso); const today = d.toDateString()===NOW.toDateString(); const tmr = new Date(NOW.getTime()+864e5).toDateString()===d.toDateString(); const t=d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}); return (today?'Today ':tmr?'Tomorrow ':d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})+' ')+t; }
+
+/* ---------- render: brief ---------- */
+(function renderBrief(){ const b = DATA.brief; const el=$('#brief'); if (!b || !b.lines?.length) { el.style.display='none'; return; }
+  const mail = [].concat(b.mail || []).filter(Boolean).slice(0,5);
+  el.innerHTML = `<span class="lbl">Brief</span><div class="txt">${b.lines.slice(0,2).map(l=>`<p>${esc(l)}</p>`).join('')}`
+    + (mail.length ? `<div class="mail"><b>Mail</b>${mail.map(l=>`<div>${esc(l)}</div>`).join('')}</div>` : '')
+    + `</div><span class="when" title="written by the master session">${ageText(b.when)} ago</span>`; })();
+
+/* ---------- tickets: every Jira row, with the quick-win verdict on the rows
+   the runner flagged. One list, not two. ---------- */
+const QWI = DATA.quickwins?.items || [];
+const QW_V = { quick_win:['good','quick win'], close:['accent','close'], stale:['warn','stale'] };
+const QW_DEC = { do:['Picked up','good'], defer:['Deferred','warn'], drop:['Dropped','neutral'], close:['Closing','accent'], keep:['Kept','info'] };
+const QW_ACT = {
+  quick_win: [['do','Do it','Claude executes the suggested action and reports in the Decision log'],['defer','Defer','Come back to it on a date'],['drop','Drop','Not doing it — say why']],
+  close: [['close','Close as Done','Transition the ticket to Done with the evidence'],['keep','Not done','The runner was wrong — say what is left'],['drop','Drop','Close as Won\'t Do — say why']],
+  stale: [['defer','Re-plan','Pick a date and say what changes'],['drop','Drop','Close as Won\'t Do — say why'],['keep','Keep','Keep it open — say why']],
+};
+let qwDone = store.get('qw', {}), tkFilter = 'all', qwShow = false, qwForm = null;
+const qwOpen = v => QWI.filter(i => !qwDone[i.key] && (!v || i.verdict === v));
+const jiraUrl = k => jiraLink(k);
+const qwUrl = it => jiraUrl(it.key);
+function qwFormHtml(d){
+  const send = `<button class="btn primary" data-write data-qsend="1">Send</button><span class="cancel">Cancel</span>`;
+  if (d==='drop') return `<div class="decform"><span class="lbl">Drop because</span><input class="free" data-qf="why" placeholder="why it does not matter (required)">${send}</div>`;
+  if (d==='keep') return `<div class="decform"><span class="lbl">Keep because</span><input class="free" data-qf="note" placeholder="one line — what the runner missed (required)">${send}</div>`;
+  if (d==='defer') return `<div class="decform"><span class="lbl">Come back on</span><input type="date" data-qf="until" value="${dayOffset(1)}">
+    <button class="chip" data-qchip="${dayOffset(1)}">Tomorrow</button><button class="chip" data-qchip="${nextMonday()}">Mon</button><button class="chip" data-qchip="${dayOffset(7)}">+1w</button>
+    <input class="free" data-qf="note" placeholder="note (optional)">${send}</div>`;
+  return '';
+}
+function qwLine(it, d, x){
+  const t = `${it.key} ${it.summary}`;
+  if (d==='do') return `Pick up (quick win): ${t}${it.action?' — '+it.action:''}`;
+  if (d==='close') return `Close as Done: ${t}${it.action?' — '+it.action:''}`;
+  if (d==='keep') return `Keep open — the quick-win runner was wrong about ${it.key}: ${t} — ${x.note}`;
+  if (d==='drop') return `Drop: ${t} — ${x.why}`;
+  return `Defer to ${x.until}: ${t}${x.note?' — '+x.note:''}`;
+}
+function qwDecide(it, d, x){
+  qwDone[it.key] = d; store.set('qw', qwDone);
+  const extra = { decision:d, item:{ id:'jira:'+it.key, src:'jira', title:`${it.key} ${it.summary}`, url:qwUrl(it), key:it.key }, source:'quickwins' };
+  for (const k of ['why','until','note']) if (x[k]) extra[k] = x[k];
+  qwForm = null;
+  queueDecision(newReq('decision', qwLine(it, d, x), [qwUrl(it)], extra));
+  closeDrawer();
+  renderTickets(); renderLog(); renderTabs();
+}
+function qwSubmit(f){
+  const it = QWI.find(x => x.key === qwForm?.key); if (!it) return;
+  const val = k => f.querySelector(`[data-qf="${k}"]`)?.value.trim() || '';
+  const d = qwForm.decision;
+  if (d==='drop') { const why=val('why'); if (!why) { toast('Say why you drop it'); return; } qwDecide(it,'drop',{why}); }
+  if (d==='keep') { const note=val('note'); if (!note) { toast('Say what the runner missed'); return; } qwDecide(it,'keep',{note}); }
+  if (d==='defer') { const until=val('until'); if (!until) { toast('Pick a date'); return; } qwDecide(it,'defer',{until, note:val('note')}); }
+}
+/* evidence, plan and the verdict-specific form open in the drawer */
+function qwDrawerHtml(it){
+  const ev = it.evidence || [], v = QW_V[it.verdict] || ['neutral', it.verdict];
+  return `<div class="q-title"><a class="key" href="${esc(qwUrl(it))}" target="_blank" rel="noopener">${esc(it.key)}</a><span>${esc(it.summary)}</span>`
+    + `<span class="pill ${v[0]}">${esc(v[1])}</span>${it.estimate?`<span class="pill neutral mono">${esc(it.estimate)}</span>`:''}`
+    + `<span class="conf">${esc(it.confidence||'')} confidence</span></div>`
+    + `<div class="qw-reason">${esc(it.reason)}</div>`
+    + (it.action?`<div class="q-act"><span class="arrow">→</span>${esc(it.action)}</div>`:'')
+    + (ev.length?`<div class="dr-sec">Evidence (${ev.length})</div>`
+        + ev.map(e=>`<div class="e"><b>${esc(e.type)}</b> · ${/^https?:\/\//.test(e.ref||'')?`<a href="${esc(e.ref)}" target="_blank" rel="noopener">${esc(e.ref)}</a>`:`<span class="mono">${esc(e.ref)}</span>`}<br>${esc(e.text)}</div>`).join(''):'')
+    + (it.plan?`<div class="dr-sec">Plan</div><div class="plan">${esc(it.plan)}</div>`:'')
+    + `<div class="decform">${sessBtnJira(it.key, it.summary)}`
+    + (QW_ACT[it.verdict]||[]).map(a=>`<button class="dec ${qwForm&&qwForm.key===it.key&&qwForm.decision===a[0]?'on':''}" data-write data-qdec="${a[0]}" data-qkey="${esc(it.key)}" title="${esc(a[2])}">${esc(a[1])}</button>`).join('')
+    + `</div>`
+    + (qwForm && qwForm.key===it.key ? qwFormHtml(qwForm.decision) : '');
+}
+function openQwDrawer(key, decision){
+  const it = QWI.find(x => x.key === key); if (!it) return;
+  qwForm = decision ? { key, decision } : null;
+  openDrawer(`${it.key} ${it.summary}`, qwDrawerHtml(it), { kind:'qw', key });
+  if (decision) $('#dr-body .decform input')?.focus();
+}
+
+const jOrder = j => (/Stuck|Blocked/.test(j.status)?0:/Review/.test(j.status)?1:/Progress/.test(j.status)?2:3);
+const PRI_ORDER = { Highest:0, High:1, Medium:2, Low:3 };
+function ticketRows(){
+  const qm = {}; QWI.forEach(i => { qm[i.key] = i; });
+  const rows = DATA.jira.map(j => ({ key:j.key, summary:j.summary||'', status:j.status||'', type:j.type||'', priority:j.priority||'', updated:j.updated||'', qw:qm[j.key]||null }));
+  // The Jira fetch is the source of truth for open tickets: a verdict whose ticket
+  // left the list (closed or reassigned) must not linger as a ghost row.
+  return rows;
+}
+const TK_F = {
+  all: () => true,
+  quick_win: r => r.qw?.verdict === 'quick_win' || r.qw?.verdict === 'close',
+  stale: r => r.qw?.verdict === 'stale' || (!r.qw && r.updated && days(r.updated) > 45),
+  progress: r => /Progress/.test(r.status),
+  review: r => /Review/.test(r.status),
+};
+function renderTickets(){
+  const gen = DATA.quickwins?.generated_at;
+  const all = ticketRows();
+  $('#qw-cnt').textContent = `${all.length} tickets · ${qwOpen('quick_win').length} quick · ${qwOpen('stale').length} stale · ${qwOpen('close').length} closable`;
+  $('#qw-hint').textContent = `Every Jira ticket assigned to me, one row.${gen ? ` Quick-win verdicts from the runner, ${ageText(gen)} old.` : ' No quick-win analysis yet — click Re-run analysis.'}`;
+  const q = query.toLowerCase();
+  const rows = all
+    .filter(r => (TK_F[tkFilter] || TK_F.all)(r))
+    .filter(r => qwShow || !qwDone[r.key])
+    .filter(r => !q || `${r.key} ${r.summary} ${r.status} ${r.qw?.reason || ''}`.toLowerCase().includes(q))
+    .sort((a,b) => (a.qw?0:1)-(b.qw?0:1) || jOrder(a)-jOrder(b) || ((PRI_ORDER[a.priority]??4)-(PRI_ORDER[b.priority]??4)) || String(a.key).localeCompare(String(b.key)));
+  const body = rows.map(r => {
+    const st = String(r.status).replace(/^[^\w]+/,'').trim();
+    const cls = /Stuck|Blocked/.test(st)?'crit':/Review/.test(st)?'warn':/Progress/.test(st)?'info':'neutral';
+    const v = r.qw ? (QW_V[r.qw.verdict] || ['neutral', r.qw.verdict]) : null;
+    const took = qwDone[r.key], dp = took && (QW_DEC[took] || ['sent','neutral']);
+    const acts = r.qw ? (QW_ACT[r.qw.verdict] || []).map(a=>`<button class="dec" data-write data-qdec="${a[0]}" data-qkey="${esc(r.key)}" title="${esc(a[2])}">${esc(a[1])}</button>`).join('') : '';
+    return `<div class="tk-row ${took?'decided':''}" data-tkkey="${esc(r.key)}">
+      <div class="tk-line">
+        ${jiraUrl(r.key) ? `<a class="key" href="${esc(jiraUrl(r.key))}" target="_blank" rel="noopener">${esc(r.key)}</a>` : `<span class="key">${esc(r.key)}</span>`}
+        <span class="sm">${esc(r.summary)}</span>
+        ${st?`<span class="pill ${cls}">${esc(st)}</span>`:''}
+        ${v?`<span class="pill ${v[0]}">${esc(v[1])}</span>`:''}
+        ${r.qw?.estimate?`<span class="pill neutral mono">${esc(r.qw.estimate)}</span>`:''}
+        ${dp?`<span class="pill ${dp[1]}">${dp[0]}</span>`:''}
+        ${ssPill(ssFor(r.key))}${pdPill(r.key)}
+        <span class="${ageCls(r.updated,14,45)}">${esc(ageText(r.updated))}</span>
+      </div>
+      <div class="r">${sessBtnJira(r.key, r.summary)}${acts}${r.qw?`<button class="dots" data-qmore="${esc(r.key)}" title="Evidence, plan and every action">···</button>`:''}</div>
+    </div>`;
+  }).join('');
+  const shell = !DATA.config.modules?.jira
+    ? '<div class="empty">Jira is not enabled — turn on modules.jira in your config.</div>'
+    : notBaked('jira')
+      ? '<div class="empty">Jira is not baked yet — run the daily bake (ms-refresher, full mode).</div>'
+      : ticketAgg(all) + (body || '<div class="empty">Nothing.</div>');
+  const jqlLink = jiraJqlLink('assignee%20%3D%20currentUser()%20AND%20statusCategory%20!%3D%20Done%20ORDER%20BY%20priority%20ASC');
+  panel('#p-tickets', 'Jira assigned to me', `${rows.length} of ${all.length}`, shell,
+    jqlLink ? `<a class="chip" href="${esc(jqlLink)}" target="_blank" rel="noopener">Open in Jira</a>` : '');
+}
+/* One glance at the whole assigned queue before the rows: what state it is in,
+   what is due, what nobody has touched. Jira is baked once a day, so these are
+   the counts of that bake, not a live query. */
+const AGG_CLS = [['Stuck','crit'],['Blocked','crit'],['Review','warn'],['Progress','info'],['Highest','crit'],['High','warn'],['Medium','info'],['Low','neutral']];
+const aggCls = k => (AGG_CLS.find(([w]) => k.includes(w)) || [,'neutral'])[1];
+function aggChips(label, pairs){
+  if (!pairs.length) return '';
+  return `<span class="g">${esc(label)}</span>` + pairs.map(([k,n]) => `<span class="pill ${aggCls(k)}">${esc(k)} ${n}</span>`).join('');
+}
+function tally(rows, f){
+  const m = new Map();
+  rows.forEach(r => { const k = String(f(r) || '').trim() || 'none'; m.set(k, (m.get(k)||0) + 1); });
+  return [...m.entries()].sort((a,b) => b[1]-a[1]);
+}
+function ticketAgg(all){
+  if (!all.length) return '';
+  const soon = all.filter(r => r.due && (new Date(r.due) - NOW) / 864e5 < 7);
+  const stale = all.filter(r => r.updated && days(r.updated) > 14);
+  return `<div class="tk-agg">`
+    + aggChips('status', tally(all, r => String(r.status).replace(/^[^\w]+/,'')))
+    + aggChips('priority', tally(all, r => r.priority))
+    + `<span class="g">flags</span><span class="pill ${soon.length?'warn':'neutral'}" title="${esc(soon.map(r=>r.key+' due '+r.due).join(', ') || 'nothing due in the next 7 days')}">due &lt;7d ${soon.length}</span>`
+    + `<span class="pill ${stale.length?'warn':'neutral'}" title="no Jira update for more than 14 days">stale ${stale.length}</span>`
+    + `</div>`;
+}
+
+$('#p-tickets').addEventListener('click', e => {
+  if (e.target.closest('a')) return;
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.cmd) { copy(b.dataset.cmd); return; }
+  if (b.dataset.qmore) { openQwDrawer(b.dataset.qmore, null); return; }
+  if (b.dataset.qdec) {
+    const it = QWI.find(x => x.key === b.dataset.qkey); if (!it) return;
+    if (b.dataset.qdec === 'do' || b.dataset.qdec === 'close') { qwDecide(it, b.dataset.qdec, {}); return; }
+    openQwDrawer(it.key, b.dataset.qdec);
+  }
+});
+document.querySelectorAll('.chip[data-tkf]').forEach(c => c.addEventListener('click', () => { document.querySelectorAll('.chip[data-tkf]').forEach(x=>x.classList.remove('on')); c.classList.add('on'); tkFilter=c.dataset.tkf; renderTickets(); }));
+$('#qw-show').addEventListener('click', e => { qwShow=!qwShow; e.target.classList.toggle('on', qwShow); renderTickets(); });
+(function qwRerun(){ const b=$('#qw-rerun'); const p=DATA.requests.find(r=>r.kind==='quickwins' && r.status==='pending');
+  if (p) { b.classList.add('pending'); b.textContent = `⟳ Analysing… (asked ${ageText(p.when)} ago)`; b.disabled = true; return; }
+  b.addEventListener('click', () => { b.classList.add('pending'); b.textContent='⟳ Sending…'; publishRequests([newReq('quickwins', 'Re-run the quick-win analysis over my open Jira tickets.', [])]); }); })();
+
+/* ---------- render: now strip — six tiles, one row ---------- */
+function renderNow(){
+  const nxt = DATA.calendar.map(e=>({...e,h:(new Date(e.start)-NOW)/36e5})).filter(e=>e.h>-0.75).sort((a,b)=>a.h-b.h)[0];
+  const myOpen = DATA.my_prs.length, needMe = DATA.my_prs.filter(p=>p.mergeable==='CONFLICTING'||p.reviews.nodes.some(r=>r.state==='CHANGES_REQUESTED')).length;
+  const rrD = DATA.review_requests.filter(r=>r.direct), rr = rrD.length, rrOld = rrD.filter(r=>days(r.createdAt||r.updatedAt)>7).length;
+  const rvNew = rvReviewReq().filter(r => r.reply && !rvSeen[r.id]).length;
+  const jHigh = DATA.jira.filter(j=>/High/.test(j.priority)).length, jStuck = DATA.jira.filter(j=>/Stuck|Blocked/.test(j.status)).length;
+  const busy = DATA.sessions.filter(s=>s.status==='busy'||s.status===null||s.status==='shell').length;
+  const tiles = [
+    nxt ? {href:nxt.url||'https://calendar.google.com', cls:'next '+(nxt.h<1?'warn':''), lbl: nxt.h<0?'In progress':'Next meeting', val: esc(nxt.title), sub:`${nxt.h<0?'started':'in'} ${Math.abs(Math.round(nxt.h*60))<90?Math.abs(Math.round(nxt.h*60))+' min':Math.abs(nxt.h).toFixed(1)+' h'} · ${esc(nxt.organizer.split('@')[0])}`, bar:true} : {cls:'next',lbl:'Next meeting',val:'—',sub:'nothing in 3 days'},
+    {go:'#p-prs', tab:'work', cls: needMe?'crit':'info', lbl:'My open PRs', val:myOpen, sub: needMe?`${needMe} need my action`:'none blocked on me'},
+    {go:'#p-reviews', tab:'reviews', cls: rrOld?'warn':'info', lbl:'Reviews on me', val:rr, sub:`${rrOld} over a week · ${rrD.filter(r=>RV[r.url]).length} reviewed${rvNew?` · ${rvNew} new repl${rvNew===1?'y':'ies'}`:''}`},
+    {go:'#p-tickets', tab:'tickets', cls: jStuck?'crit':'', lbl:'Jira on me', val:DATA.jira.length, sub:`${jHigh} high · ${jStuck} stuck`},
+    {go:'#p-tickets', tab:'tickets', cls: qwOpen('quick_win').length?'good':'', lbl:'Quick wins', val:qwOpen('quick_win').length, sub:`${qwOpen('close').length} closable · ${qwOpen('stale').length} stale`},
+    {go:'#p-agents', tab:'work', cls:'good', lbl:'Claude sessions', val:DATA.sessions.length, sub:`${busy} active · ${DATA.sessions.length-busy} idle`},
+  ];
+  $('#now').innerHTML = tiles.slice(0,6).map(t=>{ const inner=`${t.bar?'<span class="bar"></span>':''}<span class="go">${t.href?'↗':'→'}</span><div class="lbl">${t.lbl}</div><div class="val">${t.val}</div><div class="sub">${t.sub}</div>`;
+    return t.href ? `<a class="tile link ${t.cls}" href="${esc(t.href)}" target="_blank" rel="noopener">${inner}</a>` : `<div class="tile link ${t.cls}" role="button" tabindex="0" data-go="${t.go}" data-tab="${t.tab}">${inner}</div>`; }).join('');
+}
+renderNow();
+$('#now').addEventListener('click', e => { const t=e.target.closest('[data-go]'); if(!t) return;
+  if (t.dataset.tab) setTab(t.dataset.tab);
+  const el=document.querySelector(t.dataset.go); if(!el) return;
+  el.scrollIntoView({behavior:'smooth',block:'start'}); el.style.outline='2px solid var(--accent)'; setTimeout(()=>el.style.outline='',1400); });
+$('#now').addEventListener('keydown', e => { if (e.key==='Enter' && e.target.dataset.go) e.target.click(); });
+
+/* ---------- render: queue ---------- */
+let filter='all', showDone=false, sel=0, query='', queueAll = store.get('qall', false);
+const QUEUE_TOP = 10;
+const catOf = it => it.cat;
+function visibleItems(){
+  const q = query.toLowerCase();
+  return items
+    .filter(it => filter==='all' || catOf(it)===filter)
+    .filter(it => !q || (it.title+' '+it.sub+' '+it.act).toLowerCase().includes(q))
+    .filter(it => showDone || (!done[it.id] && !snoozed[it.id]))
+    .sort((a,b)=>b.score-a.score);
+}
+const queueRows = () => { const all = visibleItems(); return queueAll ? all : all.slice(0, QUEUE_TOP); };
+/* at most two secondary pills on a row — the rest is in the drawer */
+function queuePills(it){
+  const out = [];
+  if (it.src === 'review' && RV[it.url]) { const v = rvVerdict(RV[it.url].verdict); out.push(`<span class="pill ${v[0]}">${esc(v[1])}</span>`); }
+  (it.state || []).forEach(st => out.push(`<span class="pill ${st[0]}">${esc(st[1])}</span>`));
+  const ss = ssPill(ssNamesForItem(it)); if (ss) out.push(ss);
+  return out.slice(0, 2);
+}
+function renderQueue(){
+  const all = visibleItems(), vis = queueAll ? all : all.slice(0, QUEUE_TOP);
+  $('#q-cnt').textContent = `${vis.length} of ${all.length} · ${Object.keys(done).length} done · ${Object.keys(snoozed).length} snoozed`;
+  const sa = $('#q-showall');
+  sa.style.display = all.length > QUEUE_TOP ? '' : 'none';
+  sa.classList.toggle('on', queueAll);
+  sa.textContent = queueAll ? `Show top ${QUEUE_TOP}` : `Show all ${all.length}`;
+  if (!vis.length) { $('#queue').innerHTML = '<div class="empty">Nothing here. Enjoy it.</div>'; return; }
+  sel = Math.min(sel, vis.length-1);
+  $('#queue').innerHTML = vis.map((it,i)=>{
+    const took = done[it.id]?.decision;
+    const prim = (it.src === 'review' && RV[it.url])
+      ? `<button class="dec" data-rv="${esc(it.url)}" title="Read the offline review in the drawer">Review</button>`
+      : `<button class="dec" data-write data-dec="do" data-id="${esc(it.id)}" title="${DECS.do[2]}">Do</button>`;
+    return `
+    <div class="q-row sev-${it.sev} ${i===sel?'sel':''} ${done[it.id]||snoozed[it.id]?'done':''}" data-i="${i}" data-id="${esc(it.id)}" tabindex="0">
+      <span class="stripe"></span>
+      <div class="score"><b>${Math.round(it.score)}</b></div>
+      <div class="q-line">
+        <span class="pill src">${it.src}</span>
+        <span class="t">${it.url?`<a href="${esc(it.url)}" target="_blank" rel="noopener">${esc(it.title)}</a>`:esc(it.title)}</span>
+        <span class="act" title="${esc(it.act)}">${esc(it.act)}</span>
+        ${queuePills(it).join('')}${took?`<span class="pill ${DECS[took][1]}">${DECS[took][0]}</span>`:''}
+      </div>
+      <div class="q-side">${prim}<button class="dots" data-more="${esc(it.id)}" title="Every action and the full detail">···</button></div>
+    </div>`; }).join('');
+}
+$('#queue').addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if (b?.dataset.more) { openRowDrawer(b.dataset.more, null); return; }
+  if (b?.dataset.rv) { openReviewDrawer(b.dataset.rv); return; }
+  if (b?.dataset.dec) { openDecision(b.dataset.id, b.dataset.dec); return; }
+  if (b?.dataset.cmd) { copy(b.dataset.cmd); b.classList.add('copied'); setTimeout(()=>b.classList.remove('copied'),1200); return; }
+  const row = e.target.closest('.q-row'); if (row) { sel = +row.dataset.i; renderQueue(); }
+});
+$('#q-showall').addEventListener('click', () => { queueAll = !queueAll; store.set('qall', queueAll); sel = 0; renderQueue(); });
+
+/* ---------- decisions ---------- */
+const DECS = { do:['Do','good','Work it now — copies the command and logs it'], delegate:['Delegate','info','Hand it to someone else'], drop:['Drop','neutral','Not doing it — say why'], defer:['Defer','warn','Come back to it on a date'] };
+const WHO = [...new Set(DATA.review_requests.map(r=>r.author?.login).filter(Boolean))].filter(w=>w!==ME);
+$('#dg-who').innerHTML = WHO.map(w=>`<option value="${esc(w)}"></option>`).join('');
+function decisions(){ return DATA.requests.filter(r=>r.kind==='decision'); }
+const isoDate = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+function dayOffset(n){ const d=new Date(NOW); d.setDate(d.getDate()+n); return isoDate(d); }
+function nextMonday(){ const d=new Date(NOW); d.setDate(d.getDate() + ((8 - d.getDay()) % 7 || 7)); return isoDate(d); }
+let formState = null;
+function decForm(it, decision){
+  const send = `<button class="btn primary" data-write data-dsend="1">Send</button><span class="cancel">Cancel</span>`;
+  if (decision==='delegate') return `<div class="decform"><span class="lbl">Delegate to</span><input class="who" data-df="to" list="dg-who" placeholder="github login or name" autocomplete="off"><input class="free" data-df="note" placeholder="note for them (optional)">${send}</div>`;
+  if (decision==='drop') return `<div class="decform"><span class="lbl">Drop because</span><input class="free" data-df="why" placeholder="why it does not matter (required)">${send}</div>`;
+  if (decision==='defer') return `<div class="decform"><span class="lbl">Defer until</span><input type="date" data-df="until" value="${dayOffset(1)}">
+    <button class="chip" data-chip="${dayOffset(1)}">Tomorrow</button><button class="chip" data-chip="${nextMonday()}">Mon</button><button class="chip" data-chip="${dayOffset(7)}">+1w</button>
+    <input class="free" data-df="note" placeholder="note (optional)">${send}</div>`;
+  return '';
+}
+/* the whole strip — Do / Delegate / Drop / Defer, the session button and the
+   link — lives in the drawer, so the row stays one line */
+function rowDetailHtml(it, decision){
+  const wait = it.when && days(it.when) > 2 ? `<span class="${ageCls(it.when)}">waiting ${Math.round(days(it.when))}d</span>` : '';
+  const pills = [...(it.state||[]).map(st=>`<span class="pill ${st[0]}">${esc(st[1])}</span>`),
+                 it.src==='review'?rvPills(it.url):'', it.url?pdPill(it.url):'', ssPill(ssNamesForItem(it))].filter(Boolean).join('');
+  return `<div class="q-title"><span class="pill src">${it.src}</span>${it.url?`<a href="${esc(it.url)}" target="_blank" rel="noopener">${esc(it.title)}</a>`:esc(it.title)}${pills}</div>
+    <div class="q-sub">${esc(it.sub)}${wait}</div>
+    <div class="q-act"><span class="arrow">→</span>${esc(it.act)}${it.cmd?`<button class="cmd" data-cmd="${esc(it.cmd)}" title="Copy">${ICON.copy}${esc(it.cmd)}</button>`:''}</div>
+    <div class="decform">${Object.keys(DECS).map(d=>`<button class="dec ${decision===d?'on':''}" data-write data-dec="${d}" data-id="${esc(it.id)}" title="${DECS[d][2]}">${DECS[d][0]}</button>`).join('')}`
+    + `${sessBtnItem(it)}${it.url?`<a class="dec" href="${esc(it.url)}" target="_blank" rel="noopener" title="Open the item">Open link</a>`:''}`
+    + `${it.src==='review'&&RV[it.url]?`<button class="dec" data-rv="${esc(it.url)}" title="Read the offline review">Review</button>`:''}</div>
+    ${decision ? decForm(it, decision) : ''}`;
+}
+function openRowDrawer(id, decision){
+  const it = items.find(x => x.id === id); if (!it) return;
+  openDrawer(it.title, rowDetailHtml(it, decision), { kind:'row', id, decision });
+  if (decision) $('#dr-body .decform input')?.focus();
+}
+function openDecision(id, decision){
+  const it = items.find(x=>x.id===id); if (!it) return;
+  if (decision==='do') { decide(it, 'do', {}); return; }
+  formState = { id, decision };
+  openRowDrawer(id, decision);
+}
+function submitForm(f){
+  const it = items.find(x=>x.id===formState?.id); if (!it) return;
+  const val = k => f.querySelector(`[data-df="${k}"]`)?.value.trim() || '';
+  const d = formState.decision;
+  if (d==='delegate') { const to=val('to'); if (!to) { toast('Who takes it?'); return; } decide(it,'delegate',{to, note:val('note')}); }
+  if (d==='drop') { const why=val('why'); if (!why) { toast('Say why you drop it'); return; } decide(it,'drop',{why}); }
+  if (d==='defer') { const until=val('until'); if (!until) { toast('Pick a date'); return; } decide(it,'defer',{until, note:val('note')}); }
+}
+function decisionLine(it, d, x){
+  if (d==='do') return `Do now: ${it.title}${it.act?' — '+it.act:''}`;
+  if (d==='delegate') return `Delegate to ${x.to}: ${it.title}${x.note?' — '+x.note:''}`;
+  if (d==='drop') return `Drop: ${it.title} — ${x.why}`;
+  return `Defer to ${x.until}: ${it.title}${x.note?' — '+x.note:''}`;
+}
+function decide(it, d, x){
+  if (d==='defer') { snoozed[it.id] = new Date(x.until+'T08:00:00').toISOString(); store.set('snoozed', snoozed); }
+  else { done[it.id] = { when:new Date().toISOString(), decision:d }; store.set('done', done); }
+  if (d==='do' && it.cmd) copy(it.cmd);
+  const extra = { decision:d, item:{ id:it.id, src:it.src, title:it.title, url:it.url||'' } };
+  if (it.key) extra.item.key = it.key;
+  if (it.cmd) extra.item.cmd = it.cmd;
+  for (const k of ['to','why','until','note']) if (x[k]) extra[k] = x[k];
+  formState = null;
+  queueDecision(newReq('decision', decisionLine(it,d,x), it.url?[it.url]:[], extra));
+  closeDrawer();
+  renderQueue(); renderLog(); renderTabs();
+}
+
+/* Decisions batch for 4s so a fast run of clicks becomes one republish, not one per click. */
+let pending = [], pendTimer = null, pendTick = null, pendDue = 0;
+function queueDecision(req){
+  // A defer is page state only (snoozed[...] in this browser) — waking the master for it costs tokens and does nothing.
+  if (LOCAL && (req.extra?.decision) === 'defer') { toast(`Deferred until ${req.extra.until || 'the chosen date'} — local only`); return; }
+  pending.push(req); pendDue = Date.now() + 4000;
+  clearTimeout(pendTimer); pendTimer = setTimeout(flushDecisions, 4000);
+  pendTick ||= setInterval(renderPendBar, 400);
+  renderPendBar();
+}
+function flushDecisions(){
+  clearTimeout(pendTimer); pendTimer=null;
+  const reqs = pending; pending = []; renderPendBar();
+  if (reqs.length) publishRequests(reqs);
+}
+function renderPendBar(){
+  const el = $('#pendbar');
+  if (!pending.length) { el.classList.remove('show'); el.innerHTML=''; clearInterval(pendTick); pendTick=null; return; }
+  const left = Math.max(0, Math.ceil((pendDue - Date.now())/1000));
+  el.innerHTML = `<b>${pending.length} decision${pending.length>1?'s':''}</b><span style="color:var(--muted)">sending in ${left}s…</span><button class="btn primary" data-write id="pend-now">Send now</button>`;
+  el.classList.add('show');
+}
+$('#pendbar').addEventListener('click', e => { if (e.target.id==='pend-now') flushDecisions(); });
+document.querySelectorAll('.chip[data-f]').forEach(c => c.addEventListener('click', () => { document.querySelectorAll('.chip[data-f]').forEach(x=>x.classList.remove('on')); c.classList.add('on'); filter=c.dataset.f; sel=0; renderQueue(); }));
+$('#show-done').addEventListener('click', e => { showDone=!showDone; e.target.classList.toggle('on',showDone); renderQueue(); });
+$('#reset').addEventListener('click', () => { done={}; snoozed={}; store.set('done',done); store.set('snoozed',snoozed); renderQueue(); toast('Reset'); });
+$('#q').addEventListener('input', e => { query=e.target.value; sel=0; renderQueue(); renderEfforts(); renderTickets(); renderReviews(); renderPending(); });
+
+/* standup text */
+$('#standup-btn').addEventListener('click', () => {
+  const top = visibleItems().slice(0,8);
+  const lines = [`Status ${NOW.toISOString().slice(0,10)}`, '', 'Open PRs:', ...DATA.my_prs.map(p=>`  - ${repoShort(p.repository.nameWithOwner)} #${p.number} ${p.title}${p.isDraft?' (draft)':''}${p.mergeable==='CONFLICTING'?' — CONFLICTS':''}`), '', 'Top of my queue:', ...top.map(it=>`  - [${it.src}] ${it.title} → ${it.act}`), '', 'Jira high/stuck:', ...DATA.jira.filter(j=>/High|Highest/.test(j.priority)||/Stuck/.test(j.status)).map(j=>`  - ${j.key} ${j.summary} (${j.status.replace(/^[^\w]+/,'')})`)];
+  const txt = lines.join('\n'); const el=$('#standup'); el.textContent=txt; el.classList.toggle('show'); copy(txt);
+});
+
+/* ---------- render: efforts ---------- */
+let effortMode='active';
+document.querySelectorAll('.chip[data-ef]').forEach(c => c.addEventListener('click', () => { document.querySelectorAll('.chip[data-ef]').forEach(x=>x.classList.remove('on')); c.classList.add('on'); effortMode=c.dataset.ef; renderEfforts(); }));
+function renderEfforts(){
+  const q=query.toLowerCase();
+  let rows = DATA.worktrees.filter(w=>w.remote).map(w => {
+    const sess = sessByCwd[w.path]||[]; const pr = prByBranch[w.remote+'#'+w.branch]; const notes = notesByWt[w.path]||[];
+    const tks = [...new Set(notes.flatMap(n=>ticketsIn(n.head)))].filter(k=>jiraByKey[k]);
+    const viaSS = [...new Set([...ssFor(w.branch), ...ssFor(w.name)])].filter(n => !sess.some(x => x.name === n));
+    const live = sess.length>0, recent = days(w.last_iso) < 14;
+    const isMain = /^(master|main)$/.test(w.branch);
+    const active = live || viaSS.length>0 || pr || (recent && !isMain) || w.ahead>0;
+    let health = 'ok', hint = '';
+    if (pr?.mergeable==='CONFLICTING') { health='crit'; hint='PR conflicts'; }
+    else if (w.ahead>0) { health='warn'; hint=`${w.ahead} unpushed`; }
+    else if (!live && !pr && !isMain && days(w.last_iso)>30) { health='stale'; hint=`idle ${w.last_rel}`; }
+    else if (w.dirty>0) { health='dirty'; hint=`${w.dirty} dirty`; }
+    else if (w.behind>0) { hint=`${w.behind} behind`; }
+    return {w,sess,pr,notes,tks,active,health,hint,isMain,viaSS};
+  });
+  if (effortMode==='active') rows = rows.filter(r=>r.active);
+  if (q) rows = rows.filter(r=>JSON.stringify([r.w.name,r.w.branch,r.pr?.title,r.tks]).toLowerCase().includes(q));
+  rows.sort((a,b)=> (b.sess.length-a.sess.length) || ((b.pr?1:0)-(a.pr?1:0)) || (new Date(b.w.last_iso||0)-new Date(a.w.last_iso||0)));
+  $('#e-cnt').textContent = `${rows.length} of ${DATA.worktrees.filter(w=>w.remote).length}`;
+  const hp = {ok:['good','ok'],crit:['crit','conflict'],warn:['warn','unpushed'],stale:['neutral','stale'],dirty:['info','dirty']};
+  $('#efforts').innerHTML = `<thead><tr><th class="chk"><input type="checkbox" id="chk-all" title="Select all shown"></th><th>Worktree</th><th>Branch</th><th>Session</th><th>PR</th><th>Tickets</th><th>Last commit</th><th>State</th><th></th></tr></thead><tbody>` +
+    (rows.length? rows.map(r=>`<tr data-path="${esc(r.w.path)}" class="${selected.has(r.w.path)?'checked':''}">
+      <td class="chk"><input type="checkbox" data-sel="${esc(r.w.path)}" ${selected.has(r.w.path)?'checked':''} ${r.isMain&&r.w.kind==='clone'?'disabled title="main clone"':''}></td>
+      <td><b>${esc(r.w.name)}</b><div class="s" style="color:var(--muted);font-size:11.5px">${esc(repoShort(r.w.remote))}</div></td>
+      <td class="mono">${esc(r.w.branch||'(detached)')}</td>
+      <td>${r.sess.map(s=>`<div><span class="live ${s.status||'busy'}"></span><span class="mono">${esc(s.name)}</span> <span class="age">${esc(s.status||'busy')}</span></div>`).join('') + r.viaSS.map(n=>`<div><span class="mono">${esc(n)}</span> <span class="pill info" title="from the session status ping, not from a running process in this path">via status</span></div>`).join('') || '<span class="age">—</span>'}</td>
+      <td>${r.pr?`<a href="${esc(r.pr.url)}" target="_blank" rel="noopener">#${r.pr.number}</a> <span class="pill ${r.pr.mergeable==='CONFLICTING'?'crit':r.pr.isDraft?'neutral':'info'}">${r.pr.mergeable==='CONFLICTING'?'conflicts':r.pr.isDraft?'draft':(r.pr.reviewDecision||'open').toLowerCase().replace('_',' ')}</span>`:'<span class="age">—</span>'}</td>
+      <td>${r.tks.length? r.tks.map(k=>jiraLink(k) ? `<a class="key" href="${esc(jiraLink(k))}" target="_blank" rel="noopener" title="${esc(jiraByKey[k].summary)}">${k}</a>` : `<span class="key" title="${esc(jiraByKey[k].summary)}">${k}</span>`).join(' ') : '<span class="age">—</span>'}</td>
+      <td><span class="${ageCls(r.w.last_iso,14,45)}">${esc(r.w.last_rel)}</span><div class="s" style="color:var(--muted);font-size:11.5px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.w.last_msg)}</div></td>
+      <td><span class="pill ${hp[r.health][0]}">${esc(r.hint||hp[r.health][1])}</span></td>
+      <td>${sessBtnWt(r.w.path, r.w.branch)} <button class="cmd" data-cmd="cd ${esc(r.w.path)}" title="Copy cd">${ICON.copy}cd</button>${r.sess.length? '':` <button class="cmd" data-cmd="cd ${esc(r.w.path)} && claude" title="Start a session here">${ICON.copy}claude</button>`}</td>
+    </tr>`).join('') : `<tr><td colspan="9" class="empty">No worktrees match.</td></tr>`) + `</tbody>`;
+}
+const selected = new Set();
+$('#efforts').addEventListener('click', e => { const b=e.target.closest('button[data-cmd]'); if(b){ copy(b.dataset.cmd); } });
+$('#efforts').addEventListener('change', e => {
+  if (e.target.id==='chk-all') { document.querySelectorAll('#efforts input[data-sel]:not(:disabled)').forEach(c=>{ c.checked=e.target.checked; c.checked?selected.add(c.dataset.sel):selected.delete(c.dataset.sel); }); }
+  else if (e.target.dataset.sel) { e.target.checked?selected.add(e.target.dataset.sel):selected.delete(e.target.dataset.sel); }
+  renderEfforts(); renderSelbar();
+});
+function renderSelbar(){ $('#sel-n').textContent=selected.size; $('#selbar').classList.toggle('show', selected.size>0); if(!selected.size) $('#drawer').classList.remove('show'); }
+const wtOf = p => DATA.worktrees.find(w=>w.path===p);
+function deleteCmds(paths){ return paths.map(p=>{ const w=wtOf(p); if(!w) return ''; if (w.kind==='worktree' && w.main) return `git -C ${w.main} worktree remove --force ${p}   # branch ${w.branch} stays; add 'git -C ${w.main} branch -D ${w.branch}' to drop it`; return `rm -rf ${p}   # standalone clone`; }).filter(Boolean); }
+$('#selbar').addEventListener('click', e => {
+  const b=e.target.closest('[data-wa]'); if(!b) return; const paths=[...selected]; const dr=$('#drawer');
+  if (b.dataset.wa==='clear') { selected.clear(); renderEfforts(); renderSelbar(); return; }
+  if (b.dataset.wa==='delete') {
+    const risky = paths.map(wtOf).filter(w=>w && (w.dirty>0||w.ahead>0));
+    const cmds = deleteCmds(paths).join('\n');
+    dr.innerHTML = `<b>Delete ${paths.length} worktree${paths.length>1?'s':''}</b>${risky.length?`<div class="warn-txt">⚠ ${risky.map(w=>w.name).join(', ')}: dirty or unpushed — work will be lost.</div>`:''}<pre>${esc(cmds)}</pre>
+      <button class="btn" data-copy="${esc(cmds)}">${ICON.copy} Copy commands</button> <button class="btn primary" data-write data-send="delete_worktrees">Send to Claude — verify and delete</button> <span class="s" style="color:var(--muted)">Claude re-checks dirty/unpushed state and asks you before removing.</span>`;
+    dr.classList.add('show');
+  }
+  if (b.dataset.wa==='push') {
+    const cmds = paths.map(p=>wtOf(p)).filter(w=>w&&w.ahead>0).map(w=>`git -C ${w.path} push`).join('\n') || '# nothing to push in the selection';
+    dr.innerHTML = `<b>Push ${paths.length} selected</b><pre>${esc(cmds)}</pre><button class="btn" data-copy="${esc(cmds)}">${ICON.copy} Copy</button> <button class="btn primary" data-write data-send="push_branches">Send to Claude</button>`;
+    dr.classList.add('show');
+  }
+  if (b.dataset.wa==='ask') { $('#ask-txt').value = `About these worktrees:\n${paths.map(p=>'- '+p).join('\n')}\n\n`; $('#ask-txt').focus(); $('#s-ask').scrollIntoView({behavior:'smooth'}); }
+});
+$('#drawer').addEventListener('click', e => {
+  const c=e.target.closest('[data-copy]'); if(c){ copy(c.dataset.copy); return; }
+  const sd=e.target.closest('[data-send]'); if(sd){ sendWorktreeAction(sd.dataset.send, `${sd.dataset.send.replace('_',' ')}:\n${[...selected].map(p=>'- '+p).join('\n')}`, [...selected]); }
+});
+
+/* ---------- render: panels ---------- */
+function panel(id, title, count, bodyHtml, tools='', hint=''){ $(id).innerHTML = `<div class="p-h"><h3>${title}</h3><span class="cnt">${count}</span>${hint?`<span class="hint">${hint}</span>`:''}<div class="tools">${tools}</div></div><div class="p-b">${bodyHtml||'<div class="empty">Nothing.</div>'}</div>`; }
+
+const REFRESH_BTN = p => `<button class="chip" data-write data-refresh="${p}" title="Re-collect this panel (local server)">&#8635;</button>`;
+panel('#p-prs','My open PRs', DATA.my_prs.length, DATA.my_prs.map(p=>{
+  const ci=p.commits.nodes[0]?.commit.statusCheckRollup?.state; const humans=p.reviews.nodes.filter(r=>!/claude|github-actions/.test(r.author?.login||''));
+  const linkCmd = `You now also own PR #${p.number} "${oneLine(p.title)}" — ${p.url} (repo ${p.repository.nameWithOwner}, branch ${p.headRefName}). Update your session status and put the full PR URL in the top lines of your session note so the ${DATA.config.brand} links this PR to you. If your cwd is a shared directory (not a dedicated worktree), the note file must be named after your session: ~/.claude/sessions/<your session name>.md — check your session name first.`;
+  return `<div class="row" style="grid-template-columns:1fr auto"><div><div class="t"><a href="${esc(p.url)}" target="_blank" rel="noopener">#${p.number} ${esc(p.title)}</a></div><div class="s">${esc(repoShort(p.repository.nameWithOwner))} · <span class="mono">${esc(p.headRefName)}</span> · +${p.additions}/−${p.deletions} · ${humans.length} human review${humans.length===1?'':'s'}</div></div>
+  <div class="r">${pdPill(p.url)}${p.isDraft?'<span class="pill neutral">draft</span>':''}${p.mergeable==='CONFLICTING'?'<span class="pill crit">conflicts</span>':''}<span class="pill ${ci==='SUCCESS'?'good':ci?'crit':'neutral'}">CI ${ci==='SUCCESS'?'✓':ci||'?'}</span><span class="${ageCls(p.updatedAt,2,7)}">${ageText(p.updatedAt)}</span><button class="cmd" data-cmd="${esc(linkCmd)}" title="Copy a paste-ready instruction: paste it into any Claude session and that session claims this PR">${ICON.copy}link</button>${sessBtnPR(p.url, p.title, p.headRefName)}</div></div>`; }).join(''), REFRESH_BTN('prs'),
+  `<span title="The board links a PR to a session in two ways: (1) the session's note at ~/.claude/sessions/&lt;name&gt;.md lists the PR — '#N' in the top lines, or branch: in the frontmatter (max 4 refs per session); (2) a live session sits in the worktree of the PR's branch. The link shows on the next rebuild (30 min, or ↻). One session can own several PRs — copy a &#8298;link line per PR and paste them all into that session.">Link a live session: press &#8298;link on a PR, paste the copied line into that session. A session in the PR&#8217;s worktree links by itself. Hover for detail.</span>`);
+$('#p-prs').addEventListener('click', e => {
+  const b = e.target.closest('button[data-cmd]'); if (!b) return;
+  copy(b.dataset.cmd); b.classList.add('copied'); setTimeout(()=>b.classList.remove('copied'),1200);
+});
+
+/* The working filter survives reloads and refreshes. */
+const rvSaved = store.get('rvfilters', {});
+let authorF = rvSaved.author || null,
+    rrMode = rvSaved.mode || (reviewsMode ? 'all' : 'direct'),
+    rvFilter = rvSaved.state || 'all',
+    rvShow = rvFilter === 'decided';
+const saveRvFilters = () => store.set('rvfilters', { author: authorF, mode: rrMode, state: rvFilter });
+/* Text size is a per-viewer convenience: zoom the whole page, remember it in this browser. */
+let ccZoom = Math.min(150, Math.max(80, +store.get('zoom', 100) || 100));
+const applyZoom = () => { document.body.style.zoom = ccZoom + '%'; };
+applyZoom();
+$('#rotate-master')?.addEventListener('click', () => {
+  if (!LOCAL) { toast('Rotation runs on the local board only'); return; }
+  if (!window.confirm('Rotate the master session?\nThe current master retires and a fresh one boots in the same tab (or one is launched if none is running).')) return;
+  sendRequest('rotate', 'Rotate the master session', []);
+  toast('Rotating the master…');
+});
+$('#zoom-in').addEventListener('click', () => { ccZoom = Math.min(150, ccZoom + 10); store.set('zoom', ccZoom); applyZoom(); });
+$('#zoom-out').addEventListener('click', () => { ccZoom = Math.max(80, ccZoom - 10); store.set('zoom', ccZoom); applyZoom(); });
+(function usageWidget(){
+  const rows = DATA.usage || []; const now = Date.now(), day = 864e5;
+  const sum = d => Math.round(rows.filter(r => now - new Date(r.when) < d).reduce((a,r)=>a+r.tokens,0)/1000);
+  const today = sum(day), week = sum(7*day);
+  const mu = DATA.master_usage || {}; const cur = mu.current, hist = mu.history || [];
+  const mk = cur ? Math.round((cur.tokens||0)/1000) : null;
+  const el = $('#cc-usage'); if (!el) return;
+  el.textContent = `✦ agents ${today}k today · ${week}k 7d` + (mk!==null ? ` · master ${mk}k` : '');
+  const histAvg = hist.length ? Math.round(hist.reduce((a,h)=>a+(h.tokens||0),0)/hist.length/1000) : null;
+  el.title = 'Usage\n'
+    + (mk!==null ? `Master context now: ${mk}k (rotate at ~150k)\n` : '')
+    + (histAvg!==null ? `Past masters: ${hist.length} rotations · avg ${histAvg}k at retire\n` : '')
+    + 'Agent spend (last 8):\n'
+    + rows.slice(-8).map(r=>`${Math.round(r.tokens/1000)}k · ${r.what}`).join('\n');
+})();
+let rvSel = new Set();
+let rvUpdOnly = false;
+function renderReviews(){
+  const q = query.toLowerCase();
+  const base = RR_ALL.filter(r => r.rvOnly || rrMode==='all' || rrProv(r)===rrMode);
+  const byAuthor = {}; base.forEach(r=>byAuthor[r.author.login]=(byAuthor[r.author.login]||0)+1);
+  // Filters stay strict — an agent update never smuggles a row past the author or
+  // reviewed filter. Updates surface through the ⟲ chip (and the row stays visible
+  // when only the decided-hide would swallow it).
+  const hasNew = r => rvNewReplies(r.url).length > 0;
+  const updCount = base.filter(hasNew).length;
+  // Decided = clicked on the board (rvDec, per browser) OR already approved on GitHub itself.
+  const isDec = r => !!rvDec[r.url] || GH_MY_REVIEW[r.url] === 'APPROVED';
+  const list = (rvUpdOnly ? base.filter(hasNew)
+    : base.filter(r=>!authorF||r.author.login===authorF)
+    .filter(r => rvFilter==='all' || (rvFilter==='decided' ? isDec(r) : rvFilter==='waiting' ? POSTED.has(RV[r.url]?.status) : rvFilter==='reviewed' ? !!RV[r.url] : !RV[r.url]))
+    .filter(r => hasNew(r) || rvShow || rvFilter==='waiting' || rvFilter==='decided' || !isDec(r)))
+    .filter(r => !q || `#${r.number} ${r.title} ${r.author.login} ${r.repository.nameWithOwner}`.toLowerCase().includes(q))
+    .sort((a,b)=>(hasNew(b)-hasNew(a)) || ((a.isDraft?1:0)-(b.isDraft?1:0)) || new Date(a.createdAt||a.updatedAt)-new Date(b.createdAt||b.updatedAt));
+  const body = list.map(r=>{
+    const rv = RV[r.url];
+    const ck = (LOCAL && !rv && !r.isDraft) ? `<input type="checkbox" class="rvck" data-rvsel="${esc(r.url)}" ${rvSel.has(r.url)?'checked':''} title="Select for review">` : '';
+    return `<div class="row ${r.isDraft ? 'rvdim' : isDec(r) && !rvNewReplies(r.url).length ? 'rvdim':''} ${rvOpenP===r.url?'checked':''}" style="grid-template-columns:auto 1fr auto"><div>${ck}</div><div><div class="t"><a href="${esc(r.url)}" target="_blank" rel="noopener">#${r.number} ${esc(r.title)}</a></div><div class="s">${esc(repoShort(r.repository.nameWithOwner))} · <button class="chip" style="padding:0 7px" data-author="${esc(r.author.login)}">${esc(r.author.login)}</button>${rv?` · <button class="dec" data-rv="${esc(r.url)}" title="Read the offline review in the drawer">Review</button>`:''}</div></div><div class="r">${ssPill(ssFor('#'+r.number))}${rvPills(r.url)}${pdPill(r.url)}${sessBtnPR(r.url, r.title, '')}${(()=>{const pv={direct:'me',team:'team',watch:'watch'}[r.provenance]||(r.rvOnly?'not requested':r.direct?'me':'team'); return pv==='not requested'?'<span class="pill neutral" title="Reviewed on request from a Claude session \u2014 GitHub has no review request for you on this PR">not requested</span>':pv==='me'?'<span class="pill accent">me</span>':pv==='watch'?'<span class="pill info" title="Open PR in a repo you watch \u2014 no review request from anyone">watch</span>':'<span class="pill neutral">team</span>';})()}${r.isDraft?'<span class="pill neutral">draft</span>':''}<span class="${ageCls(r.createdAt||r.updatedAt,7,21)}" title="opened">${ageText(r.createdAt||r.updatedAt)}</span></div></div>`;
+  }).join('');
+  const nUnrev = base.filter(r => !RV[r.url] && !r.isDraft).length;
+  const tools = REFRESH_BTN('reviews')
+    + (updCount || rvUpdOnly ? `<button class="chip ${rvUpdOnly?'on':''}" data-rvupd="1" title="Rows where an agent acted or answered since you last looked — shown regardless of the other filters">⟲ ${updCount} update${updCount===1?'':'s'}</button>` : '')
+    + (LOCAL && rvSel.size ? `<button class="btn model" data-write id="rv-runall" title="Run the offline review agent on the selected PRs — ~150k tokens each">✦ Review selected (${rvSel.size})</button>`
+       : LOCAL && nUnrev ? `<button class="btn model" data-write id="rv-runall" title="No PRs ticked — this runs the agent on every un-reviewed PR shown. Tick rows to narrow it. ~150k tokens each">✦ Review all ${nUnrev} un-reviewed</button>` : '')
+    + `<select class="chip sel" data-rvsel-name="mode" title="Who the review was requested from">`
+      + [['direct','asked me directly'],['team','asked the team'],['watch','watched repos'],['all','all requests']].map(([k,l])=>`<option value="${k}" ${rrMode===k?'selected':''}>${l}</option>`).join('') + `</select>`
+    + `<select class="chip sel" data-rvsel-name="state" title="Where each PR stands">`
+      + [['all','open work'],['not','not reviewed'],['reviewed','reviewed'],['waiting','⏳ waiting on author'],['decided','decided']].map(([k,l])=>`<option value="${k}" ${(rvFilter===k && !(k==='all'&&rvShow))||(k==='decided'&&rvShow)?'selected':''}>${l}</option>`).join('') + `</select>`
+    + `<select class="chip sel" data-rvsel-name="author" title="Filter by PR author">`
+      + `<option value="">any author</option>`
+      + Object.entries(byAuthor).sort((a,b)=>b[1]-a[1]).map(([a,n])=>`<option value="${esc(a)}" ${authorF===a?'selected':''}>${esc(a)} · ${n}</option>`).join('') + `</select>`;
+  panel('#p-reviews', authorF?`Reviews from ${esc(authorF)}`:(rrMode==='direct'?'Reviews asked of me directly':rrMode==='team'?'Reviews asked of the team':rrMode==='watch'?'Open PRs in watched repos':'All review requests'),
+    `${list.length}${authorF?' of '+base.length:''} · ${base.filter(r=>RV[r.url]).length} reviewed offline`, body, tools);
+  const c = $('#rv-cnt'); if (c) c.textContent = `${DATA.review_requests.filter(r=>r.direct).length} asked of me · ${DATA.review_requests.length} requested · ${RR_ALL.length} total${RV_ONLY.length?` · ${RV_ONLY.length} reviewed without a request`:''}`;
+}
+renderReviews();
+$('#p-reviews').addEventListener('change', e => {
+  const sel = e.target.closest('select[data-rvsel-name]'); if (!sel) return;
+  const v = sel.value;
+  if (sel.dataset.rvselName === 'mode') { rrMode = v; authorF = null; }
+  if (sel.dataset.rvselName === 'state') { rvShow = v === 'decided'; rvFilter = v === 'decided' ? 'decided' : v; }
+  if (sel.dataset.rvselName === 'author') { authorF = v || null; }
+  saveRvFilters(); rvUpdOnly = false; renderReviews();
+});
+$('#p-reviews').addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if (b?.dataset.rvrun) { sendRequest('review_pr', `Review ${b.dataset.rvrun}`, [b.dataset.rvrun]); toast('Review queued — the verdict lands on this row when the agent finishes'); return; }
+  const ck = e.target.closest('input[data-rvsel]'); if (ck) { ck.checked ? rvSel.add(ck.dataset.rvsel) : rvSel.delete(ck.dataset.rvsel); renderReviews(); return; }
+  if (b?.id === 'rv-runall') {
+    const urls = rvSel.size ? [...rvSel]
+      : RR_ALL.filter(r => (r.rvOnly || rrMode==='all' || rrProv(r)===rrMode) && !RV[r.url] && !r.isDraft).map(r=>r.url);
+    if (urls.length && window.confirm(`Run the review agent on ${urls.length} PR(s)? ~150k tokens each.`)) {
+      sendRequest('review_pr', `Review ${urls.length} PRs`, urls); rvSel.clear(); renderReviews(); toast('Reviews queued');
+    }
+    return;
+  }
+  if (b?.dataset.cmd) { copy(b.dataset.cmd); b.classList.add('copied'); setTimeout(()=>b.classList.remove('copied'),1200); return; }
+  if (b?.dataset.rv) { openReviewDrawer(b.dataset.rv); return; }
+  if (b?.dataset.rvupd) { rvUpdOnly = !rvUpdOnly; renderReviews(); return; }
+  if (b?.dataset.rvfilter) { rvFilter = b.dataset.rvfilter; rvUpdOnly = false; renderReviews(); return; }
+  if (b?.dataset.rvshow) { rvShow = !rvShow; renderReviews(); return; }
+  const m=e.target.closest('[data-rr]'); if(m){ rrMode=m.dataset.rr; authorF=null; saveRvFilters(); renderReviews(); return; }
+  const a=e.target.closest('[data-author]'); if(!a) return; authorF = authorF===a.dataset.author ? null : a.dataset.author; renderReviews();
+});
+
+const SESS_KIND_CLS = { interactive: 'good', agent: 'accent', background: 'neutral' };
+panel('#p-agents','Claude sessions', DATA.sessions.length, [...DATA.sessions].sort((a,b)=>(a.status==='idle')-(b.status==='idle')).map(s=>{
+  const wt = DATA.worktrees.find(w=>w.path===s.cwd); const st=s.status||'busy';
+  const tmux = (s.tmux||'').split(':')[0];
+  const kind = s.kind || 'background';
+  const jumpable = kind === 'interactive';
+  const jump = `ms://session?name=${encodeURIComponent(s.name)}&cwd=${encodeURIComponent(s.cwd)}&tmux=${encodeURIComponent(tmux)}&sid=${encodeURIComponent(s.sessionId||'')}&tty=${encodeURIComponent(s.tty||'')}`;
+  const cmd = tmux ? `tmux attach -t ${tmux}` : `cd ${s.cwd}`;
+  const kindPill = `<span class="pill ${SESS_KIND_CLS[kind]||'neutral'}" title="session kind">${esc(kind)}</span>`;
+  /* background/agent sessions have no controlling terminal — there is no tab to jump to. */
+  const nameEl = jumpable
+    ? `<a data-write href="${esc(jump)}" title="Jump to this terminal (Claude Jump.app)"><span class="live ${st}"></span><span class="mono">${esc(s.name)}</span></a>`
+    : `<span class="live ${st}"></span><span class="mono">${esc(s.name)}</span>`;
+  const jumpIco = jumpable ? `<a class="ico" data-write href="${esc(jump)}" title="Jump to terminal">${ICON.open}</a>` : '';
+  return `<div class="row" style="grid-template-columns:1fr auto"><div><div class="t">${nameEl} ${kindPill} <span class="s">${esc(wt? wt.name+' · '+wt.branch : s.cwd.replace((DATA.config.workRoot||'')+'/',''))}</span>${tmux?` <span class="pill neutral">tmux ${esc(tmux)}</span>`:''}</div><div class="s">started ${esc(s.procStart.replace(/^\w+ /,'').replace(/ \d{4}$/,''))} · v${esc(s.version)}</div>${ssLine(s.name)}</div><div class="r">${jumpIco}<button class="cmd" data-cmd="${esc(cmd)}" title="Copy">${ICON.copy}${tmux?'tmux':'cd'}</button><span class="pill ${st==='idle'?'neutral':st==='shell'?'info':'good'}">${st}</span></div></div>`; }).join(''),
+  REFRESH_BTN('sessions') + `<span class="pill neutral">${DATA.sessions.filter(s=>s.cwd===(DATA.config.workRoot||'')).length} in /work</span>`);
+$('#p-agents').addEventListener('click', e => { const b=e.target.closest('button[data-cmd]'); if(b) copy(b.dataset.cmd); });
+
+/* calendar with meeting prep */
+const prepFor = e => { const who=(e.organizer||'').split('@')[0]; const names=[who]; return items.filter(it=>!done[it.id] && names.some(n=>(it.title+' '+it.sub+' '+it.act).includes(n))).sort((a,b)=>b.score-a.score).slice(0,4); };
+function renderCalPanel(){
+panel('#p-cal','Calendar · 3 days', DATA.calendar.length, DATA.calendar.map(e=>{ const h=(new Date(e.start)-NOW)/36e5; const past=(new Date(e.end)-NOW)<0; const soon=h>-0.75&&h<3; const prep=soon||h<24?prepFor(e):[];
+  return `<div class="ev ${past?'past':''} ${soon?'soon':''}"><div class="when">${esc(fmtWhen(e.start))}</div><div><div class="t"><a href="${esc(e.url)}" target="_blank" rel="noopener">${esc(e.title)}</a></div><div class="prep">${esc(e.organizer.split('@')[0])}${e.rsvp==='needsAction'?' · <b>RSVP</b>':''}${prep.length?'<br>Prep: '+prep.map(p=>esc(p.title.slice(0,60))).join(' · '):''}</div></div><div class="r">${soon?'<span class="pill accent">soon</span>':''}</div></div>`; }).join('') || (!DATA.config.modules?.calendar ? '<div class="empty">Calendar is not enabled — turn on modules.calendar in your config.</div>' : notBaked('calendar') ? '<div class="empty">Calendar is not baked yet — run the daily bake (ms-refresher, full mode).</div>' : ''));
+}
+renderCalPanel();
+
+/* notes */
+const notesSorted = [...DATA.notes].sort((a,b)=>new Date(b.mtime)-new Date(a.mtime));
+$('#n-cnt').textContent = `${notesSorted.length} files · newest ${ageText(notesSorted[0]?.mtime)} ago`;
+$('#p-notes').innerHTML = notesSorted.map(n=>`<details class="note"><summary><span class="t">${esc(n.file.replace(/\.md$/,''))}</span><span class="${ageCls(n.mtime,7,30)}">${ageText(n.mtime)}</span><span class="s" style="color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0">${esc(n.head.replace(/^---[\s\S]*?---\s*/,'').split('\n').find(l=>l.trim())||'')}</span>${ticketsIn(n.head).slice(0,4).map(k=>`<span class="key">${k}</span>`).join('')}</summary><pre>${esc(n.head)}</pre></details>`).join('');
+
+/* ---------- artifacts ---------- */
+(function renderArtifacts(){
+  const mine = a => a.owner !== 'shared';
+  const byNew = (a,b) => new Date(b.updated||0) - new Date(a.updated||0);
+  const rows = [...DATA.artifacts.filter(mine).sort(byNew), ...DATA.artifacts.filter(a=>!mine(a)).sort(byNew)];
+  $('#a-cnt').textContent = `${rows.length} total · ${DATA.artifacts.filter(mine).length} mine`;
+  $('#p-artifacts').innerHTML = rows.map(a => {
+    const when = a.updated ? (isNaN(Date.parse(a.updated)) ? `<span class="mono">${esc(a.updated)}</span>` : `<span class="age" title="${esc(a.updated)}">${ageText(a.updated)}</span>`) : '';
+    return `<div class="row" style="grid-template-columns:1fr auto"><div><div class="t"><a href="${esc(a.url)}" target="_blank" rel="noopener">${esc(a.title)}</a></div>${a.note?`<div class="s" style="white-space:normal">${esc(a.note)}</div>`:''}</div>
+      <div class="r"><span class="pill ${mine(a)?'neutral':'info'}">${mine(a)?'mine':'shared'}</span>${when}</div></div>`;
+  }).join('') || '<div class="empty">No artifacts listed yet.</div>';
+})();
+
+/* ---------- tabs, clock, keys ---------- */
+const TAB_COUNT = {
+  home: () => visibleItems().length + pdOpen().filter(p=>!pdDec[p.id]).length,
+  reviews: () => DATA.review_requests.filter(r=>r.direct).length,
+  tickets: () => ticketRows().length,
+  work: () => DATA.sessions.length + DATA.my_prs.length,
+  log: () => decisions().filter(r=>r.status==='pending').length,
+  more: () => DATA.calendar.filter(e=>(new Date(e.end)-NOW)>0).length + DATA.notes.length + DATA.artifacts.length,
+};
+function renderTabs(){
+  $('#tabs').innerHTML = TABS.map(t => {
+    let c = ''; try { c = TAB_COUNT[t[2]](); } catch { c = ''; }
+    return `<button class="${tab===t[2]?'on':''}" data-tab="${t[2]}" title="Shift+${t[0]}"><span class="k">⇧${t[0]}</span>${t[1]}<span class="c">${c}</span></button>`;
+  }).join('');
+}
+$('#tabs').addEventListener('click', e => { const b=e.target.closest('button'); if (b) setTab(b.dataset.tab); });
+const ASK_PH = { all: $('#ask-txt').placeholder, reviews: "Ask about a PR, e.g. 'is #920 safe to merge before #64?'" };
+function setTab(next){
+  if (!TAB_IDS.includes(next)) next = 'home';
+  tab = next;
+  store.set('tab', tab);
+  document.body.dataset.tab = tab;
+  reviewsMode = tab === 'reviews';
+  logRvOnly = reviewsMode;
+  if (reviewsMode) rrMode = 'all';
+  $('#ask-txt').placeholder = reviewsMode ? ASK_PH.reviews : ASK_PH.all;
+  if (location.hash !== '#' + tab) location.hash = '#' + tab;
+  closeDrawer();
+  renderTabs(); renderReviews(); renderLog();
+  try { window.scrollTo(0, 0); } catch {}
+}
+window.addEventListener('hashchange', () => { const t = hashTab(location.hash); if (t && t !== tab) setTab(t); });
+function tick(){ $('#clock').textContent = new Date().toLocaleString('en-GB',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}); const age=hrs(DATA.collected_at); const st=$('#stamp'); st.textContent=`data ${ageText(DATA.collected_at)} old`; st.classList.toggle('stale', age>6); }
+tick(); setInterval(tick, 30000);
+document.addEventListener('keydown', e => {
+  if (e.target.tagName==='INPUT') {
+    if (e.key==='Escape') {
+      if (e.target.id==='q') { e.target.blur(); e.target.value=''; query=''; renderQueue(); renderEfforts(); renderTickets(); renderReviews(); renderPending(); }
+      else e.target.blur();
+    }
+    return;
+  }
+  if (e.target.tagName==='TEXTAREA') { if (e.key==='Escape') e.target.blur(); return; }
+  if (e.key==='Escape') {
+    if (drawerOpen()) { closeDrawer(); renderQueue(); renderTickets(); renderReviews(); return; }
+    $('#help').classList.remove('show');
+    if (formState) { formState=null; renderQueue(); }
+    return;
+  }
+  const vis = queueRows(); const cur = vis[sel];
+  switch (e.key) {
+    case 'j': sel=Math.min(vis.length-1,sel+1); renderQueue(); $('.q-row.sel')?.scrollIntoView({block:'nearest'}); break;
+    case 'k': sel=Math.max(0,sel-1); renderQueue(); $('.q-row.sel')?.scrollIntoView({block:'nearest'}); break;
+    case 'o': case 'Enter': if (cur?.url) window.open(cur.url,'_blank','noopener'); break;
+    case 'c': if (cur?.cmd) copy(cur.cmd); break;
+    case 'r': if (!e.metaKey && !e.ctrlKey) { e.preventDefault(); setTab(tab==='reviews' ? 'home' : 'reviews'); } break;
+    case '/': e.preventDefault(); $('#q').focus(); break;
+    case '?': $('#help').classList.add('show'); break;
+    default: {
+      if (e.shiftKey) { const t=TABS.find(x=>e.code==='Digit'+x[0]); if (t) { e.preventDefault(); setTab(t[2]); } return; }
+      const d = ['do','delegate','drop','defer'][['1','2','3','4'].indexOf(e.key)];
+      if (d && cur) { e.preventDefault(); openDecision(cur.id, d); }
+    }
+  }
+});
+$('#help-btn').addEventListener('click',()=>$('#help').classList.add('show'));
+$('#help').addEventListener('click',e=>{ if(e.target.id==='help') e.target.classList.remove('show'); });
+
+/* ---------- request channel (page → master session) ---------- */
+let artifactCap = null, linkState = 'checking';
+function renderRequests(){
+  const rs=DATA.requests.filter(r=>r.kind!=='decision').sort((a,b)=>new Date(b.when)-new Date(a.when)); // decisions have their own section
+  $('#r-cnt').textContent = `${rs.filter(r=>r.status==='pending').length} pending · ${rs.length} total`;
+  $('#requests').innerHTML = rs.map(r=>`<div class="req ${r.status}"><span class="pill ${r.status==='pending'||r.status==='needs_confirmation'?'warn':r.status==='done'?'good':'neutral'}">${esc(r.status==='needs_confirmation'?'needs your OK':r.status)}</span><div><div class="txt">${esc(r.text)}</div>${r.reply?`<div class="reply">${esc(r.reply)}</div>`:''}${r.status==='needs_confirmation'?`<div style="margin-top:6px;display:flex;gap:6px"><button class="btn" data-write data-confirm="${esc(r.id)}">Confirm</button><button class="chip" data-write data-deny="${esc(r.id)}">Deny</button></div>`:''}</div><span class="age">${ageText(r.when)}</span></div>`).join('') || '<div class="empty">No requests yet.</div>';
+}
+function buildDocument(data){
+  const tpl = $('#tpl').textContent.replace(/<\\\//g,'</');
+  const tplEsc = $('#tpl').textContent;
+  const D='/*__'+'DATA__*/null', T='/*__'+'TPL__*/';
+  const body = tpl.replace(D, JSON.stringify(data).replace(/<\//g,'<\\/')).replace(T, tplEsc);
+  return '<!doctype html>\n<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">' + body + '</html>';
+}
+function newReq(kind, text, targets, extra){
+  return Object.assign({ id: 'r'+Date.now().toString(36)+Math.floor(Math.random()*1296).toString(36), when: new Date().toISOString(), kind, text: String(text).trim(), targets: targets||[], status:'pending', reply:'' }, extra||{});
+}
+/* Local mode: one POST per request. The server runs the scripted kinds itself and
+   answers with the stored record, so the reply is on screen before the poll. */
+async function postLocal(req){
+  const { kind, text, targets, id, when, status, reply, ...extra } = req;
+  const res = await fetch('/request', { method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ id, when, kind, text, targets, extra }) });
+  const rec = await res.json().catch(() => null);
+  if (!rec || !rec.id) throw new Error((rec && rec.error) || ('local server: HTTP ' + res.status));
+  return rec;
+}
+function mergeReq(rec){
+  const i = DATA.requests.findIndex(r => r.id === rec.id);
+  if (i >= 0) DATA.requests[i] = rec; else DATA.requests.push(rec);
+}
+async function publishLocal(reqs){
+  const out = [];
+  for (const req of reqs) {
+    let rec;
+    try { rec = await postLocal(req); }
+    catch (e) { rec = { ...req, status:'error', reply: String(e && e.message || e) }; }
+    mergeReq(rec); out.push(rec);
+    if (rec.reply) toast(rec.reply);
+  }
+  renderRequests(); renderLog(); renderTabs();
+  return out;
+}
+async function publishRequests(reqs){
+  if (!reqs.length) return;
+  if (LOCAL) return publishLocal(reqs);
+  const text = reqs.map(r=>r.text).join('\n');
+  if (!artifactCap) { copy(text); toast('No live link — request copied. Paste it in the master session.'); return; }
+  const next = { ...DATA, requests: [...DATA.requests, ...reqs] };
+  $('#ask-status').textContent = 'saving…';
+  try { await artifactCap.publish(buildDocument(next)); toast(reqs.length>1 ? `Sent ${reqs.length} — the page reloads` : 'Sent — the page reloads with your request'); }
+  catch (e) { if (e?.code==='conflict') { toast('Someone published first — reloading'); } else if (e?.code==='not_writer'||e?.code==='not_granted') { linkState='readonly'; $('#ask-status').textContent='read-only view — copy instead'; copy(text); } else { $('#ask-status').textContent='save failed: '+(e?.code||e?.message||e); } }
+}
+/* Local mode: the server answers needs_confirmation with the dirty/unpushed check; a confirmed second post deletes. */
+async function sendWorktreeAction(kind, text, targets){
+  if (!LOCAL || kind!=='delete_worktrees') return sendRequest(kind, text, targets);
+  const [rec] = await publishLocal([newReq(kind, text, targets)]);
+  if (!rec || rec.status!=='needs_confirmation') { toast(rec?.reply || 'sent'); return; }
+  if (!window.confirm(rec.reply + '\n\nDelete now?')) { toast('cancelled'); return; }
+  const [done] = await publishLocal([newReq(kind, text, targets, { confirmed: true })]);
+  toast(done?.reply || 'done'); setTimeout(()=>location.reload(), 1500);
+}
+async function sendRequest(kind, text, targets, extra){
+  if (!String(text).trim()) return;
+  try { sessionStorage.setItem('cc:draft',''); } catch {}
+  return publishRequests([newReq(kind, text, targets, extra)]);
+}
+async function sendAsk(){
+  const t = $('#ask-txt');
+  const recs = await sendRequest('chat', t.value);
+  if (!recs || !recs[0] || recs[0].status !== 'error') t.value = '';
+}
+$('#ask-send').addEventListener('click', sendAsk);
+$('#jump-master')?.addEventListener('click', () =>
+  publishRequests([newReq('jump', 'Open master session', [], { cc: 'ms://session?name=master&cwd=' + encodeURIComponent(DATA.config.workRoot || '') + '&tmux=' + encodeURIComponent(DATA.config.masterTmuxSession || '') + '&sid=&tty=' })]));
+(function refreshBtn(){ const b=$('#refresh');
+  const pending = !LOCAL && DATA.requests.find(r=>r.kind==='refresh' && r.status==='pending');
+  if (pending) { b.classList.add('pending'); b.textContent = `↻ Refreshing… (asked ${ageText(pending.when)} ago)`; b.disabled = true; return; }
+  b.addEventListener('click', async () => {
+    b.classList.add('pending'); b.disabled = true;
+    b.textContent = LOCAL ? '↻ Refreshing…' : '↻ Sending…';
+    if (!LOCAL) { sendRequest('refresh', 'Refresh the board: re-collect all sources and rewrite the brief.'); return; }
+    await localRefresh(b, null);
+  }); })();
+/* The server rebuilds the page before it answers, so a reload is the render. */
+async function localRefresh(btn, panel){
+  const [rec] = await publishLocal([newReq('refresh', panel ? `Refresh the ${panel} panel.` : 'Refresh the board: re-collect everything.', [], panel ? { panel } : undefined)]);
+  if (rec && rec.status === 'done') { location.reload(); return; }
+  btn.classList.remove('pending'); btn.disabled = false; btn.textContent = '↻ Refresh failed';
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-refresh]'); if (!b || !LOCAL || b.disabled) return;
+  e.preventDefault(); e.stopPropagation();
+  b.classList.add('pending'); b.disabled = true;
+  localRefresh(b, b.dataset.refresh);
+}, true);
+/* Replies land in requests.json, written by the server or by the master session. */
+if (LOCAL) setInterval(async () => {
+  try {
+    const res = await fetch('/data/requests.json', { cache:'no-store' });
+    if (!res.ok) return;
+    const rows = await res.json();
+    if (JSON.stringify(rows) === JSON.stringify(DATA.requests)) return;
+    DATA.requests = rows;
+    renderRequests(); renderLog(); renderTabs();
+  } catch {}
+}, 10000);
+$('#ask-txt').addEventListener('keydown', e => { if ((e.metaKey||e.ctrlKey) && e.key==='Enter') sendAsk(); });
+try { const d=sessionStorage.getItem('cc:draft'); if(d) $('#ask-txt').value=d; } catch {}
+$('#ask-txt').addEventListener('input', e => { try { sessionStorage.setItem('cc:draft', e.target.value); } catch {} });
+if (LOCAL) $('#s-ask .hint').textContent = 'Send posts to the local server. Scripted requests run at once; chat and decisions wait for the master session to pick them up.';
+(async () => {
+  if (LOCAL) { $('#ask-status').textContent = `local server — Send posts to ${location.host} (⌘⏎)`; return; }
+  try { artifactCap = window.claude?.use ? await window.claude.use('artifact') : null; } catch { artifactCap = null; }
+  $('#ask-status').textContent = artifactCap ? 'linked — Send publishes a new version (⌘⏎)' : 'no live link here — Send copies the text';
+})();
+
+/* ---------- render: decision log ---------- */
+function renderLog(){
+  const all = decisions().sort((a,b)=>new Date(b.when)-new Date(a.when));
+  const ds = logRvOnly ? all.filter(r => r.item?.src === 'review' || r.decision === 'review_question') : all;
+  $('#log-rvonly').classList.toggle('on', logRvOnly);
+  $('#l-cnt').textContent = `${ds.length}${logRvOnly?' of '+all.length:''} total · ${ds.filter(r=>r.status==='pending').length} pending`;
+  $('#p-log').innerHTML = ds.map(r=>{
+    const d = DECS[r.decision] || QW_DEC[r.decision] || RV_DEC[r.decision] || PD_DEC[r.decision] || ['?','neutral'];
+    const t = r.item?.title || r.text;
+    const meta = [r.to?`to ${r.to}`:'', r.until?`until ${r.until}`:'', r.why?`why: ${r.why}`:'', r.note?`note: ${r.note}`:'', r.drafts?.length?`drafts: ${r.drafts.join(', ')}`:'', r.question?`question: ${r.question}`:''].filter(Boolean).join(' · ');
+    return `<div class="row logrow"><span class="age" title="${esc(r.when)}">${ageText(r.when)}</span><span class="pill ${d[1]}">${d[0]}</span>
+      <div><div class="t">${r.item?.url?`<a href="${esc(r.item.url)}" target="_blank" rel="noopener">${esc(t)}</a>`:esc(t)}${r.item?.src?` <span class="pill src">${esc(r.item.src)}</span>`:''}</div>${meta?`<div class="s" style="white-space:normal">${esc(meta)}</div>`:''}${r.reply?`<div class="reply">${esc(r.reply)}</div>`:''}</div>
+      <span class="pill ${r.status==='pending'?'warn':'good'}">${esc(r.status)}</span></div>`;
+  }).join('') || '<div class="empty">No decisions yet. Use Do / Delegate / Drop / Defer on any queue row.</div>';
+}
+$('#log-rvonly').addEventListener('click', () => { logRvOnly = !logRvOnly; renderLog(); });
+$('#log-standup').addEventListener('click', () => {
+  const ds = decisions().filter(r=>hrs(r.when)<24).sort((a,b)=>new Date(a.when)-new Date(b.when));
+  const lines = [`Decisions ${NOW.toISOString().slice(0,10)} (last 24h)`, ''];
+  lines.push(...(ds.length ? ds.map(r=>{
+    const extra = [r.to?`→ ${r.to}`:'', r.until?`until ${r.until}`:'', r.why||'', r.note||'', r.drafts?.length?`drafts ${r.drafts.join(', ')}`:'', r.question||''].filter(Boolean).join(' · ');
+    return `  - ${(DECS[r.decision]||QW_DEC[r.decision]||RV_DEC[r.decision]||PD_DEC[r.decision]||['?'])[0]}: ${r.item?.title||r.text}${extra?' — '+extra:''}`;
+  }) : ['  - nothing decided in the last 24h']));
+  copy(lines.join('\n'));
+});
+
+/* Confirm/Deny on a request the master session holds at needs_confirmation: re-post the
+   original object with confirmed true/false + confirms:<id>; the master executes or stands down. */
+document.addEventListener('click', async e => {
+  const c = e.target.closest('[data-confirm],[data-deny]'); if (!c) return;
+  const id = c.dataset.confirm || c.dataset.deny, ok = !!c.dataset.confirm;
+  const orig = DATA.requests.find(r => r.id === id); if (!orig) return;
+  c.disabled = true;
+  const extra = Object.assign({}, orig.extra || {}, { confirmed: ok, confirms: id });
+  await publishRequests([newReq(orig.kind || 'chat', (ok ? 'CONFIRMED: ' : 'DENIED: ') + orig.text, orig.targets || [], extra)]);
+  toast(ok ? 'Confirmed — the master session executes it' : 'Denied — the master session stands down');
+});
+/* ms:// links cannot navigate from inside the claude.ai sandbox ("This content is blocked"),
+   so a click sends the target to the master session, which runs `open` on the Mac. */
+document.addEventListener('click', e => {
+  const a = e.target.closest('a[href^="ms://"]'); if (!a) return;
+  e.preventDefault(); e.stopPropagation();
+  const cc = a.getAttribute('href');
+  const label = (a.textContent || 'terminal').trim().slice(0, 80);
+  try { publishRequests([newReq('jump', `Open ${label}`, [], { cc })]); if (!LOCAL) toast('Asking the master session to open the terminal…'); }
+  catch (err) { copy(`open "${cc}"`); toast('No live link — command copied; run it in a terminal'); }
+}, true);
+renderRequests();
+renderQueue(); renderEfforts(); renderTickets(); renderPending();
+setTab(tab); /* paints the tab bar, the review list and the log for the stored tab */
+</script>

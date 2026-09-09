@@ -1,0 +1,20 @@
+{
+  "brand": "MainStem",
+  "workRoot": "~/work",
+  "host": "127.0.0.1",
+  "port": 7777,
+  "github": { "login": "", "orgs": [] },
+  "jira": { "host": "", "email": "", "projects": [] },
+  "reviews": { "watchRepos": [] },
+  "dataDir": "~/.local/share/mainstem",
+  "reviewsDir": "~/.claude/reviews",
+  "sessionNotesDir": "~/.claude/sessions",
+  "masterHandoffNote": "~/.claude/sessions/master-mainstem.md",
+  "masterTmuxSession": "ms-master",
+  "rebuildIntervalSeconds": 1800,
+  "noteRecollectThrottleSeconds": 30,
+  "modules": {
+    "jira": false, "calendar": false, "mail": false,
+    "quickwins": false, "reviews": true, "jump": true
+  }
+}

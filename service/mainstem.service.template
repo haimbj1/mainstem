@@ -1,0 +1,12 @@
+[Unit]
+Description=MainStem local dashboard server
+
+[Service]
+ExecStart={{PYTHON_BIN}} {{REPO_DIR}}/skills/mainstem/scripts/ms_server.py
+Restart=on-failure
+Environment=MS_CONFIG={{MS_CONFIG_PATH}}
+StandardOutput=append:{{DATA_DIR}}/server.log
+StandardError=append:{{DATA_DIR}}/server.log
+
+[Install]
+WantedBy=default.target
