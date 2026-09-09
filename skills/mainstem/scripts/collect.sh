@@ -140,7 +140,7 @@ fi
 # --- GitHub -------------------------------------------------------------------
 if want prs; then
 # write-then-move: a failed gh must never truncate the live file the page reads
-gh api graphql -f query='query{ viewer{ login pullRequests(first:50,states:OPEN,orderBy:{field:UPDATED_AT,direction:DESC}){ nodes{ number title url isDraft updatedAt createdAt headRefName baseRefName additions deletions reviewDecision mergeable repository{nameWithOwner} commits(last:1){nodes{commit{statusCheckRollup{state}}}} reviews(last:20){nodes{state author{login}}} comments{totalCount} } } } }' \
+gh api graphql -f query='query{ viewer{ login pullRequests(first:50,states:OPEN,orderBy:{field:UPDATED_AT,direction:DESC}){ nodes{ number title url isDraft updatedAt createdAt headRefName baseRefName additions deletions reviewDecision mergeable repository{nameWithOwner} commits(last:1){nodes{commit{statusCheckRollup{state}}}} reviews(last:20){nodes{state author{login}}} comments{totalCount} reviewThreads(first:50){nodes{isResolved comments(last:1){nodes{author{login}}}}} } } } }' \
   > "$OUT/my_prs.json.tmp" && mv "$OUT/my_prs.json.tmp" "$OUT/my_prs.json"
 fi
 if want reviews; then

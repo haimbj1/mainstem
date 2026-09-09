@@ -1,4 +1,6 @@
 <title>MainStem</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -319,6 +321,8 @@ body[data-drawer-open] #drawer-right{transform:none;visibility:visible}
 @media (prefers-reduced-motion:reduce){#drawer-right{transition:none}}
 #drawer-right .dr-h{display:flex;gap:10px;align-items:center;padding:11px 14px;border-bottom:1px solid var(--line);flex:none}
 #drawer-right .dr-h h3{margin:0;font-family:var(--f-display);font-size:15px;min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#drawer-right .dr-h h3 a{color:inherit;text-decoration:none}
+#drawer-right .dr-h h3 a:hover{color:var(--accent-ink);text-decoration:underline}
 #dr-body{overflow:auto;padding:12px 14px;flex:1;min-height:0}
 #dr-body table{table-layout:fixed;width:100%}
 #dr-body td,#dr-body th{white-space:normal;word-break:break-word;overflow-wrap:anywhere}
@@ -628,7 +632,8 @@ let drawerCtx = null;
 const drawerOpen = () => !!document.body.dataset.drawerOpen;
 function openDrawer(title, html, ctx){
   drawerCtx = ctx || null;
-  $('#dr-title').textContent = title || '';
+  if (ctx && ctx.url) $('#dr-title').innerHTML = `<a href="${esc(ctx.url)}" target="_blank" rel="noopener">${esc(title || '')}</a>`;
+  else $('#dr-title').textContent = title || '';
   $('#dr-body').innerHTML = html;
   document.body.dataset.drawerOpen = '1';
   $('#drawer-right').setAttribute('aria-hidden', 'false');
@@ -1731,11 +1736,27 @@ $('#drawer').addEventListener('click', e => {
 function panel(id, title, count, bodyHtml, tools='', hint=''){ $(id).innerHTML = `<div class="p-h"><h3>${title}</h3><span class="cnt">${count}</span>${hint?`<span class="hint">${hint}</span>`:''}<div class="tools">${tools}</div></div><div class="p-b">${bodyHtml||'<div class="empty">Nothing.</div>'}</div>`; }
 
 const REFRESH_BTN = p => `<button class="chip" data-write data-refresh="${p}" title="Re-collect this panel (local server)">&#8635;</button>`;
+/* one honest pill per own PR: what blocks the merge, or that nothing does */
+function myPrStatus(p, ci){
+  const me = (DATA.config.github?.login || '').toLowerCase();
+  const th = (p.reviewThreads?.nodes || []).filter(t => !t.isResolved);
+  const onMe = th.filter(t => {
+    const last = (t.comments?.nodes?.[0]?.author?.login || '').toLowerCase();
+    return !me || (last && last !== me);
+  }).length;
+  if (onMe) return `<span class="pill crit" title="unresolved review threads where someone else spoke last — they wait on your answer">answer ${onMe}</span>`;
+  if (p.reviewDecision === 'CHANGES_REQUESTED') return '<span class="pill crit">changes requested</span>';
+  if (th.length) return `<span class="pill warn" title="unresolved threads, last word is yours — resolve them or nudge the reviewer">${th.length} open thread${th.length>1?'s':''}</span>`;
+  if (!p.isDraft && p.mergeable === 'MERGEABLE' && ci === 'SUCCESS' && p.reviewDecision === 'APPROVED')
+    return '<span class="pill good">ready to merge</span>';
+  if (p.reviewDecision === 'APPROVED') return '<span class="pill good">approved</span>';
+  return p.isDraft ? '' : '<span class="pill neutral">awaiting review</span>';
+}
 panel('#p-prs','My open PRs', DATA.my_prs.length, DATA.my_prs.map(p=>{
   const ci=p.commits.nodes[0]?.commit.statusCheckRollup?.state; const humans=p.reviews.nodes.filter(r=>!/claude|github-actions/.test(r.author?.login||''));
   const linkCmd = `You now also own PR #${p.number} "${oneLine(p.title)}" — ${p.url} (repo ${p.repository.nameWithOwner}, branch ${p.headRefName}). Update your session status and put the full PR URL in the top lines of your session note so the ${DATA.config.brand} links this PR to you. If your cwd is a shared directory (not a dedicated worktree), the note file must be named after your session: ~/.claude/sessions/<your session name>.md — check your session name first.`;
   return `<div class="row" style="grid-template-columns:1fr auto"><div><div class="t"><a href="${esc(p.url)}" target="_blank" rel="noopener">#${p.number} ${esc(p.title)}</a></div><div class="s">${esc(repoShort(p.repository.nameWithOwner))} · <span class="mono">${esc(p.headRefName)}</span> · +${p.additions}/−${p.deletions} · ${humans.length} human review${humans.length===1?'':'s'}</div></div>
-  <div class="r">${pdPill(p.url)}${p.isDraft?'<span class="pill neutral">draft</span>':''}${p.mergeable==='CONFLICTING'?'<span class="pill crit">conflicts</span>':''}<span class="pill ${ci==='SUCCESS'?'good':ci?'crit':'neutral'}">CI ${ci==='SUCCESS'?'✓':ci||'?'}</span><span class="${ageCls(p.updatedAt,2,7)}">${ageText(p.updatedAt)}</span><button class="cmd" data-cmd="${esc(linkCmd)}" title="Copy a paste-ready instruction: paste it into any Claude session and that session claims this PR">${ICON.copy}link</button>${sessBtnPR(p.url, p.title, p.headRefName)}</div></div>`; }).join(''), REFRESH_BTN('prs'),
+  <div class="r">${pdPill(p.url)}${p.isDraft?'<span class="pill neutral">draft</span>':''}${p.mergeable==='CONFLICTING'?'<span class="pill crit">conflicts</span>':''}${myPrStatus(p, ci)}<span class="pill ${ci==='SUCCESS'?'good':ci?'crit':'neutral'}">CI ${ci==='SUCCESS'?'✓':ci||'?'}</span><span class="${ageCls(p.updatedAt,2,7)}">${ageText(p.updatedAt)}</span><button class="cmd" data-cmd="${esc(linkCmd)}" title="Copy a paste-ready instruction: paste it into any Claude session and that session claims this PR">${ICON.copy}link</button>${sessBtnPR(p.url, p.title, p.headRefName)}</div></div>`; }).join(''), REFRESH_BTN('prs'),
   `<span title="The board links a PR to a session in two ways: (1) the session's note at ~/.claude/sessions/&lt;name&gt;.md lists the PR — '#N' in the top lines, or branch: in the frontmatter (max 4 refs per session); (2) a live session sits in the worktree of the PR's branch. The link shows on the next rebuild (30 min, or ↻). One session can own several PRs — copy a &#8298;link line per PR and paste them all into that session.">Link a live session: press &#8298;link on a PR, paste the copied line into that session. A session in the PR&#8217;s worktree links by itself. Hover for detail.</span>`);
 $('#p-prs').addEventListener('click', e => {
   const b = e.target.closest('button[data-cmd]'); if (!b) return;
