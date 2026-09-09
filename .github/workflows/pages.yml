@@ -1,0 +1,43 @@
+name: Pages demo
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  demo:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build demo site
+        run: python3 skills/mainstem/scripts/build_demo_site.py _site
+
+      - name: Screenshot for the README
+        run: |
+          npx --yes playwright@1.49.1 install --with-deps chromium
+          npx --yes playwright@1.49.1 screenshot --viewport-size=1680,950 \
+            --wait-for-timeout=2500 "file://$PWD/_site/index.html" _site/screenshot.png
+
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
