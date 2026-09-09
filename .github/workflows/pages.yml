@@ -25,11 +25,14 @@ jobs:
       - name: Build demo site
         run: python3 skills/mainstem/scripts/build_demo_site.py _site
 
-      - name: Screenshot for the README
+      - name: Screenshots for the README (both color schemes)
         run: |
           npx --yes playwright@1.49.1 install --with-deps chromium
-          npx --yes playwright@1.49.1 screenshot --viewport-size=1680,950 \
-            --wait-for-timeout=2500 "file://$PWD/_site/index.html" _site/screenshot.png
+          npx --yes playwright@1.49.1 screenshot --viewport-size=1680,950 --color-scheme=dark \
+            --wait-for-timeout=2500 "file://$PWD/_site/index.html" _site/screenshot-dark.png
+          npx --yes playwright@1.49.1 screenshot --viewport-size=1680,950 --color-scheme=light \
+            --wait-for-timeout=2500 "file://$PWD/_site/index.html" _site/screenshot-light.png
+          cp _site/screenshot-dark.png _site/screenshot.png
 
       - uses: actions/configure-pages@v5
         with:
