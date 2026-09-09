@@ -10,7 +10,10 @@ at `127.0.0.1:7777`; a handful of Claude Code agents fill in the parts that need
 
 **[▶ Live demo](https://haimbj1.github.io/mainstem/)** — the board with fictional data, no install needed.
 
-![MainStem, demo mode](https://haimbj1.github.io/mainstem/screenshot.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://haimbj1.github.io/mainstem/screenshot-dark.png">
+  <img alt="MainStem, demo mode" src="https://haimbj1.github.io/mainstem/screenshot-light.png">
+</picture>
 
 
 ## Quickstart
