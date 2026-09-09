@@ -411,6 +411,7 @@ footer{margin-top:40px;font-size:12px;color:var(--muted);display:flex;gap:16px;f
   <span class="stamp" id="cc-usage" title=""></span>
   <button class="chip" id="zoom-out" title="Smaller text (this browser only)">A−</button>
   <button class="chip" id="zoom-in" title="Larger text (this browser only)">A+</button>
+  <button class="chip" id="theme" title="Theme: follows your system — click to force dark or light (this browser only)">◐</button>
   <button class="btn" data-write id="refresh" title="Ask the master session to re-collect everything and rewrite the brief">↻ Refresh</button>
   <div class="search"><span>⌕</span><input id="q" placeholder="Filter this tab…" aria-label="Filter"><span class="k">/</span></div>
   <nav class="tabs" id="tabs"></nav>
@@ -1781,6 +1782,20 @@ $('#rotate-master')?.addEventListener('click', () => {
   toast('Rotating the master…');
 });
 $('#zoom-in').addEventListener('click', () => { ccZoom = Math.min(150, ccZoom + 10); store.set('zoom', ccZoom); applyZoom(); });
+/* theme: system -> dark -> light -> system; the CSS honors data-theme in both directions */
+const THEMES = ['system','dark','light'];
+function applyTheme(mode){
+  if (mode === 'system') delete document.documentElement.dataset.theme;
+  else document.documentElement.dataset.theme = mode;
+  const b = $('#theme'); if (!b) return;
+  b.textContent = mode === 'dark' ? '●' : mode === 'light' ? '○' : '◐';
+  b.title = `Theme: ${mode}` + (mode === 'system' ? ' (follows your OS)' : '') + ' — click to change (this browser only)';
+}
+applyTheme(store.get('theme','system'));
+$('#theme').addEventListener('click', () => {
+  const next = THEMES[(THEMES.indexOf(store.get('theme','system')) + 1) % THEMES.length];
+  store.set('theme', next); applyTheme(next);
+});
 $('#zoom-out').addEventListener('click', () => { ccZoom = Math.max(80, ccZoom - 10); store.set('zoom', ccZoom); applyZoom(); });
 (function usageWidget(){
   const rows = DATA.usage || []; const now = Date.now(), day = 864e5;
