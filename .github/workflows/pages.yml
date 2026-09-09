@@ -1,8 +1,8 @@
 name: Pages demo
 on:
   push:
-    branches: [main]
-  workflow_dispatch: {}
+    tags: ['v*']          # the demo tracks releases, not every commit
+  workflow_dispatch: {}   # ...and can be refreshed by hand any time
 
 permissions:
   contents: read
