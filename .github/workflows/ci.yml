@@ -59,8 +59,10 @@ jobs:
           # "Python unit tests" step above) bakes an *absolute* co_filename into the .pyc it
           # generates, so on a real runner that binary file can spuriously match the absolute-path
           # grep depending on the exact runner path shape — that's a build artifact, not a leak.
+          # /home/demo is the canonical FICTIONAL home for demo data — the one allowed value
           if grep -rnE '/Users/[a-zA-Z0-9_.-]+|/home/[a-zA-Z0-9_.-]+' \
-               --include='*' --exclude-dir=.git --exclude-dir=__pycache__ .; then
+               --include='*' --exclude-dir=.git --exclude-dir=__pycache__ . \
+               | grep -v '/home/demo'; then
             echo "found an absolute home path — see matches above"; exit 1
           fi
           if grep -rnE '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}' \
