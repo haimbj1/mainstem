@@ -530,6 +530,30 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 with open(OUT_HTML, encoding="utf-8") as f:
                     self._send(200, DOCTYPE + f.read() + "</html>", "text/html; charset=utf-8")
                 return
+            if path == "/manifest.webmanifest":
+                # makes the board installable as a standalone app (Chrome: Install page as app)
+                cfg = load_config()
+                self._send(200, json.dumps({
+                    "name": cfg.get("brand") or "MainStem",
+                    "short_name": cfg.get("brand") or "MainStem",
+                    "start_url": "/",
+                    "display": "standalone",
+                    "background_color": "#111418",
+                    "theme_color": "#111418",
+                    "icons": [{"src": "/icon.svg", "sizes": "any", "type": "image/svg+xml"}],
+                }), "application/manifest+json")
+                return
+            if path == "/icon.svg":
+                cfg = load_config()
+                letter = (cfg.get("brand") or "MainStem")[:1].upper()
+                self._send(200,
+                    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
+                    '<rect width="100" height="100" rx="22" fill="#111418"/>'
+                    '<circle cx="50" cy="50" r="34" fill="none" stroke="#e8a33d" stroke-width="6"/>'
+                    '<text x="50" y="63" font-family="system-ui" font-size="40" font-weight="700" '
+                    'fill="#e8a33d" text-anchor="middle">%s</text></svg>' % letter,
+                    "image/svg+xml")
+                return
             m = re.fullmatch(r"/data/([A-Za-z0-9_.-]+)\.json", path)
             if m and ".." not in m.group(1):
                 p = os.path.join(DATA_DIR, m.group(1) + ".json")
