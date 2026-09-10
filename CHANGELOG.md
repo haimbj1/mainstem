@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- Scheduled tokenless bake: `bake.sh` runs `jira_fetch.sh` + the new `google_fetch.py`
+  (stdlib-only Calendar/Gmail fetch via an OAuth refresh token) with no model involved;
+  `google_auth_setup.py` does the one-time consent. Opt-in daily 08:30 scheduling via
+  `bake.scheduledDaily` (launchd job or systemd user timer, wired by `install.sh`).
+- New config keys: `google.clientFile`, `google.tokenFile`, `bake.scheduledDaily`.
+- Staleness banner: every bake path writes `bake_stamp.json`; the brief area shows an
+  amber "run the bake" warning when the stamp is older than 24 h.
+
 ## 0.1.1
 
 - The skill starts the setup conversation automatically when no config exists — install the

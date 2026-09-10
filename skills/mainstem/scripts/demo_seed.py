@@ -151,6 +151,8 @@ def write_demo_data(data_dir):
     _write(data_dir, "jira.json", [])
     _write(data_dir, "calendar.json", [])
     _write(data_dir, "gmail.json", [])
+    # A fresh stamp, so the demo never shows the staleness banner.
+    _write(data_dir, "bake_stamp.json", {"when": NOW})
     _write(data_dir, "brief.json", {
         "lines": ["1 PR waiting on your review.", "1 session busy, 0 blocked."], "mail": [],
     })

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Shared config resolver for mainstem. Priority, highest to lowest:
 $MS_CONFIG > ~/.config/mainstem/config.json > <repo>/config.local.json > built-in DEFAULTS.
-Missing files are skipped. Fields merge shallowly per top-level key, except 'github', 'jira',
-and 'modules', which deep-merge one level down."""
+Missing files are skipped. Fields merge shallowly per top-level key, except nested config
+objects ('github', 'jira', 'modules', 'google', 'bake'), which deep-merge one level down."""
 import json
 import os
 import sys
@@ -16,7 +16,12 @@ DEFAULTS = {
     "port": 7777,
     "github": {"login": "", "orgs": []},
     "jira": {"host": "", "email": "", "projects": []},
+    "google": {
+        "clientFile": "~/.config/mainstem/google_client.json",
+        "tokenFile": "~/.config/mainstem/google_token.json",
+    },
     "reviews": {"watchRepos": []},
+    "bake": {"scheduledDaily": False},
     "dataDir": "~/.local/share/mainstem",
     "reviewsDir": "~/.claude/reviews",
     "sessionNotesDir": "~/.claude/sessions",

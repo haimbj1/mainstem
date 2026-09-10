@@ -72,6 +72,7 @@ def build(cfg, readonly=False):
         "pending": load(data_dir, "pending.json", []),
         "usage": load(data_dir, "ms_usage.json", []),
         "master_usage": load(data_dir, "master_usage.json", {}),
+        "bake_stamp": load(data_dir, "bake_stamp.json", None),
     }
     d["brief"] = compose_brief(d)
     d["not_baked"] = [name for key, name in DAILY.items()
