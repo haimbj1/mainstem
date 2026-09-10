@@ -26,6 +26,22 @@ check python3  python3  required "brew install python@3.12"
 check node     node     required "brew install node"
 check tmux     tmux     optional "brew install tmux — without it, no master-session harness"
 
+# claude: warn, never fail. Prefer ~/.local/bin/claude — a bare `command -v` can pick up a
+# stale binary from an old install (e.g. in /usr/local/bin).
+CLAUDE_BIN="$HOME/.local/bin/claude"
+[ -x "$CLAUDE_BIN" ] || CLAUDE_BIN="$(command -v claude 2>/dev/null || true)"
+if [ -n "$CLAUDE_BIN" ]; then
+  CLAUDE_VER="$("$CLAUDE_BIN" --version 2>/dev/null || true)"
+  CLAUDE_MAJOR="$(printf '%s' "$CLAUDE_VER" | grep -oE '[0-9]+' | head -1 || true)"
+  if [ -n "$CLAUDE_MAJOR" ] && [ "$CLAUDE_MAJOR" -lt 2 ]; then
+    echo "warn     claude is old ($CLAUDE_BIN, ${CLAUDE_VER:-unknown}) — 2.0 or newer expected; update it"
+  else
+    echo "ok       claude ($CLAUDE_BIN, ${CLAUDE_VER:-version unknown})"
+  fi
+else
+  echo "missing  claude (optional for the server, needed by the master/agents) — install Claude Code"
+fi
+
 if [ "$(uname -s)" = "Darwin" ]; then
   if osascript -e 'tell application "iTerm2" to version' >/dev/null 2>&1; then
     echo "ok       iTerm2"
