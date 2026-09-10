@@ -5,6 +5,7 @@ Description=MainStem local dashboard server
 ExecStart={{PYTHON_BIN}} {{REPO_DIR}}/skills/mainstem/scripts/ms_server.py
 Restart=on-failure
 Environment=MS_CONFIG={{MS_CONFIG_PATH}}
+Environment=PATH={{USER_LOCAL_BIN}}:/usr/local/bin:/usr/bin:/bin
 StandardOutput=append:{{DATA_DIR}}/server.log
 StandardError=append:{{DATA_DIR}}/server.log
 

@@ -582,6 +582,7 @@ DATA.pending ||= [];
 const CONFIG = (typeof window !== 'undefined' && window.CONFIG) || {};
 const LIVE = { email: CONFIG.email ?? '' };
 DATA.jira ||= []; DATA.calendar ||= []; DATA.gmail ||= []; DATA.not_baked ||= [];
+DATA.bake_stamp ||= null;
 const notBaked = k => DATA.not_baked.includes(k);
 /* Local mode: the page is served by ms_server.py on the loopback address, so a
    request is an HTTP POST that runs a script — no artifact publish, no model. */
@@ -1297,11 +1298,19 @@ DATA.worktrees.forEach(w => {
 function fmtWhen(iso){ const d=new Date(iso); const today = d.toDateString()===NOW.toDateString(); const tmr = new Date(NOW.getTime()+864e5).toDateString()===d.toDateString(); const t=d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}); return (today?'Today ':tmr?'Tomorrow ':d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})+' ')+t; }
 
 /* ---------- render: brief ---------- */
-(function renderBrief(){ const b = DATA.brief; const el=$('#brief'); if (!b || !b.lines?.length) { el.style.display='none'; return; }
+(function renderBrief(){ const b = DATA.brief || {}; const el=$('#brief');
+  /* Staleness: bake_stamp.json is rewritten by every bake (bake.sh, or the refresher's
+     full mode); older than a day means the calendar/jira panels show yesterday's world. */
+  const bakedH = DATA.bake_stamp?.when ? hrs(DATA.bake_stamp.when) : null;
+  const stale = bakedH !== null && bakedH > 24
+    ? `<div class="mail"><span class="pill warn">calendar/jira baked ${Math.round(bakedH)} h ago — run the bake</span></div>` : '';
+  const lines = (b.lines || []).slice(0,2);
+  if (!lines.length && !stale) { el.style.display='none'; return; }
   const mail = [].concat(b.mail || []).filter(Boolean).slice(0,5);
-  el.innerHTML = `<span class="lbl">Brief</span><div class="txt">${b.lines.slice(0,2).map(l=>`<p>${esc(l)}</p>`).join('')}`
+  el.innerHTML = `<span class="lbl">Brief</span><div class="txt">${lines.map(l=>`<p>${esc(l)}</p>`).join('')}`
     + (mail.length ? `<div class="mail"><b>Mail</b>${mail.map(l=>`<div>${esc(l)}</div>`).join('')}</div>` : '')
-    + `</div><span class="when" title="written by the master session">${ageText(b.when)} ago</span>`; })();
+    + stale
+    + `</div><span class="when" title="written by the master session">${b.when ? ageText(b.when)+' ago' : ''}</span>`; })();
 
 /* ---------- tickets: every Jira row, with the quick-win verdict on the rows
    the runner flagged. One list, not two. ---------- */
