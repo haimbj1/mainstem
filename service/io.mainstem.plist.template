@@ -15,8 +15,10 @@
   <key>EnvironmentVariables</key>
   <dict>
     <key>MS_CONFIG</key><string>{{MS_CONFIG_PATH}}</string>
-    <!-- launchd's default PATH has no Homebrew, so gh/jq vanish for the collectors -->
-    <key>PATH</key><string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    <!-- launchd's default PATH has no Homebrew and no user bin, so gh/jq/claude vanish
+         for the collectors. {{USER_LOCAL_BIN}} is rendered by install.sh from the user's
+         own ~/.local/bin (templates may not carry literal home paths). -->
+    <key>PATH</key><string>{{USER_LOCAL_BIN}}:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
   </dict>
 </dict>
 </plist>

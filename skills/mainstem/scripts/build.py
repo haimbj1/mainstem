@@ -19,7 +19,11 @@ def load(data_dir, name, default):
     if not os.path.isfile(p):
         return default
     with open(p) as f:
-        return json.load(f)
+        try:
+            return json.load(f)
+        except ValueError as e:
+            # name the file: a bare JSONDecodeError sends the operator hunting
+            raise ValueError("%s is not valid JSON (%s) — re-run its collector" % (name, e)) from e
 
 
 def load_text(data_dir, name, default):
@@ -72,6 +76,7 @@ def build(cfg, readonly=False):
         "pending": load(data_dir, "pending.json", []),
         "usage": load(data_dir, "ms_usage.json", []),
         "master_usage": load(data_dir, "master_usage.json", {}),
+        "bake_stamp": load(data_dir, "bake_stamp.json", None),
     }
     d["brief"] = compose_brief(d)
     d["not_baked"] = [name for key, name in DAILY.items()

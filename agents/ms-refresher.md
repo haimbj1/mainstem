@@ -150,6 +150,10 @@ Then stamp the run:
 date -u +%Y-%m-%dT%H:%M:%SZ > "<dataDir>/collected_at.txt"
 ```
 
+In full mode also write `<dataDir>/bake_stamp.json` as `{"when": "<same ISO instant>"}` —
+the page's staleness banner reads it, and every bake path (this agent, `bake.sh`) must
+refresh it.
+
 ## Not available to you
 
 The Artifact list (`artifacts.json`) needs the Artifact tool, which a subagent does not have.

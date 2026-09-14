@@ -5,7 +5,12 @@
   "port": 7777,
   "github": { "login": "", "orgs": [] },
   "jira": { "host": "", "email": "", "projects": [] },
+  "google": {
+    "clientFile": "~/.config/mainstem/google_client.json",
+    "tokenFile": "~/.config/mainstem/google_token.json"
+  },
   "reviews": { "watchRepos": [] },
+  "bake": { "scheduledDaily": false },
   "dataDir": "~/.local/share/mainstem",
   "reviewsDir": "~/.claude/reviews",
   "sessionNotesDir": "~/.claude/sessions",

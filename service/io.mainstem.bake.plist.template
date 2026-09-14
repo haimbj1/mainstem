@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>{{LABEL}}</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>{{REPO_DIR}}/skills/mainstem/scripts/bake.sh</string>
+  </array>
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key><integer>8</integer>
+    <key>Minute</key><integer>30</integer>
+  </dict>
+  <key>StandardOutPath</key><string>{{DATA_DIR}}/bake.log</string>
+  <key>StandardErrorPath</key><string>{{DATA_DIR}}/bake.log</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>MS_CONFIG</key><string>{{MS_CONFIG_PATH}}</string>
+    <!-- launchd's default PATH has no Homebrew and no user bin. {{USER_LOCAL_BIN}} is
+         rendered by install.sh from the user's own ~/.local/bin (templates may not carry
+         literal home paths). -->
+    <key>PATH</key><string>{{USER_LOCAL_BIN}}:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+  </dict>
+</dict>
+</plist>

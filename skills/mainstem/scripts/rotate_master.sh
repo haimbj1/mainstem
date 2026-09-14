@@ -11,8 +11,16 @@ HOST="$(CFG host)"
 PORT="$(CFG port)"
 MODEL="${MS_MASTER_MODEL:-claude-fable-5}"
 TMUX_BIN="${TMUX_BIN:-$(command -v tmux 2>/dev/null || echo /opt/homebrew/bin/tmux)}"
-# The server's launchd PATH has no ~/.local/bin — a bare `claude` makes the pane die instantly.
-CLAUDE_BIN="${CLAUDE_BIN:-$(command -v claude 2>/dev/null || echo "$HOME/.local/bin/claude")}"
+# Prefer ~/.local/bin/claude: `command -v` under the service PATH can pick up a stale
+# binary from an old install (e.g. in /usr/local/bin). The current installer puts it here.
+if [ -z "${CLAUDE_BIN:-}" ]; then
+  if [ -x "$HOME/.local/bin/claude" ]; then
+    CLAUDE_BIN="$HOME/.local/bin/claude"
+  else
+    CLAUDE_BIN="$(command -v claude 2>/dev/null || echo "$HOME/.local/bin/claude")"
+  fi
+fi
+echo "rotate: claude = $CLAUDE_BIN ($("$CLAUDE_BIN" --version 2>/dev/null || echo 'version unknown'))"
 if ! "$TMUX_BIN" has-session -t "$SESSION" 2>/dev/null; then
   echo "rotate: no '$SESSION' tmux session — start it with ms_master.sh first" >&2
   exit 3

@@ -14,6 +14,9 @@ CFGPATH() { python3 "$SCRIPTS/config.py" path "$1"; }
 PORT="$(CFG port)"
 DATA_DIR="$(CFGPATH dataDir)"
 mkdir -p "$DATA_DIR"
+# Rendered into every service template's PATH: services must see the user's own bin
+# (claude lives there), and templates may not carry literal home paths.
+USER_LOCAL_BIN="$HOME/.local/bin"
 
 # Symlink skill + agents into Claude Code's user dirs (standalone install; plugin install skips this).
 mkdir -p "$HOME/.claude/skills" "$HOME/.claude/agents"
@@ -48,7 +51,7 @@ if [ "$(uname -s)" = "Darwin" ]; then
   PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
   sed -e "s|{{LABEL}}|$LABEL|" -e "s|{{PYTHON_BIN}}|$(command -v python3)|" \
       -e "s|{{REPO_DIR}}|$HERE|" -e "s|{{DATA_DIR}}|$DATA_DIR|" \
-      -e "s|{{MS_CONFIG_PATH}}|$MS_CONFIG_PATH|" \
+      -e "s|{{MS_CONFIG_PATH}}|$MS_CONFIG_PATH|" -e "s|{{USER_LOCAL_BIN}}|$USER_LOCAL_BIN|" \
       "$HERE/service/io.mainstem.plist.template" > "$PLIST"
   launchctl bootout "gui/$(id -u)/$LABEL" >/dev/null 2>&1 || true
   # bootout is asynchronous — an immediate bootstrap races it and fails with I/O error 5
@@ -63,14 +66,44 @@ else
   UNIT="$HOME/.config/systemd/user/mainstem.service"
   sed -e "s|{{PYTHON_BIN}}|$(command -v python3)|" -e "s|{{REPO_DIR}}|$HERE|" \
       -e "s|{{DATA_DIR}}|$DATA_DIR|" -e "s|{{MS_CONFIG_PATH}}|$MS_CONFIG_PATH|" \
+      -e "s|{{USER_LOCAL_BIN}}|$USER_LOCAL_BIN|" \
       "$HERE/service/mainstem.service.template" > "$UNIT"
   systemctl --user daemon-reload
   systemctl --user enable --now mainstem.service
 fi
 
+# Daily tokenless bake (bake.sh at 08:30) — installed only when the config opts in.
+if [ "$(CFG bake.scheduledDaily)" = "true" ]; then
+  if [ "$(uname -s)" = "Darwin" ]; then
+    BAKE_LABEL="io.mainstem.bake"
+    BAKE_PLIST="$HOME/Library/LaunchAgents/$BAKE_LABEL.plist"
+    sed -e "s|{{LABEL}}|$BAKE_LABEL|" -e "s|{{REPO_DIR}}|$HERE|" -e "s|{{DATA_DIR}}|$DATA_DIR|" \
+        -e "s|{{MS_CONFIG_PATH}}|$MS_CONFIG_PATH|" -e "s|{{USER_LOCAL_BIN}}|$USER_LOCAL_BIN|" \
+        "$HERE/service/io.mainstem.bake.plist.template" > "$BAKE_PLIST"
+    launchctl bootout "gui/$(id -u)/$BAKE_LABEL" >/dev/null 2>&1 || true
+    # bootout is asynchronous — an immediate bootstrap races it and fails with I/O error 5
+    for i in 1 2 3 4 5; do
+      launchctl bootstrap "gui/$(id -u)" "$BAKE_PLIST" 2>/dev/null && break
+      [ "$i" = 5 ] && { echo "launchctl bootstrap kept failing for the bake job — try: launchctl bootstrap gui/$(id -u) $BAKE_PLIST" >&2; exit 1; }
+      sleep 1
+    done
+    echo "daily bake scheduled: launchd $BAKE_LABEL, 08:30"
+  else
+    mkdir -p "$HOME/.config/systemd/user"
+    sed -e "s|{{REPO_DIR}}|$HERE|" -e "s|{{DATA_DIR}}|$DATA_DIR|" \
+        -e "s|{{MS_CONFIG_PATH}}|$MS_CONFIG_PATH|" -e "s|{{USER_LOCAL_BIN}}|$USER_LOCAL_BIN|" \
+        "$HERE/service/mainstem-bake.service.template" > "$HOME/.config/systemd/user/mainstem-bake.service"
+    cp "$HERE/service/mainstem-bake.timer.template" "$HOME/.config/systemd/user/mainstem-bake.timer"
+    systemctl --user daemon-reload
+    systemctl --user enable --now mainstem-bake.timer
+    echo "daily bake scheduled: systemd mainstem-bake.timer, 08:30"
+  fi
+fi
+
 for _ in $(seq 1 20); do
   if curl -sf "http://127.0.0.1:$PORT/health" >/dev/null 2>&1; then
     echo "mainstem running at http://127.0.0.1:$PORT"
+    echo "open a NEW Claude Code session and type /mainstem — running sessions do not pick up newly installed skills"
     exit 0
   fi
   sleep 0.5

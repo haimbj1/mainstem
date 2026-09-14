@@ -84,6 +84,10 @@ Sources the server cannot collect on its own. Run the `ms-refresher` agent in `f
 A file that is missing shows as "not baked yet" on the page — `build.py` never invents rows.
 Quick-win verdicts come from `ms-quickwins` (at most once a day, `quickwins.json`).
 
+Tokenless alternative: `scripts/bake.sh` (jira_fetch.sh + google_fetch.py, no model) writes
+`jira.json`, `calendar.json`, `gmail.json` and `bake_stamp.json`; with `bake.scheduledDaily`
+set it runs on its own at 08:30 — see the README's "Scheduled bake" section.
+
 ## `publish` — optional, on explicit ask only
 
 The artifact is no longer the daily tool. Publish only when the developer asks for a shareable,

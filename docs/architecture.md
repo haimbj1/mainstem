@@ -35,8 +35,9 @@ since that inventory was authoritative at the time the collectors were built.
 | `reviews.json` | Object keyed by PR URL; see § Review file format below for the full drafted-review shape `reviews_index.py` produces. |
 | `nudges.json` | `{prs, posted, close_after}` when there's something to nudge about, or `null` — not collector-sourced; `null` is the accurate "nothing to show" shape, matching `build.py`'s own default when the file is absent. |
 | `jira.json` | List of `{key, summary, status, priority, type, updated, project, due, labels}` — open issues assigned to the developer, written by `jira_fetch.sh`; empty (or absent) when `jira.host` isn't set or nothing has baked yet. |
-| `calendar.json` | List of upcoming calendar events (next three days), written by the daily bake. |
-| `gmail.json` | List, currently always empty — superseded by `brief.json`'s `mail` summary lines. |
+| `calendar.json` | List of `{title, start, end, organizer, rsvp, url}` — upcoming events (next three days, primary calendar), written by the daily bake (`google_fetch.py`, or the refresher's full mode). |
+| `gmail.json` | List of `{subject, from, when, kind, important, note}` — up to 6 unread inbox messages (metadata only) from `google_fetch.py`, or the refresher's condensed rows. The page has no Gmail panel; `brief.json`'s `mail` lines stay the readable summary. |
+| `bake_stamp.json` | `{when}` — ISO-8601 instant of the last bake, written by `bake.sh` and by the refresher's full mode. When it is older than 24 h the page's brief area shows an amber "run the bake" banner. |
 | `brief.json` | `{lines: [...≤5 one-line summaries...], mail: [...≤5 inbox summary lines...]}` — the daily bake's condensed status. |
 | `requests.json` | List of every request the page has ever sent, in arrival order — see § Request contract below. |
 | `quickwins.json` | `{generated_at, counts: {close, quick_win, stale, keep}, items: [...]}` — written by `ms-quickwins`, at most once a day. |
@@ -45,6 +46,29 @@ since that inventory was authoritative at the time the collectors were built.
 | `ms_usage.json` | List of per-agent token-usage log entries, written by `log_usage.py`; feeds the page's usage widget. |
 | `master_usage.json` | `{current, history}` — the master session's own transcript-derived token cost; refreshed by `master_usage.py` on every handoff, `current` reset to `null` on a new session id. |
 | `collected_at.txt` | Not JSON — a single ISO-8601 timestamp of the last full collection, shown in the page header. |
+
+## Scheduled tokenless bake
+
+The daily bake has two paths that write the same files:
+
+- **Model path** — the `ms-refresher` agent in full mode (judgement: condensed Gmail rows,
+  the brief).
+- **Tokenless path** — `bake.sh`: `jira_fetch.sh` (pure curl) plus `google_fetch.py`
+  (stdlib `urllib`; refreshes an OAuth access token from `google.clientFile` +
+  `google.tokenFile`, then fetches Calendar v3 and Gmail metadata). No model, no MCP —
+  safe to run headless on a schedule. A source with no credentials is skipped with a
+  one-line notice; its files are left as is.
+
+Both paths end by rewriting `bake_stamp.json` (`{when}`). `build.py` bakes the stamp into
+`DATA.bake_stamp`; the template shows an amber "run the bake" banner in the brief area when
+the stamp is older than 24 h. `google_auth_setup.py` is the one-time interactive consent
+(loopback redirect flow) that creates `google.tokenFile` with a refresh token scoped to
+`calendar.readonly` + `gmail.readonly`.
+
+Scheduling is opt-in: when `bake.scheduledDaily` is `true`, `install.sh` installs
+`io.mainstem.bake` (launchd, daily 08:30) or `mainstem-bake.timer` (systemd user timer)
+from the templates in `service/`. The default is `false` — nothing is scheduled unless the
+config says so.
 
 ## Request contract
 

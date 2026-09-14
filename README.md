@@ -55,6 +55,14 @@ reverses the service and the symlinks; your config and `dataDir` are left untouc
 
 Either way, open `http://127.0.0.1:7777` (or your configured port) once the server is up.
 
+The plugin and `install.sh` are **alternative delivery paths for the same skill and agents —
+pick one**, don't stack them: the plugin ships them through Claude Code's plugin system, the
+standalone install symlinks them into `~/.claude/skills` and `~/.claude/agents`. When
+switching from one to the other, run `uninstall.sh` first (it removes the service and the
+symlinks; your config and `dataDir` stay). After a standalone install, open a **new** Claude
+Code session and type `/mainstem` — sessions that were already running do not pick up newly
+installed skills.
+
 ## Config reference
 
 MainStem reads one merged JSON config — see `config.example.json` for a starting point,
@@ -71,7 +79,10 @@ and `docs/architecture.md` for the exact file-resolution order and merge rules. 
 | `jira.host` | string | `""` | Jira Cloud host, e.g. `yourteam.atlassian.net`. Empty disables Jira entirely. |
 | `jira.email` | string | `""` | Jira account email, paired with an API token for `jira_fetch.sh`. |
 | `jira.projects` | array | `[]` | Jira project keys to filter to. An empty list disables ticket parsing even if `jira.host` is set. |
+| `google.clientFile` | path | `~/.config/mainstem/google_client.json` | OAuth desktop-client JSON (downloaded from Google Cloud Console) for the tokenless bake. |
+| `google.tokenFile` | path | `~/.config/mainstem/google_token.json` | Refresh-token file written once by `google_auth_setup.py`, read by `google_fetch.py`. |
 | `reviews.watchRepos` | array | `[]` | Extra repos whose open PRs feed the review queue even without a direct or team review request (shown with `provenance: "watch"`). |
+| `bake.scheduledDaily` | bool | `false` | Have `install.sh` schedule the tokenless bake daily at 08:30 (launchd on macOS, a systemd user timer on Linux) — see Scheduled bake. |
 | `dataDir` | path | `~/.local/share/mainstem` | Where collected JSON and the built page live. |
 | `reviewsDir` | path | `~/.claude/reviews` | Root of drafted-review `.md` files (an `active/` subdirectory). |
 | `sessionNotesDir` | path | `~/.claude/sessions` | Root of session handoff notes. |
@@ -97,6 +108,33 @@ them via `~/.config/mainstem/config.json`, `<repo>/config.local.json`, or `$MS_C
 - **Linux is degraded, not unsupported**: `install.sh` installs a systemd user unit instead of
   launchd; jump-to-session (`modules.jump`) has no iTerm2 equivalent and stays off; everything
   else — server, collectors, reviews, sessions panel, publish — works the same.
+
+## Scheduled bake
+
+The Jira / Calendar / mail panels come from a daily "bake". Next to the model-driven path
+(the `ms-refresher` agent), `skills/mainstem/scripts/bake.sh` is a tokenless path — pure
+curl + stdlib Python, safe to run headless:
+
+1. `jira_fetch.sh` — Jira REST with an API token (keychain or `~/.config/mainstem/jira_token`).
+2. `google_fetch.py` — Calendar (next 3 days) and Gmail (up to 6 unread, metadata only)
+   with a Google OAuth refresh token.
+3. `bake_stamp.json` — the freshness stamp; the board shows an amber "run the bake"
+   banner when it is older than 24 h.
+
+A source with no credentials is skipped and its files are left as is.
+
+One-time Google setup:
+
+1. In Google Cloud Console, enable the Calendar and Gmail APIs and create an OAuth
+   client of type **Desktop app** (`google_auth_setup.py` prints the exact steps).
+2. Save the downloaded client JSON to `google.clientFile`.
+3. Run `python3 skills/mainstem/scripts/google_auth_setup.py` — it opens the browser for
+   consent (read-only Calendar + Gmail scopes) and writes `google.tokenFile`.
+
+To run it on a schedule, set `bake.scheduledDaily` to `true` and rerun `./install.sh` —
+it installs a launchd job (`io.mainstem.bake`, macOS) or a systemd user timer
+(`mainstem-bake.timer`, Linux), daily at 08:30, logging to `<dataDir>/bake.log`.
+`uninstall.sh` removes it.
 
 ## Security posture
 

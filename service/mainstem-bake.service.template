@@ -1,0 +1,10 @@
+[Unit]
+Description=MainStem daily tokenless bake
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash {{REPO_DIR}}/skills/mainstem/scripts/bake.sh
+Environment=MS_CONFIG={{MS_CONFIG_PATH}}
+Environment=PATH={{USER_LOCAL_BIN}}:/usr/local/bin:/usr/bin:/bin
+StandardOutput=append:{{DATA_DIR}}/bake.log
+StandardError=append:{{DATA_DIR}}/bake.log

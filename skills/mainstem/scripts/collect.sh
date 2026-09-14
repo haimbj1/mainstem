@@ -54,7 +54,7 @@ if want worktrees; then
         last_rel:$last_rel,last_iso:$last_iso,last_msg:$last_msg}'
   done
   echo ']'
-} > "$OUT/worktrees.json"
+} > "$OUT/worktrees.json.tmp" && mv "$OUT/worktrees.json.tmp" "$OUT/worktrees.json"
 fi
 
 # --- live sessions (registry) -------------------------------------------------
@@ -115,7 +115,9 @@ for s in sess:
     try: s["tty"], s["host"] = chain(s["pid"])
     except Exception: s["tty"], s["host"] = "", ""
     s["kind"] = classify_kind(s.get("name", ""), s["tty"], s["host"], s.get("tmux"), session_kind_env(s["pid"]))
-json.dump(sess, open(f"{out}/sessions.json", "w"))
+with open(f"{out}/sessions.json.tmp", "w") as f:
+    json.dump(sess, f)
+os.replace(f"{out}/sessions.json.tmp", f"{out}/sessions.json")
 os.remove(f"{out}/sessions.raw.json")
 PY
 
@@ -134,7 +136,7 @@ PY
       '{file:$file,mtime:$mtime,head:($body[:1400])}'
   done
   echo ']'
-} > "$OUT/session_notes.json"
+} > "$OUT/session_notes.json.tmp" && mv "$OUT/session_notes.json.tmp" "$OUT/session_notes.json"
 fi
 
 # --- GitHub -------------------------------------------------------------------
@@ -180,7 +182,7 @@ jq -n --argjson known "$direct_and_team_json" --argjson watch "$watch_prs" --arg
   | ($known_p | map(.url)) as $known_urls
   | ($watch | map(select(.url as $u | ($known_urls | index($u)) == null)) | map(.provenance = "watch")) as $watched_only
   | ($known_p + $watched_only) | map(select(.author.login != $me))
-' > "$OUT/review_requests.json"
+' > "$OUT/review_requests.json.tmp" && mv "$OUT/review_requests.json.tmp" "$OUT/review_requests.json"
 fi
 
 
