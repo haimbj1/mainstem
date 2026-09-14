@@ -36,7 +36,9 @@ on open location theURL
 			end repeat
 			if found then exit repeat
 		end repeat
-		if not found and (count of byPath) is 1 then
+		-- a detached-tmux session has no tab: the cwd fallback would hijack any tab in that
+		-- directory (usually the master's), so with a tmux target we attach instead
+		if not found and sTmux is "" and (count of byPath) is 1 then
 			set {w, t, s} to item 1 of byPath
 			select w
 			select t
