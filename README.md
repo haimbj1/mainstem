@@ -23,9 +23,11 @@ at `127.0.0.1:7777`; a handful of Claude Code agents fill in the parts that need
 If you use Claude Code plugins:
 
 ```
-/plugin marketplace add <marketplace-org>/<marketplace-repo>
-/plugin install mainstem
+/plugin marketplace add haimbj1/mainstem
+/plugin install mainstem@mainstem
 ```
+
+(Your team can also list MainStem in its own marketplace — any entry pointing at this repo works.)
 
 The plugin ships the skill and the four `ms-*` agents (`.claude-plugin/plugin.json`). Then run
 the skill's own onboarding conversation:
@@ -41,7 +43,7 @@ and the port, writes `~/.config/mainstem/config.json`, and starts the server.
 ### Option B — standalone install
 
 ```bash
-git clone <this-repo> mainstem
+git clone https://github.com/haimbj1/mainstem
 cd mainstem
 ./install.sh
 ```
