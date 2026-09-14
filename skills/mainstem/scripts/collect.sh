@@ -120,6 +120,8 @@ with open(f"{out}/sessions.json.tmp", "w") as f:
 os.replace(f"{out}/sessions.json.tmp", f"{out}/sessions.json")
 os.remove(f"{out}/sessions.raw.json")
 PY
+# the ledger keeps dead sessions restorable after a reboot
+python3 "$HERE/session_ledger.py" "$OUT"
 
 # --- session status notes ($sessionNotesDir/*.md) -----------------------------
 {

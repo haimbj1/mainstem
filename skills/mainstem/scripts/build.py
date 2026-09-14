@@ -74,6 +74,7 @@ def build(cfg, readonly=False):
         "quickwins": load(data_dir, "quickwins.json", {}),
         "artifacts": load(data_dir, "artifacts.json", []),
         "pending": load(data_dir, "pending.json", []),
+        "ledger": load(data_dir, "session_ledger.json", {}),
         "usage": load(data_dir, "ms_usage.json", []),
         "master_usage": load(data_dir, "master_usage.json", {}),
         "bake_stamp": load(data_dir, "bake_stamp.json", None),

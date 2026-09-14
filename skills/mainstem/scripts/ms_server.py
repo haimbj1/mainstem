@@ -403,7 +403,49 @@ def do_publish(rec):
     return "done", "Read-only page rendered to %s (%.1f KB). Read it and publish via the Artifact tool." % (out_path, size_kb)
 
 
+def do_restore_sessions(rec):
+    """Resume dead sessions from the ledger, each in its own tmux session. Deterministic —
+    the ledger holds the sessionId, cwd and name; no model is needed."""
+    targets = rec.get("targets") or []
+    if not targets:
+        raise ValueError("refused: no session ids given")
+    try:
+        with open(os.path.join(DATA_DIR, "session_ledger.json")) as f:
+            ledger = json.load(f)
+    except (OSError, ValueError):
+        return "error", "no session ledger yet — run a sessions collect first"
+    claude = os.path.expanduser("~/.local/bin/claude")
+    if not os.access(claude, os.X_OK):
+        claude = "claude"
+    done, skipped = [], []
+    for sid in targets[:12]:
+        e = ledger.get(sid)
+        if not e:
+            skipped.append("%s: not in the ledger" % sid[:8])
+            continue
+        if e.get("alive"):
+            skipped.append("%s: already live" % (e.get("name") or sid[:8]))
+            continue
+        name = re.sub(r"[^A-Za-z0-9_-]", "-", e.get("name") or sid[:8])[:40] or sid[:8]
+        if _tmux_has(name):
+            skipped.append("%s: tmux session exists" % name)
+            continue
+        cwd = e.get("cwd") or os.path.expanduser("~")
+        rc, _, err = run(["tmux", "new-session", "-d", "-s", name, "-c", cwd,
+                          "%s --resume %s" % (claude, sid)], timeout=30)
+        if rc != 0:
+            skipped.append("%s: %s" % (name, (err or "tmux failed")[:80]))
+        else:
+            done.append(name)
+    recollect_after_mutation("sessions")
+    msg = "Restored %d: %s." % (len(done), ", ".join(done)) if done else "Nothing restored."
+    if skipped:
+        msg += " Skipped: " + "; ".join(skipped)
+    return ("done" if done or not skipped else "error"), msg + " Attach: tmux attach -t <name>."
+
+
 DISPATCH = {
+    "restore_sessions": do_restore_sessions,
     "jump": do_jump,
     "refresh": do_refresh,
     "delete_worktrees": do_delete_worktrees,
