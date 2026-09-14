@@ -19,7 +19,11 @@ def load(data_dir, name, default):
     if not os.path.isfile(p):
         return default
     with open(p) as f:
-        return json.load(f)
+        try:
+            return json.load(f)
+        except ValueError as e:
+            # name the file: a bare JSONDecodeError sends the operator hunting
+            raise ValueError("%s is not valid JSON (%s) — re-run its collector" % (name, e)) from e
 
 
 def load_text(data_dir, name, default):
