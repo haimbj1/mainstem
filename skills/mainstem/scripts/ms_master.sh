@@ -22,7 +22,7 @@ if [ -z "${CLAUDE_BIN:-}" ]; then
   fi
 fi
 echo "ms_master: claude = $CLAUDE_BIN ($("$CLAUDE_BIN" --version 2>/dev/null || echo 'version unknown'))"
-RITUAL="You are the MainStem master session. Invoke the mainstem skill and follow its 'New master — start ritual': read the configured masterHandoffNote path, run TaskList to confirm no MainStem Monitor is already running, then arm the requests.json Monitor, then curl -s $HOST:$PORT/health. Then wait for requests. Do not refresh, re-read old requests, or message other sessions."
+RITUAL="You are the MainStem master session. Invoke the mainstem skill and follow its 'New master — start ritual': read the configured masterHandoffNote path, run ListAgents to check for a live master, then arm the Monitor via master_watch.py (it takes the master lock; on REFUSED stop and follow its instructions), then curl -s $HOST:$PORT/health. Then wait for requests. Do not refresh, re-read old requests, or message other sessions."
 if ! "$TMUX_BIN" has-session -t "$SESSION" 2>/dev/null; then
   "$TMUX_BIN" new-session -d -s "$SESSION" -c "$WORKROOT" "$CLAUDE_BIN --model $MODEL $(printf %q "$RITUAL")"
   sleep 1

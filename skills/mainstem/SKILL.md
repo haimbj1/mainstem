@@ -56,16 +56,21 @@ review_post fallbacks).
 ## Watching for pending requests
 
 **Exactly one master may watch `requests.json` at a time.** Two armed Monitors both wake on the same
-request and can double-post to GitHub. Before arming, run `TaskList`: if a MainStem Monitor is
-already running (this session after a resume, or an un-retired old master), do NOT arm a second — reuse
-it, or `TaskStop` the stale one first. On rotation, the old master must exit before the new one arms.
+request and can double-post to GitHub. A session's own task list only shows its OWN Monitors — it can
+never see another session's — so self-reporting is not a check. The check is a lock:
+`master_watch.py` takes an flock on `<dataDir>/master.lock` before it loops. A second master's arm
+attempt is REFUSED with instructions. The kernel releases the flock when the holder dies (kill -9
+and reboot included), so a stale lock file never blocks.
 
-Arm one Monitor on `requests.json` and let it wake you. Never poll it yourself, and never read the
-whole file — `pending_requests.py` prints only what you own:
+Before arming, run `ListAgents` as a cross-check: a live session in the configured master tmux
+session, or one whose name or note claims the master role, means a master may still be retiring —
+ask the developer before arming. On rotation, the old master must exit before the new one arms.
 
-```bash
-python3 pending_requests.py
-```
+Arm one Monitor that runs `master_watch.py` and let it wake you. Never poll requests.json yourself,
+and never read the whole file — the watcher prints only what you own (via `pending_requests.py`).
+If the Monitor's first event is a `REFUSED:` line, another master holds the lock: stop, follow the
+printed instructions, do not retry until the other master is retired. `--probe` tests the lock
+without holding it.
 
 Then answer per `REFERENCE.md` (§ `kind: decision`, § Review requests, § Pending approvals), write
 the `reply` and `status` back into `requests.json`, and stop. The server rebuilds the page on the
@@ -136,12 +141,17 @@ the gap the server still handles refresh/jump/defer/delete/jira; only chat/decis
 queue in `requests.json`, and drain the moment the new Monitor is armed — nothing is lost.
 
 1. Read the configured `masterHandoffNote` path (the handoff note). Do not redo what it says is done.
-2. `TaskList` — confirm no MainStem Monitor is already running, then arm it (persistent):
+2. `ListAgents` — if a live session sits in the configured master tmux session, or claims the
+   master role, ask the developer before you arm anything.
+3. Arm the Monitor (persistent):
    ```
-   prev=""; while true; do cur=$(python3 pending_requests.py 2>&1 | grep -v '^no pending' || true); [ "$cur" != "$prev" ] && [ -n "$cur" ] && echo "$cur"; prev="$cur"; sleep 20; done
+   python3 master_watch.py
    ```
-3. `curl -s <configured host:port>/health` — if the server is down, `bash install.sh` (repo root).
-4. That is all. Do not re-read old requests, do not refresh, do not message other sessions.
+   It takes the master lock (`<dataDir>/master.lock`) before it loops. If it prints `REFUSED:`,
+   another master holds the lock — stop and follow the printed instructions; never arm a second
+   Monitor around it.
+4. `curl -s <configured host:port>/health` — if the server is down, `bash install.sh` (repo root).
+5. That is all. Do not re-read old requests, do not refresh, do not message other sessions.
 
 After every agent result: `python3 log_usage.py <tokens> <model> "<what>"` (feeds the ✦ widget).
 Master context cost is tracked for free: `handoff.sh` runs `master_usage.py`, which reads the
@@ -151,7 +161,7 @@ session id archives the old master and zeroes `current` — no manual step.
 ## Files
 
 `ms_server.py` `collect.sh` `build.py` `template.html` `jump.sh` `reviews_index.py`
-`session_status_from_notes.py` `pending_requests.py` `handoff.sh` `master_usage.py` — all in this
+`session_status_from_notes.py` `pending_requests.py` `master_watch.py` `handoff.sh` `master_usage.py` — all in this
 skill's own directory. `install.sh` and `uninstall.sh` are at the repo root. Data and the built page
 in the configured `dataDir`.
 

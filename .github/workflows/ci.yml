@@ -31,7 +31,7 @@ jobs:
           echo '{"dataDir": "/tmp/ms-ci-test-data", "reviewsDir": "/tmp/ms-ci-test-reviews"}' > "$MS_CONFIG"
           mkdir -p /tmp/ms-ci-test-data /tmp/ms-ci-test-reviews/active
           cd skills/mainstem/scripts
-          for t in test_config.py test_session_status_from_notes.py test_reviews_index.py test_backfill_excerpts.py; do
+          for t in test_config.py test_session_status_from_notes.py test_reviews_index.py test_backfill_excerpts.py test_master_watch.py; do
             echo "== $t =="
             python3 "$t"
           done

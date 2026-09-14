@@ -33,7 +33,7 @@ for q in lst:
         q["status"]="done"; q["reply"]="Rotating the master session now — fresh context, same tab."
 json.dump(r,open(p,"w"),indent=1)
 PY
-RITUAL="You are the rotated MainStem master. Invoke the mainstem skill and follow its 'New master — start ritual': read the configured masterHandoffNote path, TaskList to confirm no Monitor is already running, arm the requests.json Monitor, curl -s $HOST:$PORT/health. Then wait. Do not refresh or message other sessions."
+RITUAL="You are the rotated MainStem master. Invoke the mainstem skill and follow its 'New master — start ritual': read the configured masterHandoffNote path, ListAgents to check for a live master, arm the Monitor via master_watch.py (it takes the master lock; on REFUSED stop and follow its instructions), curl -s $HOST:$PORT/health. Then wait. Do not refresh or message other sessions."
 "$TMUX_BIN" respawn-pane -k -t "${SESSION}:0.0" "$CLAUDE_BIN --model $MODEL $(printf %q "$RITUAL")"
 sleep 1
 if ! "$TMUX_BIN" has-session -t "$SESSION" 2>/dev/null; then
