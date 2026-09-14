@@ -168,6 +168,8 @@ def collect(panel=None):
         steps.append([sys.executable, os.path.join(SKILL_DIR, "prune_reviews.py")])
     if panel in (None, "sessions"):
         steps.append([sys.executable, os.path.join(SKILL_DIR, "session_status_from_notes.py")])
+        # after status, so ledger entries carry the freshest refs
+        steps.append([sys.executable, os.path.join(SKILL_DIR, "session_ledger.py"), DATA_DIR])
     for cmd in steps:
         name = os.path.basename(cmd[1])
         rc, out, err = run(cmd)

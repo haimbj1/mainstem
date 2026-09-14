@@ -25,6 +25,11 @@ def update(data_dir):
             ledger = json.load(f)
     except (OSError, ValueError):
         ledger = {}
+    try:
+        with open(os.path.join(data_dir, "session_status.json")) as f:
+            status = json.load(f)
+    except (OSError, ValueError):
+        status = {}
 
     now = datetime.now(timezone.utc).isoformat()
     live_ids = set()
@@ -33,7 +38,11 @@ def update(data_dir):
         if not sid:
             continue
         live_ids.add(sid)
+        # refs come from the session's status (its note); a dead entry keeps its last refs,
+        # so a PR row can offer "restore" for the exact session that owned it
+        refs = (status.get(s.get("name", "")) or {}).get("refs") or ledger.get(sid, {}).get("refs", [])
         ledger[sid] = {
+            "refs": refs,
             "sessionId": sid,
             "name": s.get("name", ""),
             "cwd": s.get("cwd", ""),
