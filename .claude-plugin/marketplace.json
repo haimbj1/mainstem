@@ -2,7 +2,7 @@
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "mainstem",
   "description": "MainStem — a local-first dev control board for Claude Code.",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "owner": {
     "name": "haimbj1",
     "url": "https://github.com/haimbj1"
@@ -13,7 +13,7 @@
       "displayName": "MainStem",
       "source": "./",
       "description": "Local dev control board: worktrees, sessions, PR review queue with offline drafts, Jira/Calendar bake, session restore, and a master session that answers the page.",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "author": { "name": "haimbj1" },
       "license": "MIT",
       "category": "developer-tools",
