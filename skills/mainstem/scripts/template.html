@@ -1907,7 +1907,34 @@ panel('#p-agents','Claude sessions', DATA.sessions.length, [...DATA.sessions].so
   const jumpIco = jumpable ? `<a class="ico" data-write href="${esc(jump)}" title="Jump to terminal">${ICON.open}</a>` : '';
   return `<div class="row" style="grid-template-columns:1fr auto"><div><div class="t">${nameEl} ${kindPill} <span class="s">${esc(wt? wt.name+' · '+wt.branch : s.cwd.replace((DATA.config.workRoot||'')+'/',''))}</span>${tmux?` <span class="pill neutral">tmux ${esc(tmux)}</span>`:''}</div><div class="s">started ${esc(s.procStart.replace(/^\w+ /,'').replace(/ \d{4}$/,''))} · v${esc(s.version)}</div>${ssLine(s.name)}</div><div class="r">${jumpIco}<button class="cmd" data-cmd="${esc(cmd)}" title="Copy">${ICON.copy}${tmux?'tmux':'cd'}</button><span class="pill ${st==='idle'?'neutral':st==='shell'?'info':'good'}">${st}</span></div></div>`; }).join(''),
   REFRESH_BTN('sessions') + `<span class="pill neutral">${DATA.sessions.filter(s=>s.cwd===(DATA.config.workRoot||'')).length} in /work</span>`);
-$('#p-agents').addEventListener('click', e => { const b=e.target.closest('button[data-cmd]'); if(b) copy(b.dataset.cmd); });
+/* dead sessions from the ledger: a reboot kills every session, the ledger remembers them.
+   Default-checked: interactive ones seen in the last 48 h. One click resumes each in tmux. */
+(function deadSessions(){
+  const liveIds = new Set(DATA.sessions.map(s=>s.sessionId));
+  const dead = Object.values(DATA.ledger||{}).filter(l=>!liveIds.has(l.sessionId))
+    .sort((a,b)=> a.lastSeen < b.lastSeen ? 1 : -1).slice(0,12);
+  if (!dead.length) return;
+  const fresh = l => (Date.now() - new Date(l.lastSeen)) < 48*36e5;
+  const rows = dead.map(l=>`<div class="row" style="grid-template-columns:1fr auto"><div class="t">
+      <label class="pst"><input type="checkbox" data-restore="${esc(l.sessionId)}"${l.kind==='interactive'&&fresh(l)?' checked':''}></label>
+      <span class="mono">${esc(l.name||l.sessionId.slice(0,8))}</span>
+      <span class="s">${esc((l.cwd||'').replace((DATA.config.workRoot||'')+'/',''))}</span></div>
+      <div class="r"><span class="age">last seen ${ageText(l.lastSeen)}</span></div></div>`).join('');
+  $('#p-agents').insertAdjacentHTML('beforeend',
+    `<div class="p-h"><h3>Ended sessions</h3><span class="cnt">${dead.length}</span>
+     <span class="hint">The ledger keeps sessions a reboot killed. Tick and restore — each resumes in its own tmux session.</span>
+     <div class="tools"><button class="btn" data-write id="restore-sessions">⟲ Restore selected</button></div></div>
+     <div class="p-b">${rows}</div>`);
+})();
+$('#p-agents').addEventListener('click', e => {
+  const b=e.target.closest('button'); if(!b) return;
+  if (b.dataset.cmd) { copy(b.dataset.cmd); return; }
+  if (b.id === 'restore-sessions') {
+    const ids=[...document.querySelectorAll('input[data-restore]:checked')].map(i=>i.dataset.restore);
+    if (!ids.length) { toast('Tick at least one session'); return; }
+    publishRequests([newReq('restore_sessions', `Restore ${ids.length} session${ids.length>1?'s':''}`, ids)]);
+  }
+});
 
 /* calendar with meeting prep */
 const prepFor = e => { const who=(e.organizer||'').split('@')[0]; const names=[who]; return items.filter(it=>!done[it.id] && names.some(n=>(it.title+' '+it.sub+' '+it.act).includes(n))).sort((a,b)=>b.score-a.score).slice(0,4); };
