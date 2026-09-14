@@ -21,7 +21,8 @@ cleanup() {
 trap cleanup EXIT
 
 git -C "$REPO" fetch -q origin "$BRANCH" 2>/dev/null || true
-git -C "$REPO" worktree add -q "$WT" "$BRANCH"
+# --detach: works even when the branch is checked out in another worktree
+git -C "$REPO" worktree add -q --detach "$WT" "$BRANCH"
 
 SRC="$(python3 "$HERE/config.py" path dataDir)"
 cp "$SRC"/*.json "$DATA"/ 2>/dev/null || true
