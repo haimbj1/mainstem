@@ -1064,8 +1064,17 @@ function sessBtnFor(s){
   if ((s.kind || 'background') !== 'interactive') return `<span class="dec sessbtn" title="This session has no controlling terminal to jump to"><span class="nm">${esc(s.name)}</span></span>`;
   return `<a class="dec sessbtn" data-write href="${esc(sessJump(s))}" title="${TIP_GO}">Go to session · <span class="nm">${esc(s.name)}</span></a>`;
 }
-function sessBtn(s, dir, prompt){
+/* a dead ledger session that owned this ref or worktree — restore beats starting fresh */
+const LIVE_SIDS = new Set(DATA.sessions.map(s=>s.sessionId));
+function deadOwner(refs, wtPath){
+  const cand = Object.values(DATA.ledger||{}).filter(l=>!LIVE_SIDS.has(l.sessionId));
+  const byRef = cand.find(l => (l.refs||[]).some(r => refs.includes(String(r).toLowerCase())));
+  return byRef || (wtPath ? cand.find(l => l.cwd === wtPath) : null) || null;
+}
+function sessBtn(s, dir, prompt, refs, wtPath){
   if (s) return sessBtnFor(s);
+  const d = deadOwner((refs||[]).map(r=>String(r).toLowerCase()), wtPath);
+  if (d) return `<button class="dec sessbtn" data-write data-restoresid="${esc(d.sessionId)}" title="This session worked on it and ended (reboot?). Restore resumes it in tmux — context intact.">⟲ Restore · <span class="nm">${esc(d.name||d.sessionId.slice(0,8))}</span></button>`;
   return `<a class="dec sessbtn new" data-write href="${esc(startUrl(dir, prompt))}" title="${TIP_NEW}">Start session</a>`;
 }
 const prNumOf = url => (String(url).match(/\/pull\/(\d+)/) || [])[1] || '';
@@ -1078,7 +1087,8 @@ function sessBtnPR(url, title, branch){
   const prompt = `Continue PR #${n} "${oneLine(title).replace(/^#\d+\s*/, '')}" ${url}. Repo ${remote}. `
     + `Offline review: ${RV[url]?.path || 'none'}. Session notes: ~/.claude/sessions/. `
     + `Start by summarizing the PR state and the open review threads.`;
-  return sessBtn(s, pdirOf(remote, branch), prompt);
+  const refs = n ? [repoShort(remote).toLowerCase() + '#' + n, '#' + n] : [];
+  return sessBtn(s, pdirOf(remote, branch), prompt, refs, wt?.path);
 }
 function sessBtnJira(key, summary){
   const link = jiraLink(key);
@@ -1918,7 +1928,8 @@ panel('#p-agents','Claude sessions', DATA.sessions.length, [...DATA.sessions].so
   const rows = dead.map(l=>`<div class="row" style="grid-template-columns:1fr auto"><div class="t">
       <label class="pst"><input type="checkbox" data-restore="${esc(l.sessionId)}"${l.kind==='interactive'&&fresh(l)?' checked':''}></label>
       <span class="mono">${esc(l.name||l.sessionId.slice(0,8))}</span>
-      <span class="s">${esc((l.cwd||'').replace((DATA.config.workRoot||'')+'/',''))}</span></div>
+      <span class="s">${esc((l.cwd||'').replace((DATA.config.workRoot||'')+'/',''))}</span>
+      ${(l.refs||[]).slice(0,4).map(r=>`<span class="pill neutral mono">${esc(r)}</span>`).join('')}</div>
       <div class="r"><span class="age">last seen ${ageText(l.lastSeen)}</span></div></div>`).join('');
   $('#p-agents').insertAdjacentHTML('beforeend',
     `<div class="p-h"><h3>Ended sessions</h3><span class="cnt">${dead.length}</span>
@@ -1926,6 +1937,12 @@ panel('#p-agents','Claude sessions', DATA.sessions.length, [...DATA.sessions].so
      <div class="tools"><button class="btn" data-write id="restore-sessions">⟲ Restore selected</button></div></div>
      <div class="p-b">${rows}</div>`);
 })();
+/* restore buttons render on PR rows too — one delegated handler covers every panel */
+document.body.addEventListener('click', e => {
+  const b = e.target.closest('button[data-restoresid]'); if (!b) return;
+  b.disabled = true;
+  publishRequests([newReq('restore_sessions', `Restore ${(b.textContent||'session').trim()}`, [b.dataset.restoresid])]);
+});
 $('#p-agents').addEventListener('click', e => {
   const b=e.target.closest('button'); if(!b) return;
   if (b.dataset.cmd) { copy(b.dataset.cmd); return; }
