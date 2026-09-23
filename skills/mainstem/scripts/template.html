@@ -779,7 +779,14 @@ const STACK = (() => {
   return m;
 })();
 const RR_DRAFT = new Set(DATA.review_requests.filter(r => r.isDraft).map(r => r.url));
-const RV_QUEUED = new Set(DATA.requests.filter(r => r.kind === 'review_pr' && r.status === 'pending').flatMap(r => r.targets || []));
+let RV_QUEUED = new Set();
+function rvQueuedSync(){
+  const next = new Set(DATA.requests.filter(r => r.kind === 'review_pr' && (r.status === 'pending' || r.status === 'working')).flatMap(r => r.targets || []));
+  const changed = next.size !== RV_QUEUED.size || [...next].some(u => !RV_QUEUED.has(u));
+  RV_QUEUED = next;
+  return changed;
+}
+rvQueuedSync();
 const GH_MY_REVIEW = {}; DATA.review_requests.forEach(r => { if (r.my_review) GH_MY_REVIEW[r.url] = r.my_review; });
 const GH_RS = { APPROVED:['✓ approved on GitHub','good'], CHANGES_REQUESTED:['✗ changes requested on GitHub','crit'], COMMENTED:['commented on GitHub','neutral'], DISMISSED:['review dismissed','warn'] };
 const POSTED = new Set(['approved','changes-requested','comments-posted']);
@@ -816,7 +823,7 @@ function rvPills(url){
   const dft = (RR_DRAFT.has(url) ? `<span class="pill neutral" title="Draft PR — the author is not asking for review yet; reviewing it now wastes time and tokens">✎ draft</span>` : '')
     + (RV_QUEUED.has(url) ? `<span class="pill warn" title="The review agent is queued or running on this PR — the verdict replaces this pill">⌛ review running</span>` : '');
   if (!rv) return dft + waitPill(url) + ghReviewPill(url) + stackPills(url) + `<span class="pill neutral" title="no offline review file for this PR yet">not reviewed</span>`
-    + (LOCAL ? `<button class="pill model" data-write data-rvrun="${esc(url)}" title="Run the offline review agent on this PR — ~150k tokens">✦ review</button>` : '')
+    + (LOCAL && !RV_QUEUED.has(url) ? `<button class="pill model" data-write data-rvrun="${esc(url)}" title="Run the offline review agent on this PR — ~150k tokens">✦ review</button>` : '')
     + `${nudgePill(url)}${decp}${nrp}`;
   const v = rvVerdict(rv.verdict), n = (rv.findings||[]).length, top = rvTopSev(rv);
   return dft + depthPill(url) + waitPill(url) + ghReviewPill(url) + stackPills(url) + `<button class="pill ${v[0]}" data-rv="${esc(url)}" title="Show the offline review">${esc(v[1])}</button>`
@@ -1852,10 +1859,10 @@ function renderReviews(){
     .sort((a,b)=>(hasNew(b)-hasNew(a)) || ((a.isDraft?1:0)-(b.isDraft?1:0)) || new Date(a.createdAt||a.updatedAt)-new Date(b.createdAt||b.updatedAt));
   const body = list.map(r=>{
     const rv = RV[r.url];
-    const ck = (LOCAL && !rv && !r.isDraft) ? `<input type="checkbox" class="rvck" data-rvsel="${esc(r.url)}" ${rvSel.has(r.url)?'checked':''} title="Select for review">` : '';
+    const ck = (LOCAL && !rv && !r.isDraft && !RV_QUEUED.has(r.url)) ? `<input type="checkbox" class="rvck" data-rvsel="${esc(r.url)}" ${rvSel.has(r.url)?'checked':''} title="Select for review">` : '';
     return `<div class="row ${r.isDraft ? 'rvdim' : isDec(r) && !rvNewReplies(r.url).length ? 'rvdim':''} ${rvOpenP===r.url?'checked':''}" style="grid-template-columns:auto 1fr auto"><div>${ck}</div><div><div class="t"><a href="${esc(r.url)}" target="_blank" rel="noopener">#${r.number} ${esc(r.title)}</a></div><div class="s">${esc(repoShort(r.repository.nameWithOwner))} · <button class="chip" style="padding:0 7px" data-author="${esc(r.author.login)}">${esc(r.author.login)}</button>${rv?` · <button class="dec" data-rv="${esc(r.url)}" title="Read the offline review in the drawer">Review</button>`:''}</div></div><div class="r">${ssPill(ssFor('#'+r.number))}${rvPills(r.url)}${pdPill(r.url)}${sessBtnPR(r.url, r.title, '')}${(()=>{const pv={direct:'me',team:'team',watch:'watch'}[r.provenance]||(r.rvOnly?'not requested':r.direct?'me':'team'); return pv==='not requested'?'<span class="pill neutral" title="Reviewed on request from a Claude session \u2014 GitHub has no review request for you on this PR">not requested</span>':pv==='me'?'<span class="pill accent">me</span>':pv==='watch'?'<span class="pill info" title="Open PR in a repo you watch \u2014 no review request from anyone">watch</span>':'<span class="pill neutral">team</span>';})()}${r.isDraft?'<span class="pill neutral">draft</span>':''}<span class="${ageCls(r.createdAt||r.updatedAt,7,21)}" title="opened">${ageText(r.createdAt||r.updatedAt)}</span></div></div>`;
   }).join('');
-  const nUnrev = base.filter(r => !RV[r.url] && !r.isDraft).length;
+  const nUnrev = base.filter(r => !RV[r.url] && !r.isDraft && !RV_QUEUED.has(r.url)).length;
   const tools = REFRESH_BTN('reviews')
     + (updCount || rvUpdOnly ? `<button class="chip ${rvUpdOnly?'on':''}" data-rvupd="1" title="Rows where an agent acted or answered since you last looked — shown regardless of the other filters">⟲ ${updCount} update${updCount===1?'':'s'}</button>` : '')
     + (LOCAL && rvSel.size ? `<button class="btn model" data-write id="rv-runall" title="Run the offline review agent on the selected PRs — ~150k tokens each">✦ Review selected (${rvSel.size})</button>`
@@ -1882,11 +1889,15 @@ $('#p-reviews').addEventListener('change', e => {
 });
 $('#p-reviews').addEventListener('click', e => {
   const b = e.target.closest('button');
-  if (b?.dataset.rvrun) { sendRequest('review_pr', `Review ${b.dataset.rvrun}`, [b.dataset.rvrun]); toast('Review queued — the verdict lands on this row when the agent finishes'); return; }
+  if (b?.dataset.rvrun) {
+    if (RV_QUEUED.has(b.dataset.rvrun)) { toast('A review is already queued or running on this PR'); return; }
+    sendRequest('review_pr', `Review ${b.dataset.rvrun}`, [b.dataset.rvrun]); toast('Review queued — the verdict lands on this row when the agent finishes'); return;
+  }
   const ck = e.target.closest('input[data-rvsel]'); if (ck) { ck.checked ? rvSel.add(ck.dataset.rvsel) : rvSel.delete(ck.dataset.rvsel); renderReviews(); return; }
   if (b?.id === 'rv-runall') {
-    const urls = rvSel.size ? [...rvSel]
-      : RR_ALL.filter(r => (r.rvOnly || rrMode==='all' || rrProv(r)===rrMode) && !RV[r.url] && !r.isDraft).map(r=>r.url);
+    const urls = (rvSel.size ? [...rvSel]
+      : RR_ALL.filter(r => (r.rvOnly || rrMode==='all' || rrProv(r)===rrMode) && !RV[r.url] && !r.isDraft).map(r=>r.url)
+      ).filter(u => !RV_QUEUED.has(u));
     if (urls.length && window.confirm(`Run the review agent on ${urls.length} PR(s)? ~150k tokens each.`)) {
       sendRequest('review_pr', `Review ${urls.length} PRs`, urls); rvSel.clear(); renderReviews(); toast('Reviews queued');
     }
@@ -2087,6 +2098,7 @@ async function publishLocal(reqs){
     mergeReq(rec); out.push(rec);
     if (rec.reply) toast(rec.reply);
   }
+  if (rvQueuedSync()) renderReviews();
   renderRequests(); renderLog(); renderTabs();
   return out;
 }
@@ -2151,6 +2163,7 @@ if (LOCAL) setInterval(async () => {
     const rows = await res.json();
     if (JSON.stringify(rows) === JSON.stringify(DATA.requests)) return;
     DATA.requests = rows;
+    if (rvQueuedSync()) renderReviews();
     renderRequests(); renderLog(); renderTabs();
   } catch {}
 }, 10000);
