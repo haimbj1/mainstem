@@ -787,7 +787,7 @@ function rvQueuedSync(){
   return changed;
 }
 rvQueuedSync();
-const GH_MY_REVIEW = {}; DATA.review_requests.forEach(r => { if (r.my_review) GH_MY_REVIEW[r.url] = r.my_review; });
+const GH_MY_REVIEW = Object.assign({}, DATA.my_reviews || {}); DATA.review_requests.forEach(r => { if (r.my_review) GH_MY_REVIEW[r.url] = r.my_review; });
 const GH_RS = { APPROVED:['✓ approved on GitHub','good'], CHANGES_REQUESTED:['✗ changes requested on GitHub','crit'], COMMENTED:['commented on GitHub','neutral'], DISMISSED:['review dismissed','warn'] };
 const POSTED = new Set(['approved','changes-requested','comments-posted']);
 function waitPill(url){
