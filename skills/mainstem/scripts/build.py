@@ -65,6 +65,7 @@ def build(cfg, readonly=False):
         "my_prs": (load(data_dir, "my_prs.json", {}) or {})
                   .get("data", {}).get("viewer", {}).get("pullRequests", {}).get("nodes", []),
         "review_requests": load(data_dir, "review_requests.json", []),
+        "my_reviews": load(data_dir, "my_reviews.json", {}),
         "reviews": load(data_dir, "reviews.json", {}),
         "nudges": load(data_dir, "nudges.json", []),
         "jira": load(data_dir, "jira.json", []),

@@ -151,8 +151,12 @@ if want reviews; then
 # review requests, split into direct (me as reviewer) vs team — team ones are noise for the queue.
 # A third tier, "watch" (config reviews.watchRepos), surfaces open PRs in repos/orgs the developer
 # only watches — no formal ask there, so a direct/team row for the same PR always wins over it.
-direct_and_team_json="$(gh api graphql -f query='query{ search(query:"is:pr is:open review-requested:'"$GH_LOGIN"'", type:ISSUE, first:50){ nodes{ ... on PullRequest{ number title url isDraft updatedAt createdAt headRefName baseRefName author{login} repository{nameWithOwner} myReviews: reviews(author:"'"$GH_LOGIN"'", last:1){nodes{state}} reviewRequests(first:10){nodes{requestedReviewer{ __typename ... on User{login} ... on Team{name} }}} } } } }' \
-  | jq --arg me "$GH_LOGIN" '[.data.search.nodes[] | {number,title,url,isDraft,updatedAt,createdAt,headRefName,baseRefName,my_review:(.myReviews.nodes[0].state // null),author:{login:.author.login},repository:{nameWithOwner:.repository.nameWithOwner}, direct: ([.reviewRequests.nodes[].requestedReviewer | select(.__typename=="User" and .login==$me)] | length > 0), teams: [.reviewRequests.nodes[].requestedReviewer | select(.__typename=="Team") | .name]}]')"
+# my_review is the EFFECTIVE state: the newest APPROVED/CHANGES_REQUESTED, not merely the
+# last review event — a later thread reply lands as a COMMENTED review and must not mask
+# a standing approval.
+MY_REVIEW_JQ='((([.myReviews.nodes[].state] | map(select(. == "APPROVED" or . == "CHANGES_REQUESTED")) | last) // ([.myReviews.nodes[].state] | last)) // null)'
+direct_and_team_json="$(gh api graphql -f query='query{ search(query:"is:pr is:open review-requested:'"$GH_LOGIN"'", type:ISSUE, first:50){ nodes{ ... on PullRequest{ number title url isDraft updatedAt createdAt headRefName baseRefName author{login} repository{nameWithOwner} myReviews: reviews(author:"'"$GH_LOGIN"'", last:10){nodes{state}} reviewRequests(first:10){nodes{requestedReviewer{ __typename ... on User{login} ... on Team{name} }}} } } } }' \
+  | jq --arg me "$GH_LOGIN" '[.data.search.nodes[] | {number,title,url,isDraft,updatedAt,createdAt,headRefName,baseRefName,my_review:'"$MY_REVIEW_JQ"',author:{login:.author.login},repository:{nameWithOwner:.repository.nameWithOwner}, direct: ([.reviewRequests.nodes[].requestedReviewer | select(.__typename=="User" and .login==$me)] | length > 0), teams: [.reviewRequests.nodes[].requestedReviewer | select(.__typename=="Team") | .name]}]')"
 
 watch_prs='[]'
 WATCH_REPOS="$(CFG reviews.watchRepos)"
@@ -170,8 +174,8 @@ for entry in json.load(sys.stdin):
         continue
       fi
       if [[ "$entry" == */\* ]]; then q="is:pr is:open org:${entry%/*}"; else q="is:pr is:open repo:$entry"; fi
-      gh api graphql -f query='query{ search(query:"'"$q"'", type:ISSUE, first:50){ nodes{ ... on PullRequest{ number title url isDraft updatedAt createdAt headRefName baseRefName author{login} repository{nameWithOwner} myReviews: reviews(author:"'"$GH_LOGIN"'", last:1){nodes{state}} } } } }' \
-        | jq '[.data.search.nodes[] | {number,title,url,isDraft,updatedAt,createdAt,headRefName,baseRefName,my_review:(.myReviews.nodes[0].state // null),author:{login:.author.login},repository:{nameWithOwner:.repository.nameWithOwner}, direct:false, teams:[]}]' \
+      gh api graphql -f query='query{ search(query:"'"$q"'", type:ISSUE, first:50){ nodes{ ... on PullRequest{ number title url isDraft updatedAt createdAt headRefName baseRefName author{login} repository{nameWithOwner} myReviews: reviews(author:"'"$GH_LOGIN"'", last:10){nodes{state}} } } } }' \
+        | jq '[.data.search.nodes[] | {number,title,url,isDraft,updatedAt,createdAt,headRefName,baseRefName,my_review:'"$MY_REVIEW_JQ"',author:{login:.author.login},repository:{nameWithOwner:.repository.nameWithOwner}, direct:false, teams:[]}]' \
         || { echo "reviews.watchRepos: gh/jq failed for entry $entry — skipping" >&2; echo '[]'; }
     done | jq -s 'add // []')"
 fi
@@ -185,6 +189,16 @@ jq -n --argjson known "$direct_and_team_json" --argjson watch "$watch_prs" --arg
   | ($watch | map(select(.url as $u | ($known_urls | index($u)) == null)) | map(.provenance = "watch")) as $watched_only
   | ($known_p + $watched_only) | map(select(.author.login != $me))
 ' > "$OUT/review_requests.json.tmp" && mv "$OUT/review_requests.json.tmp" "$OUT/review_requests.json"
+
+# GitHub drops the review request the moment a review is submitted, so an approved PR
+# vanishes from the searches above. Collect my standing reviews on still-open PRs
+# separately — the page files those under decided instead of open work.
+my_reviews_json="$(gh api graphql -f query='query{ search(query:"is:pr is:open reviewed-by:'"$GH_LOGIN"'", type:ISSUE, first:50){ nodes{ ... on PullRequest{ url myReviews: reviews(author:"'"$GH_LOGIN"'", last:10){nodes{state}} } } } }' \
+  | jq '[.data.search.nodes[] | {key:.url, value:'"$MY_REVIEW_JQ"'}] | map(select(.value != null)) | from_entries' \
+  || { echo "my_reviews: gh/jq failed — keeping the previous file" >&2; echo ''; })"
+if [ -n "$my_reviews_json" ]; then
+  printf '%s\n' "$my_reviews_json" > "$OUT/my_reviews.json.tmp" && mv "$OUT/my_reviews.json.tmp" "$OUT/my_reviews.json"
+fi
 fi
 
 
