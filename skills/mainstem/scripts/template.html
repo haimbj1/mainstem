@@ -1795,7 +1795,7 @@ const rvSaved = store.get('rvfilters', {});
 let authorF = rvSaved.author || null,
     rrMode = rvSaved.mode || (reviewsMode ? 'all' : 'direct'),
     rvFilter = rvSaved.state || 'all',
-    rvShow = rvFilter === 'decided';
+    rvShow = rvFilter === 'decided' || rvFilter === 'approved';
 const saveRvFilters = () => store.set('rvfilters', { author: authorF, mode: rrMode, state: rvFilter });
 /* Text size is a per-viewer convenience: zoom the whole page, remember it in this browser. */
 let ccZoom = Math.min(150, Math.max(80, +store.get('zoom', 100) || 100));
@@ -1851,10 +1851,11 @@ function renderReviews(){
   const updCount = base.filter(hasNew).length;
   // Decided = clicked on the board (rvDec, per browser) OR already approved on GitHub itself.
   const isDec = r => !!rvDec[r.url] || GH_MY_REVIEW[r.url] === 'APPROVED';
+  const isAppr = r => GH_MY_REVIEW[r.url] === 'APPROVED' || rvDec[r.url] === 'approve' || rvDec[r.url] === 'approve_with_comments' || RV[r.url]?.status === 'approved';
   const list = (rvUpdOnly ? base.filter(hasNew)
     : base.filter(r=>!authorF||r.author.login===authorF)
-    .filter(r => rvFilter==='all' || (rvFilter==='decided' ? isDec(r) : rvFilter==='waiting' ? POSTED.has(RV[r.url]?.status) : rvFilter==='reviewed' ? !!RV[r.url] : !RV[r.url]))
-    .filter(r => rvShow || rvFilter==='waiting' || rvFilter==='decided' || !isDec(r)))
+    .filter(r => rvFilter==='all' || (rvFilter==='decided' ? isDec(r) : rvFilter==='approved' ? isAppr(r) : rvFilter==='waiting' ? POSTED.has(RV[r.url]?.status) : rvFilter==='reviewed' ? !!RV[r.url] : !RV[r.url]))
+    .filter(r => rvShow || rvFilter==='waiting' || rvFilter==='decided' || rvFilter==='approved' || !isDec(r)))
     .filter(r => !q || `#${r.number} ${r.title} ${r.author.login} ${r.repository.nameWithOwner}`.toLowerCase().includes(q))
     .sort((a,b)=>(hasNew(b)-hasNew(a)) || ((a.isDraft?1:0)-(b.isDraft?1:0)) || new Date(a.createdAt||a.updatedAt)-new Date(b.createdAt||b.updatedAt));
   const body = list.map(r=>{
@@ -1870,7 +1871,7 @@ function renderReviews(){
     + `<select class="chip sel" data-rvsel-name="mode" title="Who the review was requested from">`
       + [['direct','asked me directly'],['team','asked the team'],['watch','watched repos'],['all','all requests']].map(([k,l])=>`<option value="${k}" ${rrMode===k?'selected':''}>${l}</option>`).join('') + `</select>`
     + `<select class="chip sel" data-rvsel-name="state" title="Where each PR stands">`
-      + [['all','open work'],['not','not reviewed'],['reviewed','reviewed'],['waiting','⏳ waiting on author'],['decided','decided']].map(([k,l])=>`<option value="${k}" ${(rvFilter===k && !(k==='all'&&rvShow))||(k==='decided'&&rvShow)?'selected':''}>${l}</option>`).join('') + `</select>`
+      + [['all','open work'],['not','not reviewed'],['reviewed','reviewed'],['waiting','⏳ waiting on author'],['approved','✓ approved'],['decided','decided']].map(([k,l])=>`<option value="${k}" ${(rvFilter===k && !(k==='all'&&rvShow))||(k==='decided'&&rvShow&&rvFilter!=='approved')?'selected':''}>${l}</option>`).join('') + `</select>`
     + `<select class="chip sel" data-rvsel-name="author" title="Filter by PR author">`
       + `<option value="">any author</option>`
       + Object.entries(byAuthor).sort((a,b)=>b[1]-a[1]).map(([a,n])=>`<option value="${esc(a)}" ${authorF===a?'selected':''}>${esc(a)} · ${n}</option>`).join('') + `</select>`;
@@ -1883,7 +1884,7 @@ $('#p-reviews').addEventListener('change', e => {
   const sel = e.target.closest('select[data-rvsel-name]'); if (!sel) return;
   const v = sel.value;
   if (sel.dataset.rvselName === 'mode') { rrMode = v; authorF = null; }
-  if (sel.dataset.rvselName === 'state') { rvShow = v === 'decided'; rvFilter = v === 'decided' ? 'decided' : v; }
+  if (sel.dataset.rvselName === 'state') { rvShow = v === 'decided' || v === 'approved'; rvFilter = v; }
   if (sel.dataset.rvselName === 'author') { authorF = v || null; }
   saveRvFilters(); rvUpdOnly = false; renderReviews();
 });
