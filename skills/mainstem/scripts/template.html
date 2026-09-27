@@ -1854,7 +1854,7 @@ function renderReviews(){
   const list = (rvUpdOnly ? base.filter(hasNew)
     : base.filter(r=>!authorF||r.author.login===authorF)
     .filter(r => rvFilter==='all' || (rvFilter==='decided' ? isDec(r) : rvFilter==='waiting' ? POSTED.has(RV[r.url]?.status) : rvFilter==='reviewed' ? !!RV[r.url] : !RV[r.url]))
-    .filter(r => hasNew(r) || rvShow || rvFilter==='waiting' || rvFilter==='decided' || !isDec(r)))
+    .filter(r => rvShow || rvFilter==='waiting' || rvFilter==='decided' || !isDec(r)))
     .filter(r => !q || `#${r.number} ${r.title} ${r.author.login} ${r.repository.nameWithOwner}`.toLowerCase().includes(q))
     .sort((a,b)=>(hasNew(b)-hasNew(a)) || ((a.isDraft?1:0)-(b.isDraft?1:0)) || new Date(a.createdAt||a.updatedAt)-new Date(b.createdAt||b.updatedAt));
   const body = list.map(r=>{
