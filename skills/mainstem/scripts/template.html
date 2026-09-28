@@ -656,6 +656,9 @@ $('#dr-body').addEventListener('input', e => {
   const b = ta.closest('details')?.querySelector(`[data-dsave="${CSS.escape(ta.dataset.dredit)}"]`);
   if (b) b.hidden = false;
 });
+$('#dr-body').addEventListener('change', e => {
+  if (e.target.matches('input[data-draft]')) rvSyncCounts(e.target.closest('.rvcard'));
+});
 $('#dr-body').addEventListener('click', e => {
   if (e.target.closest('a')) return; // links keep their own routing
   const b = e.target.closest('button, .cancel'); if (!b) return;
@@ -1768,9 +1771,6 @@ $('#selbar').addEventListener('click', e => {
 $('#drawer').addEventListener('click', e => {
   const c=e.target.closest('[data-copy]'); if(c){ copy(c.dataset.copy); return; }
   const sd=e.target.closest('[data-send]'); if(sd){ sendWorktreeAction(sd.dataset.send, `${sd.dataset.send.replace('_',' ')}:\n${[...selected].map(p=>'- '+p).join('\n')}`, [...selected]); }
-});
-$('#drawer').addEventListener('change', e => {
-  if (e.target.matches('input[data-draft]')) rvSyncCounts(e.target.closest('.rvcard'));
 });
 
 /* ---------- render: panels ---------- */
