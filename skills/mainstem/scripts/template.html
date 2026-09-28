@@ -793,7 +793,7 @@ function rvQueuedSync(){
 rvQueuedSync();
 const GH_MY_REVIEW = Object.assign({}, DATA.my_reviews || {}); DATA.review_requests.forEach(r => { if (r.my_review) GH_MY_REVIEW[r.url] = r.my_review; });
 const GH_RS = { APPROVED:['✓ approved on GitHub','good'], CHANGES_REQUESTED:['✗ changes requested on GitHub','crit'], COMMENTED:['commented on GitHub','neutral'], DISMISSED:['review dismissed','warn'] };
-const POSTED = new Set(['approved','changes-requested','comments-posted']);
+const POSTED = new Set(['approved','changes-requested','comments-posted','posted']);
 function waitPill(url){
   const rv = RV[url]; if (!rv || !POSTED.has(rv.status)) return '';
   if (rv.live_head && rv.last_head_sha && !rv.live_head.startsWith(rv.last_head_sha) && !rv.last_head_sha.startsWith(rv.live_head))
@@ -1867,7 +1867,17 @@ function renderReviews(){
   // A click stores rvDec locally at once, but the server can refuse the post (stale
   // head) — so a local decision counts as decided only once it actually landed: the
   // review file's status flipped to a posted state, or GitHub shows my review.
-  const isDec = r => (!!rvDec[r.url] && (POSTED.has(RV[r.url]?.status) || !!GH_MY_REVIEW[r.url])) || GH_MY_REVIEW[r.url] === 'APPROVED';
+  // A decision hides a row only with THAT decision's receipt — a refused click plus an
+  // old comment of mine must not read as decided, and "post drafts only" is no verdict.
+  const DEC_RECEIPT = { approve:['approved','APPROVED'], approve_with_comments:['approved','APPROVED'], request_changes:['changes-requested','CHANGES_REQUESTED'] };
+  const isDec = r => {
+    const gh = GH_MY_REVIEW[r.url];
+    if (gh === 'APPROVED' || gh === 'CHANGES_REQUESTED') return true;
+    const d = rvDec[r.url]; if (!d) return false;
+    if (d === 'skip_review' || d === 'close_stale') return true;
+    const m = DEC_RECEIPT[d]; if (!m) return false;
+    return RV[r.url]?.status === m[0];
+  };
   const isAppr = r => GH_MY_REVIEW[r.url] === 'APPROVED' || RV[r.url]?.status === 'approved';
   const list = (rvUpdOnly ? base.filter(hasNew)
     : base.filter(r=>!authorF||r.author.login===authorF)
