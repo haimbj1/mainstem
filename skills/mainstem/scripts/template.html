@@ -2183,6 +2183,20 @@ document.addEventListener('click', e => {
   b.classList.add('pending'); b.disabled = true;
   localRefresh(b, b.dataset.refresh);
 }, true);
+/* The server re-collects the reviews panel every few minutes (reviewsRefreshSeconds).
+   When fresh data landed, reload — but never under the user's hands: not with the
+   drawer open, and not while they type. GET / rebuilds the page from the new data. */
+if (LOCAL) { let baseStamp = DATA.collected_at; setInterval(async () => {
+  try {
+    const res = await fetch('/freshness', { cache:'no-store' });
+    if (!res.ok) return;
+    const { collected_at } = await res.json();
+    if (!collected_at || collected_at === baseStamp) return;
+    const typing = /^(TEXTAREA|INPUT)$/.test(document.activeElement?.tagName || '');
+    if (document.body.hasAttribute('data-drawer-open') || typing) return;
+    location.reload();
+  } catch {}
+}, 60000); }
 /* Replies land in requests.json, written by the server or by the master session. */
 if (LOCAL) setInterval(async () => {
   try {

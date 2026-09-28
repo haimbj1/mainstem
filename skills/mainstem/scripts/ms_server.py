@@ -58,6 +58,7 @@ STAMP = os.path.join(DATA_DIR, ".build_stamp")
 PIDFILE = os.path.join(DATA_DIR, "server.pid")
 LOG = os.path.join(DATA_DIR, "server.log")
 REBUILD_EVERY = cfg["rebuildIntervalSeconds"]
+REVIEWS_EVERY = int(cfg.get("reviewsRefreshSeconds") or 0)
 NOTE_RECOLLECT_THROTTLE = cfg["noteRecollectThrottleSeconds"]
 # build.py emits only the page body: the artifact runtime supplies the shell.
 # Serving it raw would put the browser in quirks mode, so add the same shell here.
@@ -585,6 +586,15 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 with open(OUT_HTML, encoding="utf-8") as f:
                     self._send(200, DOCTYPE + f.read() + "</html>", "text/html; charset=utf-8")
                 return
+            if path == "/freshness":
+                # the page polls this to learn a background collect finished
+                stamp = ""
+                p = os.path.join(DATA_DIR, "collected_at.txt")
+                if os.path.exists(p):
+                    with open(p) as f:
+                        stamp = f.read().strip()
+                self._send(200, json.dumps({"collected_at": stamp}), "application/json")
+                return
             if path == "/manifest.webmanifest":
                 # makes the board installable as a standalone app (Chrome: Install page as app)
                 cfg = load_config()
@@ -713,6 +723,18 @@ def rebuild_loop():
             log("scheduled refresh failed: %s" % e)
 
 
+def reviews_loop():
+    """GitHub review state goes stale in minutes (approvals, pushes, re-requests), so the
+    reviews panel re-collects on its own cadence — a handful of gh calls, no model. 0 disables."""
+    while True:
+        time.sleep(REVIEWS_EVERY)
+        try:
+            collect("reviews")
+            log("reviews refresh done")
+        except Exception as e:
+            log("reviews refresh failed: %s" % e)
+
+
 def main():
     parser = argparse.ArgumentParser(description="mainstem local server")
     parser.add_argument("--demo", action="store_true",
@@ -744,6 +766,8 @@ def main():
         sys.exit("cannot bind %s:%d — %s" % (HOST, PORT, e))
     srv.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     threading.Thread(target=rebuild_loop, daemon=True).start()
+    if REVIEWS_EVERY > 0:
+        threading.Thread(target=reviews_loop, daemon=True).start()
     def stop(*_):
         log("shutting down")
         threading.Thread(target=srv.shutdown, daemon=True).start()  # shutdown() deadlocks if called on the serve_forever thread
