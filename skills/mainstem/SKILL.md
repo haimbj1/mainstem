@@ -29,7 +29,9 @@ Refresh only when the developer clicks ↻ or asks.
 | routes | `GET /` (rebuilds if a `*.json` changed, then serves the page) · `GET /data/<name>.json` · `POST /request` · `GET /health` |
 | built page | the configured `dataDir`'s `control-center.html` |
 
-It rebuilds every 30 minutes on its own (`collect.sh` + `reviews_index.py` +
+It rebuilds every 30 minutes on its own, and re-collects the reviews panel every 5 minutes
+(`reviewsRefreshSeconds`, 0 disables); an open page reloads itself when fresh data lands, unless
+the drawer is open or the user is typing. The full rebuild runs (`collect.sh` + `reviews_index.py` +
 `session_status_from_notes.py` + `build.py`). Single instance, held by an flock on `server.pid`.
 
 ## Request kinds — who handles what

@@ -28,6 +28,7 @@ DEFAULTS = {
     "masterHandoffNote": "~/.claude/sessions/master-mainstem.md",
     "masterTmuxSession": "ms-master",
     "rebuildIntervalSeconds": 1800,
+    "reviewsRefreshSeconds": 300,
     "noteRecollectThrottleSeconds": 30,
     "modules": {
         "jira": False, "calendar": False, "mail": False,
