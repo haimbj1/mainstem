@@ -271,6 +271,12 @@ carries a verdict, the findings and ready-to-post comments.
 - **Files** — the configured `reviewsDir`'s `active/<repo>-<pr>.md`. Never edit them by hand while agents run; they own the files.
 - **What to re-run** — a PR whose `headRefOid` differs from `last_head_sha`, and a PR with no file at all. A PR whose
   head did not move needs no new run: the agent only refreshes `last_reviewed`.
+- **Resumed decisions** — a `review_pr` request whose `extra.resume` is set carries a posting click the server
+  refused for a stale head (`{decision, drafts, review_path}`). After the agent updates the .md, the master
+  POSTs one decision request back to the local server with that decision, those drafts, `review_path`, and
+  `subset_ok: true`. The server posts the drafts that survived the re-review and names the dropped ones in the
+  reply; it refuses (falls back pending) when the refreshed verdict contradicts the decision — then the
+  developer decides again. Relay the outcome in the re-review request's `reply` before setting it `done`.
 - **Nudged PRs** — for every PR in `nudges.json`, check whether the author commented or pushed after `posted`.
   If yes, set `"replied": true` on that entry; the row then shows an "author replied" pill and the PR is alive again.
 - **Index** — `reviews_index.py`, inside `ms-refresher`, turns the files into `reviews.json`. The page reads it: verdict pill, findings pill, and the

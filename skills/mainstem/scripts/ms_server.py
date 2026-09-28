@@ -481,25 +481,30 @@ def stale_review_check(rec):
     return ("error", "head moved (%s -> %s) — the review is stale." % (m.group(1)[:8], live[:8]))
 
 
-def queue_rereview(url):
+def queue_rereview(url, resume=None):
     """A stale posting click should cost the user nothing: queue the re-review for the
-    master automatically instead of sending them hunting for a button. Returns False when
-    one is already pending or running for this PR."""
-    try:
-        with open(os.path.join(DATA_DIR, "requests.json")) as f:
-            r = json.load(f)
-        lst = r if isinstance(r, list) else r.get("requests", [])
-        for q in lst:
+    master automatically instead of sending them hunting for a button. `resume` carries
+    the refused decision ({decision, drafts, review_path}) so the master re-applies it
+    to the surviving drafts once the re-review lands. Returns False when a re-review is
+    already pending or running for this PR (the resume payload still lands on it)."""
+    with req_lock:
+        reqs = load_requests()
+        for q in reqs:
             if q.get("kind") == "review_pr" and url in (q.get("targets") or []) \
                     and q.get("status") in ("pending", "working"):
+                if resume:
+                    # the latest click wins — it is the freshest statement of intent
+                    q.setdefault("extra", {})["resume"] = resume
+                    tmp = REQUESTS + ".tmp"
+                    with open(tmp, "w") as f:
+                        json.dump(reqs, f, indent=1, ensure_ascii=False)
+                    os.replace(tmp, REQUESTS)
                 return False
-    except OSError:
-        pass
     now = datetime.datetime.now(datetime.timezone.utc).isoformat()
     append_request({
         "id": new_id(), "kind": "review_pr",
         "text": "Re-review %s (head moved under a posting click)" % url,
-        "targets": [url], "extra": {}, "status": "pending",
+        "targets": [url], "extra": ({"resume": resume} if resume else {}), "status": "pending",
         "created": now, "when": now, "reply": "",
     })
     return True
@@ -511,10 +516,16 @@ def handle(rec):
         stale = stale_review_check(rec)
         if stale:
             url = (rec.get("targets") or [""])[0]
-            queued = queue_rereview(url)
+            extra = rec.get("extra") or {}
+            resume = {
+                "decision": extra.get("decision") or rec.get("decision") or "",
+                "drafts": extra.get("drafts") or rec.get("drafts") or [],
+                "review_path": extra.get("review_path") or rec.get("review_path") or "",
+            }
+            queued = queue_rereview(url, resume=resume)
             return stale[0], stale[1] + (
-                " A re-review was queued automatically — decide again when its reply lands."
-                if queued else " A re-review is already running — decide again when it lands.")
+                " A re-review was queued — your decision is applied automatically to the drafts that survive it."
+                if queued else " A re-review is already running — your decision is applied automatically to the drafts that survive it.")
         if review_post is None:
             # Ported in a later milestone; until then the master handles posting.
             return "pending", ""

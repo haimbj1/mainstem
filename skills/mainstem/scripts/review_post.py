@@ -104,20 +104,41 @@ def execute(rec):
     selected = extra.get("drafts") or rec.get("drafts") or []
     dry = bool(os.environ.get("MS_REVIEW_DRY_RUN"))
 
-    if decision == "approve" and not selected:
+    subset_ok = bool(extra.get("subset_ok"))
+
+    def plain_approve(note=""):
         if dry:
-            return "done", "DRY RUN: would approve %s/pull/%d with no comments." % (repo, pr)
+            return "done", "DRY RUN: would approve %s/pull/%d with no comments.%s" % (repo, pr, note)
         rc, out, err = run(["gh", "pr", "review", url, "--approve"], timeout=60)
         if rc != 0:
             return "error", "approve failed: " + (err or out)[:300]
         _mark(path, [], status="approved", verdict="approved")
-        return "done", "Approved %s#%d, no comments. Posted by the server - no model tokens." % (repo.split("/")[-1], pr)
+        return "done", "Approved %s#%d, no comments. Posted by the server - no model tokens.%s" % (
+            repo.split("/")[-1], pr, note)
+
+    if decision == "approve" and not selected:
+        return plain_approve()
 
     if not path or not os.path.exists(path):
         raise Unpostable("no review file at %r" % path)
-    drafts = parse_drafts(open(path).read())
+    text = open(path).read()
+    if subset_ok:
+        # A resumed decision must not contradict the refreshed review: a flipped
+        # verdict means the ground changed under the click — the developer decides.
+        vm = re.search(r"^verdict:\s*(\S+)", text, re.M)
+        v = vm.group(1) if vm else ""
+        if decision in ("approve", "approve_with_comments") and v == "request-changes":
+            raise Unpostable("resume stopped: the refreshed verdict is request-changes")
+        if decision == "request_changes" and v.startswith("approve"):
+            raise Unpostable("resume stopped: the refreshed verdict is %s" % v)
+    drafts = parse_drafts(text)
     chosen = [(f, drafts[f]) for f in selected if f in drafts]
+    dropped = [f for f in selected if f not in drafts] if subset_ok else []
+    note = " The re-review dropped %s." % ", ".join(dropped) if dropped else ""
     if not chosen:
+        if subset_ok and decision == "approve_with_comments":
+            # every selected comment was resolved at the new head; the approval stands
+            return plain_approve(note)
         raise Unpostable("selected drafts %r not found in %s" % (selected, os.path.basename(path)))
 
     valid = diff_lines(repo, pr)
@@ -150,9 +171,9 @@ def execute(rec):
         payload["commit_id"] = out.strip()
 
     if dry:
-        return "done", "DRY RUN: %s on %s#%d with %d inline + %d in body (%s)." % (
+        return "done", "DRY RUN: %s on %s#%d with %d inline + %d in body (%s).%s" % (
             event, repo.split("/")[-1], pr, len(comments), len(moved),
-            ", ".join(f for f, _ in chosen))
+            ", ".join(f for f, _ in chosen), note)
     rc, out, err = run(
         ["gh", "api", "repos/%s/pulls/%d/reviews" % (repo, pr), "--input", "-"],
         stdin=json.dumps(payload), timeout=120,
@@ -163,6 +184,6 @@ def execute(rec):
     status = "approved" if event == "APPROVE" else "posted"
     verdict = {"APPROVE": "approved", "REQUEST_CHANGES": "request-changes"}.get(event)
     _mark(path, [f for f, _ in chosen], status=status, verdict=verdict)
-    return "done", "%s posted on %s#%d (review %s): %d inline, %d in the body (%s). Posted by the server - no model tokens." % (
+    return "done", "%s posted on %s#%d (review %s): %d inline, %d in the body (%s). Posted by the server - no model tokens.%s" % (
         event.replace("_", " ").title(), repo.split("/")[-1], pr, rid,
-        len(comments), len(moved), ", ".join(f for f, _ in chosen))
+        len(comments), len(moved), ", ".join(f for f, _ in chosen), note)
