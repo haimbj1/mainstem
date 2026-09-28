@@ -1850,8 +1850,11 @@ function renderReviews(){
   const hasNew = r => rvNewReplies(r.url).length > 0;
   const updCount = base.filter(hasNew).length;
   // Decided = clicked on the board (rvDec, per browser) OR already approved on GitHub itself.
-  const isDec = r => !!rvDec[r.url] || GH_MY_REVIEW[r.url] === 'APPROVED';
-  const isAppr = r => GH_MY_REVIEW[r.url] === 'APPROVED' || rvDec[r.url] === 'approve' || rvDec[r.url] === 'approve_with_comments' || RV[r.url]?.status === 'approved';
+  // A click stores rvDec locally at once, but the server can refuse the post (stale
+  // head) — so a local decision counts as decided only once it actually landed: the
+  // review file's status flipped to a posted state, or GitHub shows my review.
+  const isDec = r => (!!rvDec[r.url] && (POSTED.has(RV[r.url]?.status) || !!GH_MY_REVIEW[r.url])) || GH_MY_REVIEW[r.url] === 'APPROVED';
+  const isAppr = r => GH_MY_REVIEW[r.url] === 'APPROVED' || RV[r.url]?.status === 'approved';
   const list = (rvUpdOnly ? base.filter(hasNew)
     : base.filter(r=>!authorF||r.author.login===authorF)
     .filter(r => rvFilter==='all' || (rvFilter==='decided' ? isDec(r) : rvFilter==='approved' ? isAppr(r) : rvFilter==='waiting' ? POSTED.has(RV[r.url]?.status) : rvFilter==='reviewed' ? !!RV[r.url] : !RV[r.url]))
