@@ -400,6 +400,7 @@ td.mono{color:var(--ink-2)}
 .standup{white-space:pre-wrap;font:12.5px/1.5 var(--f-mono);background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:12px;max-height:360px;overflow:auto;margin-top:10px;display:none}
 .standup.show{display:block}
 footer{margin-top:40px;font-size:12px;color:var(--muted);display:flex;gap:16px;flex-wrap:wrap}
+.dcount{opacity:.7;font-size:.92em;margin-left:4px}
 </style>
 
 <div class="top"><div class="top-in">
@@ -893,9 +894,9 @@ function rvCard(rv, title){
   const acts = `<div class="decform">
     ${sessBtnPR(url, rvTitle(rv), '')}
     <button class="dec" data-write data-rva="approve" title="Approve on GitHub in your name — Claude confirms with you first">Approve</button>
-    <button class="dec" data-write data-rva="approve_with_comments" title="Post the selected drafts as inline comments, then approve">Approve + post selected</button>
-    <button class="dec" data-write data-rva="request_changes" title="Post the selected drafts and request changes">Request changes</button>
-    <button class="dec" data-write data-rva="post_findings" title="Post the selected drafts only — no verdict yet">Post drafts only</button>
+    <button class="dec" data-write data-rva="approve_with_comments" title="Post the selected drafts as inline comments, then approve">Approve + post selected<span class="dcount" data-dcount></span></button>
+    <button class="dec" data-write data-rva="request_changes" title="Post the selected drafts and request changes">Request changes<span class="dcount" data-dcount></span></button>
+    <button class="dec" data-write data-rva="post_findings" title="Post the selected drafts only — no verdict yet">Post drafts only<span class="dcount" data-dcount></span></button>
     <input class="free" data-rvf="question" placeholder="ask the review agent one question…"><button class="dec" data-write data-rva="review_question" title="Claude answers in the Decision log — no GitHub write">Ask agent</button>
     <input class="free" data-rvf="why" placeholder="skip because…"><button class="dec" data-write data-rva="skip_review" title="Drop the review — Claude removes you as reviewer">Skip</button>
     ${nudgeDue() && nudgeOf(url) ? `<button class="dec" data-write data-rva="close_stale" title="The nudge comment got no answer — close the PR">Close (no answer)</button>` : ''}</div>`;
@@ -949,12 +950,22 @@ function rvSend(url, action, card){
   renderQueue(); renderReviews(); renderLog(); renderTabs();
 }
 /* the review card renders into the drawer — the list behind it never moves */
+/* The card pre-ticks High/Med only, so the post buttons say how many drafts go out
+   and how many stay behind — a silent partial post surprised the developer once. */
+function rvSyncCounts(card){
+  if (!card) return;
+  const total = card.querySelectorAll('input[data-draft]').length;
+  const sel = card.querySelectorAll('input[data-draft]:checked').length;
+  const txt = total ? ` · ${sel} of ${total}${total - sel ? ` · ${total - sel} unticked` : ''}` : '';
+  card.querySelectorAll('[data-dcount]').forEach(s => s.textContent = txt);
+}
 function openReviewDrawer(url){
   const rv = RV[url]; if (!rv) return;
   rvMarkSeen(url); rvOpenQ = rvOpenP = url;
   const rr = DATA.review_requests.find(r => r.url === url);
   const title = rr ? `#${rr.number} ${rr.title}` : `#${rv.pr} ${rvTitle(rv)}`;
   openDrawer(title, rvCard(rv, title), { kind:'review', url });
+  rvSyncCounts(document.querySelector('.rvcard'));
   renderQueue(); renderReviews(); renderNow();
 }
 
@@ -1757,6 +1768,9 @@ $('#selbar').addEventListener('click', e => {
 $('#drawer').addEventListener('click', e => {
   const c=e.target.closest('[data-copy]'); if(c){ copy(c.dataset.copy); return; }
   const sd=e.target.closest('[data-send]'); if(sd){ sendWorktreeAction(sd.dataset.send, `${sd.dataset.send.replace('_',' ')}:\n${[...selected].map(p=>'- '+p).join('\n')}`, [...selected]); }
+});
+$('#drawer').addEventListener('change', e => {
+  if (e.target.matches('input[data-draft]')) rvSyncCounts(e.target.closest('.rvcard'));
 });
 
 /* ---------- render: panels ---------- */
