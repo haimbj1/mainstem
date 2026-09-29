@@ -66,6 +66,7 @@ def build(cfg, readonly=False):
                   .get("data", {}).get("viewer", {}).get("pullRequests", {}).get("nodes", []),
         "review_requests": load(data_dir, "review_requests.json", []),
         "my_reviews": load(data_dir, "my_reviews.json", {}),
+        "my_review_replies": load(data_dir, "my_review_replies.json", {}),
         "reviews": load(data_dir, "reviews.json", {}),
         "nudges": load(data_dir, "nudges.json", []),
         "jira": load(data_dir, "jira.json", []),

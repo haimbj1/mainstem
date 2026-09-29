@@ -193,11 +193,24 @@ jq -n --argjson known "$direct_and_team_json" --argjson watch "$watch_prs" --arg
 # GitHub drops the review request the moment a review is submitted, so an approved PR
 # vanishes from the searches above. Collect my standing reviews on still-open PRs
 # separately — the page files those under decided instead of open work.
-my_reviews_json="$(gh api graphql -f query='query{ search(query:"is:pr is:open reviewed-by:'"$GH_LOGIN"'", type:ISSUE, first:50){ nodes{ ... on PullRequest{ url myReviews: reviews(author:"'"$GH_LOGIN"'", last:10){nodes{state}} } } } }' \
-  | jq '[.data.search.nodes[] | {key:.url, value:'"$MY_REVIEW_JQ"'}] | map(select(.value != null)) | from_entries' \
-  || { echo "my_reviews: gh/jq failed — keeping the previous file" >&2; echo ''; })"
-if [ -n "$my_reviews_json" ]; then
-  printf '%s\n' "$my_reviews_json" > "$OUT/my_reviews.json.tmp" && mv "$OUT/my_reviews.json.tmp" "$OUT/my_reviews.json"
+my_reviewed_raw="$(gh api graphql -f query='query{ search(query:"is:pr is:open reviewed-by:'"$GH_LOGIN"'", type:ISSUE, first:50){ nodes{ ... on PullRequest{ url myReviews: reviews(author:"'"$GH_LOGIN"'", last:10){nodes{state submittedAt}} comments(last:10){nodes{author{login} createdAt}} reviewThreads(last:30){nodes{comments(last:1){nodes{author{login} createdAt}}}} } } } }' \
+  || { echo "my_reviews: gh failed — keeping the previous files" >&2; echo ''; })"
+if [ -n "$my_reviewed_raw" ]; then
+  printf '%s\n' "$my_reviewed_raw" \
+    | jq '[.data.search.nodes[] | {key:.url, value:'"$MY_REVIEW_JQ"'}] | map(select(.value != null)) | from_entries' \
+    > "$OUT/my_reviews.json.tmp" && mv "$OUT/my_reviews.json.tmp" "$OUT/my_reviews.json"
+  # A comment by someone else AFTER my last review means the ball came back to me.
+  # Posting again advances my last-review time past the reply, which clears the entry.
+  printf '%s\n' "$my_reviewed_raw" \
+    | jq --arg me "$GH_LOGIN" '[.data.search.nodes[]
+        | ([.myReviews.nodes[].submittedAt] | max) as $myAt
+        | select($myAt != null)
+        | ([(.comments.nodes[]), (.reviewThreads.nodes[].comments.nodes[])]
+           | map(select(.author.login != $me and .createdAt > $myAt))
+           | sort_by(.createdAt) | last) as $rep
+        | select($rep != null)
+        | {key:.url, value:{by:$rep.author.login, at:$rep.createdAt}}] | from_entries' \
+    > "$OUT/my_review_replies.json.tmp" && mv "$OUT/my_review_replies.json.tmp" "$OUT/my_review_replies.json"
 fi
 fi
 

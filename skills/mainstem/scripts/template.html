@@ -792,6 +792,7 @@ function rvQueuedSync(){
 }
 rvQueuedSync();
 const GH_MY_REVIEW = Object.assign({}, DATA.my_reviews || {}); DATA.review_requests.forEach(r => { if (r.my_review) GH_MY_REVIEW[r.url] = r.my_review; });
+const RV_REPLIED = DATA.my_review_replies || {};
 const GH_RS = { APPROVED:['✓ approved on GitHub','good'], CHANGES_REQUESTED:['✗ changes requested on GitHub','crit'], COMMENTED:['commented on GitHub','neutral'], DISMISSED:['review dismissed','warn'] };
 const POSTED = new Set(['approved','changes-requested','comments-posted','posted']);
 function waitPill(url){
@@ -825,7 +826,8 @@ function rvPills(url){
     return `<span class="pill accent" title="${esc(last.reply || '')} — open the review card to mark it seen">⟲ ${esc(lbl)}: ${esc(gist)}${(last.reply||'').length > 70 ? '…' : ''}</span>`;
   })() : '';
   const dft = (RR_DRAFT.has(url) ? `<span class="pill neutral" title="Draft PR — the author is not asking for review yet; reviewing it now wastes time and tokens">✎ draft</span>` : '')
-    + (RV_QUEUED.has(url) ? `<span class="pill warn" title="The review agent is queued or running on this PR — the verdict replaces this pill">⌛ review running</span>` : '');
+    + (RV_QUEUED.has(url) ? `<span class="pill warn" title="The review agent is queued or running on this PR — the verdict replaces this pill">⌛ review running</span>` : '')
+    + (RV_REPLIED[url] ? `<span class="pill accent" title="${esc(RV_REPLIED[url].by)} answered ${esc(ageText(RV_REPLIED[url].at))} ago, after your last review — posting again clears this">💬 author replied</span>` : '');
   if (!rv) return dft + waitPill(url) + ghReviewPill(url) + stackPills(url) + `<span class="pill neutral" title="no offline review file for this PR yet">not reviewed</span>`
     + (LOCAL && !RV_QUEUED.has(url) ? `<button class="pill model" data-write data-rvrun="${esc(url)}" title="Run the offline review agent on this PR — ~150k tokens">✦ review</button>` : '')
     + `${nudgePill(url)}${decp}${nrp}`;
@@ -1870,8 +1872,11 @@ function renderReviews(){
   // A decision hides a row only with THAT decision's receipt — a refused click plus an
   // old comment of mine must not read as decided, and "post drafts only" is no verdict.
   const DEC_RECEIPT = { approve:['approved','APPROVED'], approve_with_comments:['approved','APPROVED'], request_changes:['changes-requested','CHANGES_REQUESTED'] };
+  const headMoved = r => { const rv = RV[r.url]; return !!(rv?.live_head && rv?.last_head_sha && !rv.live_head.startsWith(rv.last_head_sha) && !rv.last_head_sha.startsWith(rv.live_head)); };
   const isDec = r => {
+    if (RV_REPLIED[r.url]) return false;  // the author answered after my review — the ball is back with me
     const gh = GH_MY_REVIEW[r.url];
+    if (gh === 'CHANGES_REQUESTED' && headMoved(r)) return false;  // the author pushed the fix round
     if (gh === 'APPROVED' || gh === 'CHANGES_REQUESTED') return true;
     const d = rvDec[r.url]; if (!d) return false;
     if (d === 'skip_review' || d === 'close_stale') return true;
