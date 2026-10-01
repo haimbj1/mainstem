@@ -75,6 +75,33 @@ def diff_lines(repo, pr):
     return valid
 
 
+def _set_pending_fm(path, rid):
+    """Record (or clear) the GitHub pending-review id in the review file's frontmatter."""
+    if not path or not os.path.exists(path):
+        return
+    t = open(path).read()
+    t = re.sub(r"^pending_review:.*\n", "", t, flags=re.M)
+    if rid:
+        t = t.replace("\n---\n", "\npending_review: %s\n---\n" % rid, 1)
+    open(path, "w").write(t)
+
+
+def my_pending_review(repo, pr):
+    """The id of my PENDING review on this PR, if one exists (the API only returns the caller's)."""
+    rc, out, _ = run(["gh", "api", "repos/%s/pulls/%d/reviews" % (repo, pr),
+                      "--jq", '[.[] | select(.state=="PENDING")] | last | .id'], timeout=60)
+    rid = (out or "").strip()
+    return rid if rc == 0 and rid and rid != "null" else None
+
+
+def drop_pending(repo, pr, path):
+    """Delete my pending review (GitHub allows only one per PR) so a real post can land."""
+    rid = my_pending_review(repo, pr)
+    if rid:
+        run(["gh", "api", "-X", "DELETE", "repos/%s/pulls/%d/reviews/%s" % (repo, pr, rid)], timeout=60)
+    _set_pending_fm(path, None)
+
+
 def _mark(path, fids, status=None, verdict=None):
     """Flip posted findings 📋→💬 in the table and update frontmatter. Best-effort."""
     if not path or not os.path.exists(path):
@@ -117,6 +144,8 @@ def execute(rec):
             repo.split("/")[-1], pr, note)
 
     if decision == "approve" and not selected:
+        if not dry:
+            drop_pending(repo, pr, path)
         return plain_approve()
 
     if not path or not os.path.exists(path):
@@ -155,6 +184,7 @@ def execute(rec):
         "approve_with_comments": "APPROVE",
         "request_changes": "REQUEST_CHANGES",
         "post_findings": "COMMENT",
+        "pre_review": "PENDING",
     }.get(decision)
     if not event:
         raise Unpostable("unknown decision %r" % decision)
@@ -165,7 +195,11 @@ def execute(rec):
     if not comments and not moved:
         raise Unpostable("nothing to post")
 
+    # A review created WITHOUT an event stays PENDING on GitHub — inline with the code,
+    # visible only to the reviewer, until submitted or deleted.
     payload = {"event": event, "body": body, "comments": comments}
+    if event == "PENDING":
+        payload.pop("event")
     rc, out, _ = run(["gh", "pr", "view", url, "--json", "headRefOid", "-q", ".headRefOid"], timeout=30)
     if rc == 0 and out.strip():
         payload["commit_id"] = out.strip()
@@ -174,6 +208,9 @@ def execute(rec):
         return "done", "DRY RUN: %s on %s#%d with %d inline + %d in body (%s).%s" % (
             event, repo.split("/")[-1], pr, len(comments), len(moved),
             ", ".join(f for f, _ in chosen), note)
+    # one pending review per PR: a refreshed pre-review replaces the old one, and a real
+    # post must clear the staged copy or GitHub refuses the new review
+    drop_pending(repo, pr, path)
     rc, out, err = run(
         ["gh", "api", "repos/%s/pulls/%d/reviews" % (repo, pr), "--input", "-"],
         stdin=json.dumps(payload), timeout=120,
@@ -181,6 +218,10 @@ def execute(rec):
     if rc != 0:
         return "error", "post failed: " + (err or out)[:300]
     rid = json.loads(out).get("id", "?")
+    if event == "PENDING":
+        _set_pending_fm(path, rid)
+        return "done", "Pre-review staged on %s#%d (pending review %s): %d inline, %d in the body (%s) — visible only to you on GitHub; >> lines in a comment talk to the reviewer.%s" % (
+            repo.split("/")[-1], pr, rid, len(comments), len(moved), ", ".join(f for f, _ in chosen), note)
     status = "approved" if event == "APPROVE" else "posted"
     verdict = {"APPROVE": "approved", "REQUEST_CHANGES": "request-changes"}.get(event)
     _mark(path, [f for f, _ in chosen], status=status, verdict=verdict)

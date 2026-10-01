@@ -460,7 +460,7 @@ DISPATCH = {
 }
 
 
-REVIEW_POSTING = {"approve", "approve_with_comments", "request_changes", "post_findings"}
+REVIEW_POSTING = {"approve", "approve_with_comments", "request_changes", "post_findings", "pre_review"}
 
 
 def stale_review_check(rec):

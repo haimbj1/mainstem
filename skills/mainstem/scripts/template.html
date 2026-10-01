@@ -827,7 +827,8 @@ function rvPills(url){
   })() : '';
   const dft = (RR_DRAFT.has(url) ? `<span class="pill neutral" title="Draft PR — the author is not asking for review yet; reviewing it now wastes time and tokens">✎ draft</span>` : '')
     + (RV_QUEUED.has(url) ? `<span class="pill warn" title="The review agent is queued or running on this PR — the verdict replaces this pill">⌛ review running</span>` : '')
-    + (RV_REPLIED[url] ? `<span class="pill accent" title="${esc(RV_REPLIED[url].by)} answered ${esc(ageText(RV_REPLIED[url].at))} ago, after your last review — posting again clears this">💬 author replied</span>` : '');
+    + (RV_REPLIED[url] ? `<span class="pill accent" title="${esc(RV_REPLIED[url].by)} answered ${esc(ageText(RV_REPLIED[url].at))} ago, after your last review — posting again clears this">💬 author replied</span>` : '')
+    + (RV[url]?.pending_review ? `<span class="pill info" title="Your staged comments sit on GitHub as a pending review only you can see — annotate with >> lines, then click Reread pre-review">👁 pre-review staged</span>` : '');
   if (!rv) return dft + waitPill(url) + ghReviewPill(url) + stackPills(url) + `<span class="pill neutral" title="no offline review file for this PR yet">not reviewed</span>`
     + (LOCAL && !RV_QUEUED.has(url) ? `<button class="pill model" data-write data-rvrun="${esc(url)}" title="Run the offline review agent on this PR — ~150k tokens">✦ review</button>` : '')
     + `${nudgePill(url)}${decp}${nrp}`;
@@ -902,6 +903,8 @@ function rvCard(rv, title){
     <button class="dec" data-write data-rva="approve_with_comments" title="Post the selected drafts as inline comments, then approve">Approve + post selected<span class="dcount" data-dcount></span></button>
     <button class="dec" data-write data-rva="request_changes" title="Post the selected drafts and request changes">Request changes<span class="dcount" data-dcount></span></button>
     <button class="dec" data-write data-rva="post_findings" title="Post the selected drafts only — no verdict yet">Post drafts only<span class="dcount" data-dcount></span></button>
+    <button class="dec" data-write data-rva="pre_review" title="Stage the selected drafts as a GitHub pending review — inline with the code, visible only to you, nothing posted. Annotate a staged comment with lines starting with >> to talk to the reviewer agent.">Pre-review on GitHub<span class="dcount" data-dcount></span></button>
+    ${rv.pending_review ? `<button class="dec" data-write data-rva="reread_pending" title="Claude reads the staged comments back — acts on every >> note, syncs your edits into the drafts, drops what you deleted — and replies">Reread pre-review</button>` : ''}
     <input class="free" data-rvf="question" placeholder="ask the review agent one question…"><button class="dec" data-write data-rva="review_question" title="Claude answers in the Decision log — no GitHub write">Ask agent</button>
     <input class="free" data-rvf="why" placeholder="skip because…"><button class="dec" data-write data-rva="skip_review" title="Drop the review — Claude removes you as reviewer">Skip</button>
     ${nudgeDue() && nudgeOf(url) ? `<button class="dec" data-write data-rva="close_stale" title="The nudge comment got no answer — close the PR">Close (no answer)</button>` : ''}</div>`;
@@ -913,6 +916,8 @@ function rvLine(a, t, ids, q, why){
   if (a==='approve_with_comments') return `Approve ${t}. Post ${c}.`;
   if (a==='request_changes') return `Request changes on ${t}. Post ${c}.`;
   if (a==='post_findings') return `Post ${c} on ${t}. Give no verdict yet.`;
+  if (a==='pre_review') return `Pre-review ${t}: stage ${c} as a GitHub pending review. Post nothing.`;
+  if (a==='reread_pending') return `Reread the pre-review comments on ${t} and act on my >> notes.`;
   if (a==='review_question') return `Question about the review of ${t}: ${q}`;
   if (a==='close_stale') return `Close ${t}. ${why}`;
   return `Skip the review of ${t}. ${why}`;
@@ -941,15 +946,16 @@ function rvSend(url, action, card){
   const val = k => card.querySelector(`[data-rvf="${k}"]`)?.value.trim() || '';
   const q = val('question');
   const why = action==='close_stale' ? (val('why') || 'No answer to the still-relevant comment in 7 days.') : val('why');
-  if ((action==='request_changes' || action==='post_findings') && !ids.length) { toast('Select at least one draft first'); return; }
+  if ((action==='request_changes' || action==='post_findings' || action==='pre_review') && !ids.length) { toast('Select at least one draft first'); return; }
   if (action==='review_question' && !q) { toast('Type the question first'); return; }
   if (action==='skip_review' && !why) { toast('Say why you skip it'); return; }
   const t = card.dataset.rvtitle || `#${rv.pr} ${rvTitle(rv)}`;
   const extra = { decision:action, item:{ id:'review:'+url, src:'review', title:t, url }, drafts:ids, review_path:rv.path || '' };
   if (action==='review_question') extra.question = q;
   if (action==='skip_review' || action==='close_stale') extra.why = why;
-  // A question is not a decision: the row must stay in the working list until a real verdict.
-  if (action !== 'review_question') { rvDec[url] = action; store.set('rv', rvDec); }
+  // A question, a staged pre-review, or a reread is not a decision: the row must stay
+  // in the working list until a real verdict.
+  if (!['review_question', 'pre_review', 'reread_pending'].includes(action)) { rvDec[url] = action; store.set('rv', rvDec); }
   queueDecision(newReq('decision', rvLine(action, t, ids, q, why), [url], extra));
   closeDrawer();
   renderQueue(); renderReviews(); renderLog(); renderTabs();
