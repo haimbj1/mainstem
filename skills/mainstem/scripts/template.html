@@ -665,6 +665,12 @@ $('#dr-body').addEventListener('click', e => {
   if (b.dataset.cmd) { copy(b.dataset.cmd); b.classList.add('copied'); setTimeout(()=>b.classList.remove('copied'),1200); return; }
   if (b.dataset.copyDraft) { rvCopyDraft(b.closest('.rvcard').dataset.rvcard, b.dataset.copyDraft); return; }
   if (b.dataset.dsave) { const c = b.closest('.rvcard'); rvSaveDraft(c.dataset.rvcard, b.dataset.dsave, c); toast('Draft saved to the review file'); return; }
+  if (b.dataset.reassess) {
+    const u = b.dataset.reassess;
+    if (RV_QUEUED.has(u)) { toast('A review is already queued or running on this PR'); return; }
+    sendRequest('review_pr', `Reassess the review of ${u}: which posted findings were resolved, what the author replied, what the new commits add`, [u]);
+    closeDrawer(); toast('Reassess queued — the refreshed verdict lands on the row'); return;
+  }
   if (b.dataset.rva) { const c = b.closest('.rvcard'); rvSend(c.dataset.rvcard, b.dataset.rva, c); return; }
   if (b.dataset.rv) { openReviewDrawer(b.dataset.rv); return; }
   if (b.dataset.pdcopy) { const c = b.closest('.pdcard'); const p = PEND.find(x => x.id === c.dataset.pdcard);
@@ -905,6 +911,7 @@ function rvCard(rv, title){
     <button class="dec" data-write data-rva="post_findings" title="Post the selected drafts only — no verdict yet">Post drafts only<span class="dcount" data-dcount></span></button>
     <button class="dec" data-write data-rva="pre_review" title="Stage the selected drafts as a GitHub pending review — inline with the code, visible only to you, nothing posted. Annotate a staged comment with lines starting with >> to talk to the reviewer agent.">Pre-review on GitHub<span class="dcount" data-dcount></span></button>
     ${rv.pending_review ? `<button class="dec" data-write data-rva="reread_pending" title="Claude reads the staged comments back — acts on every >> note, syncs your edits into the drafts, drops what you deleted — and replies">Reread pre-review</button>` : ''}
+    ${RV_QUEUED.has(url) ? '' : `<button class="dec" data-write data-reassess="${esc(url)}" title="Re-run the review agent to reassess: which posted findings the author resolved, what the replies say, and what the new commits add — ~150k tokens">⟲ Reassess</button>`}
     <input class="free" data-rvf="question" placeholder="ask the review agent one question…"><button class="dec" data-write data-rva="review_question" title="Claude answers in the Decision log — no GitHub write">Ask agent</button>
     <input class="free" data-rvf="why" placeholder="skip because…"><button class="dec" data-write data-rva="skip_review" title="Drop the review — Claude removes you as reviewer">Skip</button>
     ${nudgeDue() && nudgeOf(url) ? `<button class="dec" data-write data-rva="close_stale" title="The nudge comment got no answer — close the PR">Close (no answer)</button>` : ''}</div>`;
