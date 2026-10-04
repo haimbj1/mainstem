@@ -24,6 +24,9 @@ last_head_sha: abc123
 
 ### F1 — pkg/a.go:2
 first draft body
+
+### F2 — (whole PR)
+whole-pr draft body
 """
 
 
@@ -109,6 +112,22 @@ def test_valid_line_posts_inline_in_dry_run():
         status, reply = review_post.execute(_rec(path, "post_findings", ["F1"]))
         assert status == "done"
         assert "1 inline" in reply
+
+
+def test_whole_pr_location_parses_and_lands_in_body():
+    with _fixture() as path:
+        status, reply = review_post.execute(_rec(path, "post_findings", ["F2"]))
+        assert status == "done"
+        assert "1 in body" in reply or "1 in the body" in reply
+
+
+def test_partial_miss_without_subset_ok_defers_to_master():
+    with _fixture() as path:
+        try:
+            review_post.execute(_rec(path, "post_findings", ["F1", "F9"]))
+            raise AssertionError("expected Unpostable")
+        except review_post.Unpostable as e:
+            assert "F9" in str(e)
 
 
 if __name__ == "__main__":

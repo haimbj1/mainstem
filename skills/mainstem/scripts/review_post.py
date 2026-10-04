@@ -32,9 +32,10 @@ def repo_pr(url):
 
 
 def parse_drafts(text):
-    """{'F1': {path, line|None, body}} from '### F1 — <path>[:<line>]' sections."""
+    """{'F1': {path, line|None, body}} from '### F1 — <location>' sections. A location
+    that is not a path (e.g. '(whole PR)') yields no diff line and lands in the body."""
     out = {}
-    for m in re.finditer(r"^### (F\d+) — (\S+)\s*\n(.*?)(?=^### |^## |\Z)", text, re.M | re.S):
+    for m in re.finditer(r"^### (F\d+) — (.+?)\s*\n(.*?)(?=^### |^## |\Z)", text, re.M | re.S):
         fid, loc, body = m.group(1), m.group(2), m.group(3).strip()
         # the excerpt is drawer-side evidence; GitHub shows the code itself
         body = re.sub(r"\A```excerpt[^\n]*\n.*?\n?```\n?", "", body, flags=re.S).strip()
@@ -162,7 +163,12 @@ def execute(rec):
             raise Unpostable("resume stopped: the refreshed verdict is %s" % v)
     drafts = parse_drafts(text)
     chosen = [(f, drafts[f]) for f in selected if f in drafts]
-    dropped = [f for f in selected if f not in drafts] if subset_ok else []
+    missing = [f for f in selected if f not in drafts]
+    # Without subset_ok a partial match must not post quietly — the click named ALL of
+    # them, so a missing draft means the file and the page disagree: the master decides.
+    if missing and not subset_ok:
+        raise Unpostable("selected drafts %s not found in %s" % (", ".join(missing), os.path.basename(path)))
+    dropped = missing if subset_ok else []
     note = " The re-review dropped %s." % ", ".join(dropped) if dropped else ""
     if not chosen:
         if subset_ok and decision == "approve_with_comments":
