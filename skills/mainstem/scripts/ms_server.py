@@ -33,6 +33,7 @@ if HERE not in sys.path:
 from config import load_config  # noqa: E402
 import build as build_mod  # noqa: E402
 import demo_seed  # noqa: E402
+import review_progress  # noqa: E402
 
 try:
     import review_post
@@ -57,6 +58,7 @@ REQUESTS = os.path.join(DATA_DIR, "requests.json")
 STAMP = os.path.join(DATA_DIR, ".build_stamp")
 PIDFILE = os.path.join(DATA_DIR, "server.pid")
 LOG = os.path.join(DATA_DIR, "server.log")
+PROGRESS_DIR = review_progress.progress_dir(cfg)
 REBUILD_EVERY = cfg["rebuildIntervalSeconds"]
 REVIEWS_EVERY = int(cfg.get("reviewsRefreshSeconds") or 0)
 NOTE_RECOLLECT_THROTTLE = cfg["noteRecollectThrottleSeconds"]
@@ -665,6 +667,10 @@ class Handler(http.server.BaseHTTPRequestHandler):
                     '<text x="50" y="63" font-family="system-ui" font-size="40" font-weight="700" '
                     'fill="#e8a33d" text-anchor="middle">%s</text></svg>' % letter,
                     "image/svg+xml")
+                return
+            if path == "/data/%s.json" % review_progress.PROGRESS_SUBDIR:
+                # no such file: the reviewer writes one per PR, and the page wants them all
+                self._json(200, review_progress.load_all(PROGRESS_DIR))
                 return
             m = re.fullmatch(r"/data/([A-Za-z0-9_.-]+)\.json", path)
             if m and ".." not in m.group(1):

@@ -511,7 +511,10 @@ body:not([data-local]) [data-bdrefresh]{display:none}
 .bd-live::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:2px solid var(--blue);opacity:0;animation:bd-ping 1.6s ease-out infinite}
 @keyframes bd-ping{0%{transform:scale(.6);opacity:.8}100%{transform:scale(1.5);opacity:0}}
 .bd-track{height:4px;border-radius:4px;background:var(--blue-soft);overflow:hidden}
-.bd-track>span{display:block;height:100%;background:var(--blue)}
+.bd-track>span{display:block;height:100%;background:var(--blue);transition:width .4s ease}
+.bd-run.stalled{font-weight:500;color:var(--yellow-ink)}
+.bd-track.stalled>span{background:var(--grey-ink)}
+.bd-pill.fail{display:inline-block;line-height:21px;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 .bd-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding-top:8px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
 .bd-foot .who{color:var(--ink-2);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bd-size{font-family:var(--f-mono);display:flex;gap:6px;white-space:nowrap}
@@ -726,6 +729,7 @@ const DATA = /*__DATA__*/null;
 DATA.requests ||= [];
 DATA.artifacts ||= [];
 DATA.pending ||= [];
+DATA.review_progress ||= [];
 /* The plugin can hand a different owner to the same page. */
 const CONFIG = (typeof window !== 'undefined' && window.CONFIG) || {};
 const LIVE = { email: CONFIG.email ?? '' };
@@ -747,9 +751,9 @@ if (DATA.config && DATA.config.brand) {
 }
 { const wr = $('#workroot-txt'); if (wr) wr.textContent = (DATA.config && DATA.config.workRoot) || '~/work'; }
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const hrs = iso => (NOW - new Date(iso)) / 36e5;
+const hrs = (iso, now = NOW) => (now - new Date(iso)) / 36e5;
 const days = iso => hrs(iso) / 24;
-function ageText(iso){ if(!iso) return ''; const h=hrs(iso); if(h<1) return `${Math.max(1,Math.round(h*60))}m`; if(h<48) return `${Math.round(h)}h`; const d=Math.round(h/24); if(d<60) return `${d}d`; return `${Math.round(d/30)}mo`; }
+function ageText(iso, now = NOW){ if(!iso) return ''; const h=hrs(iso, now); if(h<1) return `${Math.max(1,Math.round(h*60))}m`; if(h<48) return `${Math.round(h)}h`; const d=Math.round(h/24); if(d<60) return `${d}d`; return `${Math.round(d/30)}mo`; }
 function ageCls(iso, warnD=3, critD=10){ const d=days(iso); return d>critD?'age veryold':d>warnD?'age old':'age'; }
 const repoShort = r => (r||'').replace(/^[^/]+\//, '');
 const store = { get(k,d){ try{ const v=localStorage.getItem('cc:'+k); return v?JSON.parse(v):d; }catch{ return d; } }, set(k,v){ try{ localStorage.setItem('cc:'+k, JSON.stringify(v)); }catch{} } };
@@ -2161,6 +2165,12 @@ const BOARD_CONFIRM_MS = 4000;
 const BOARD_MOVE_MS = 300;
 // past this a queued run is not "about to start" any more: nobody is picking the queue up
 const BOARD_QUEUE_STALE_MIN = 10;
+// a reviewer silent this long has most likely died mid-run (steps come every few minutes)
+const BOARD_PROGRESS_STALE_MIN = 10;
+// review_progress.py STEPS in run order: [step, the agent's name for it, what the card says]
+const BD_STEPS = [['context','Collect context','Collecting context'], ['diff','Read the diff','Reading the diff'],
+  ['files','Read the touched files','Reading the touched files'], ['findings','Draft findings','Drafting findings'],
+  ['verdict','Suggest a verdict','Suggesting a verdict']];
 const BD_REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)');
 const BD_PROV = { direct:['Requested from you','violet'], team:['Via your team','grey'], watch:['Watched repo','grey'], none:['Not requested','grey'] };
 const BD_DEPTH = { 'decide-here':['Decide from here',1], 'skim-diff':['Skim the diff',2], 'read-code':['Read the code',3] };
@@ -2222,12 +2232,26 @@ let bdDD = null;
 const saveBoard = () => store.set('board', { view: bdView, sort: bdSort, repos: bdSel.repos, people: bdSel.people, types: bdSel.types, colf: bdColF });
 const bdAgeHue = iso => { const d = days(iso); return d >= BOARD_AGE_CRIT_D ? 'red' : d >= BOARD_AGE_WARN_D ? 'orange' : 'grey'; };
 const bdSizeOf = rv => { const m = String(rv?.size || '').match(/\+(\d+)\s*\/\s*[−-](\d+)/); return m ? { a: +m[1], d: +m[2] } : null; };
-/* Milestone 3 fills this from the reviewer's progress file; null hides the bar. */
-const bdProgress = url => null;
-/* The run counts until a review file newer than the request lands for an unchanged head:
-   the agent is done even if the master has not marked the request done yet. */
+/* What the reviewer last reported for a PR (review_progress.py writes it, the poll reads it). */
+const bdProgEntry = url => DATA.review_progress.find(p => p.url === url);
+// against the live clock: NOW is the page's load time, and a board stays open for hours
+const bdProgFresh = p => Date.now() - Date.parse(p.updated_at) < BOARD_PROGRESS_STALE_MIN * 6e4;
+/* The card's view of that report; null = no report. A step this page does not know (a newer
+   helper) still shows the run, just without a bar. */
+function bdProgress(url){
+  const p = bdProgEntry(url); if (!p) return null;
+  const i = BD_STEPS.findIndex(s => s[0] === p.step);
+  const base = { startedAt: p.started_at, updatedAt: p.updated_at, fresh: bdProgFresh(p) };
+  if (i < 0) return { ...base, pct: null, label: 'Reviewing…', step: p.step };
+  const counted = p.total > 0;
+  return { ...base, step: BD_STEPS[i][1],
+    pct: Math.round((i + (counted ? p.done / p.total : 0)) / BD_STEPS.length * 100),
+    label: counted ? `Reading ${p.done} of ${p.total} files` : BD_STEPS[i][2] };
+}
+/* A run counts until a review file newer than its start lands for an unchanged head: the
+   agent is done even if the master has not marked the request done or a report lingers. */
 // mtime is the file's real write time; last_reviewed is a bare date (midnight) and only a fallback.
-const bdRunFinished = (url, run) => { const rv = RV[url]; return !!rv && !rvHeadMoved(url) && (Date.parse(rv.mtime) || Date.parse(rv.last_reviewed)) > Date.parse(run.when); };
+const bdRunFinished = (url, since) => { const rv = RV[url]; return !!rv && !rvHeadMoved(url) && (Date.parse(rv.mtime) || Date.parse(rv.last_reviewed)) > Date.parse(since); };
 /* Rows rebuilt from the live data, so a re-fetch shows new reviews without a reload. */
 function bdRows(){
   const requested = new Set(DATA.review_requests.map(r => r.url));
@@ -2262,11 +2286,16 @@ function bdOutcome(url, lastDec){
   if (outcome === 'comment' && rv?.verdict === 'needs-discussion') outcome = 'discuss';
   return { outcome, posted: receipt || lastDec?.status === 'done', at: lastDec?.when || rv?.mtime || '' };
 }
-function bdPlace(r, run, lastDec){
+function bdPlace(r, run, lastDec, prog){
   const rv = RV[r.url], moved = rvHeadMoved(r.url);
-  const open = !!run && !bdRunFinished(r.url, run);
-  // Only `working` says the agent picked the run up; `pending` is a place in the master's queue.
-  if (open && run.status === 'working') return { col:'running' };
+  const open = !!run && !bdRunFinished(r.url, run.when);
+  // The reviewer's own report proves the run started, even while the request still says
+  // `pending` (a place in the master's queue); `working` is the master's word for the same.
+  const live = !!prog && !bdRunFinished(r.url, prog.started_at);
+  if (live && !prog.error || open && run.status === 'working') return { col:'running' };
+  // a click after the failure is a retry: it shows as queued, not as the old failure
+  const failed = live && !(open && Date.parse(run.when) > Date.parse(prog.updated_at)) ? prog.error : null;
+  if (failed) return { col:'needs', moved, failed };
   if (!rv) return { col:'needs', queued: open };
   const o = bdOutcome(r.url, lastDec);
   if (o && !(moved && BD_REOPENED_BY_PUSH.has(o.outcome))) return days(o.at) > BOARD_RECENT_DAYS ? null : { col:'done', ...o };
@@ -2277,7 +2306,7 @@ function bdReviewCards(){
   for (const [u, at] of bdInFlight) if (lastDec[u] && lastDec[u].when >= at) bdInFlight.delete(u);
   const cards = [];
   bdRows().forEach(r => {
-    const p = bdPlace(r, runs[r.url], lastDec[r.url]); if (!p) return;
+    const p = bdPlace(r, runs[r.url], lastDec[r.url], bdProgEntry(r.url)); if (!p) return;
     const rv = RV[r.url], opened = r.createdAt || r.updatedAt;
     cards.push({ ...p, r, rv, run: runs[r.url], key: r.url, repo: repoShort(r.repository.nameWithOwner), opened,
       hay: `${r.title} ${r.repository.nameWithOwner} #${r.number}`.toLowerCase(),
@@ -2298,7 +2327,8 @@ function bdChips(c){
   const { r, rv } = c;
   if (c.col === 'needs' || c.col === 'running') {
     const pv = BD_PROV[r.rvOnly ? 'none' : rrProv(r)] || BD_PROV.team;
-    return bdPill(pv[0], pv[1]) + (r.isDraft ? bdPill('Draft', 'grey') : '');
+    return (c.failed ? bdPill(`Review failed: ${esc(c.failed)}`, 'red fail', c.failed) : '')
+      + bdPill(pv[0], pv[1]) + (r.isDraft ? bdPill('Draft', 'grey') : '');
   }
   if (c.col === 'ready') {
     const ranks = (rv.findings || []).map(f => sevRank(f.sev));
@@ -2332,11 +2362,15 @@ function bdReadyActions(c){
 }
 function bdCardHtml(c){
   const { r, rv } = c, u = esc(r.url);
+  const now = new Date(), prog = c.col === 'running' ? bdProgress(r.url) : null;
   const age = c.col === 'done' ? bdPill(`${ageText(c.at)} ago`, 'grey')
-    : c.col === 'running' ? bdPill(`Started ${ageText(c.run.when)} ago`, 'grey')
+    : c.col === 'running' ? bdPill(`Started ${ageText(prog?.startedAt || c.run.when, now)} ago`, 'grey')
     : bdPill(`${ageText(c.opened)} waiting`, bdAgeHue(c.opened), `opened ${c.opened}`);
-  const pct = c.col === 'running' ? bdProgress(r.url) : null;
-  const run = c.col === 'running' ? `<div class="bd-run"><span class="bd-live" aria-hidden="true"></span>Reviewing…</div>${pct == null ? '' : `<div class="bd-track"><span style="width:${pct}%"></span></div>`}` : '';
+  const stalled = prog && !prog.fresh;
+  const track = prog?.pct == null ? '' : `<div class="bd-track${stalled ? ' stalled' : ''}"><span style="width:${prog.pct}%"></span></div>`;
+  const run = c.col !== 'running' ? ''
+    : stalled ? `<div class="bd-run stalled" title="The reviewer has not reported a step for ${BOARD_PROGRESS_STALE_MIN}+ minutes">Stalled · last step ${esc(prog.step)} ${ageText(prog.updatedAt, now)} ago</div>${track}`
+    : `<div class="bd-run"><span class="bd-live" aria-hidden="true"></span>${prog ? esc(prog.label) : 'Reviewing…'}</div>${track}`;
   const chips = bdChips(c);
   const acts = c.col === 'needs' ? bdNeedsActions(c) : c.col === 'ready' ? bdReadyActions(c) : '';
   const size = c.size ? `<span class="bd-size"><span class="a">+${c.size.a}</span><span class="d">−${c.size.d}</span></span>` : '';
@@ -2603,10 +2637,11 @@ async function bdReload(){
   const fetchData = async (name, optional) => { const res = await fetch(`/data/${name}.json`, { cache:'no-store' });
     if (optional && res.status === 404) return null;
     if (!res.ok) throw new Error(`${name}.json: HTTP ${res.status}`); return res.json(); };
-  const [requests, reviews, reviewRequests, myPrs, jira] = await Promise.all([
-    ...['requests', 'reviews', 'review_requests'].map(n => fetchData(n)),
+  const [requests, reviews, reviewRequests, progress, myPrs, jira] = await Promise.all([
+    ...['requests', 'reviews', 'review_requests'].map(n => fetchData(n)), fetchData('review_progress', true),
     ...(bdView === 'work' ? ['my_prs', 'jira'].map(n => fetchData(n, true)) : [])]);
   DATA.requests = requests; DATA.review_requests = reviewRequests;
+  if (progress) DATA.review_progress = progress;
   if (myPrs) DATA.my_prs = myPrs.data?.viewer?.pullRequests?.nodes || [];
   if (jira) { DATA.jira = jira; reindexJira(); }
   for (const k in RV) delete RV[k];
@@ -2619,6 +2654,8 @@ async function bdReload(){
    local server is there to answer; idle boards cost nothing. */
 const bdBusy = () => bdInFlight.size > 0 || DATA.requests.some(q => (q.kind === 'review_pr' && (q.status === 'pending' || q.status === 'working'))
   || (q.kind === 'decision' && q.status === 'pending' && q.item?.src === 'review'))
+  // a reported run moves its card on every step, and a stalled one may still wake up
+  || DATA.review_progress.some(p => !p.error)
   // a running CI is about to move its card, once a collect rewrites my_prs.json
   || (bdView === 'work' && DATA.my_prs.some(p => prCi(p) === 'PENDING'));
 function bdPollEnsure(){

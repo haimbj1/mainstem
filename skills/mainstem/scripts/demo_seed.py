@@ -3,11 +3,12 @@
 import json
 import os
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 from config import load_config  # noqa: E402
+import review_progress  # noqa: E402
 
 NOW = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
@@ -15,6 +16,10 @@ NOW = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 def _write(data_dir, name, obj):
     with open(os.path.join(data_dir, name), "w") as f:
         json.dump(obj, f, indent=1)
+
+
+def _ago(minutes):
+    return (datetime.now(timezone.utc) - timedelta(minutes=minutes)).isoformat(timespec="seconds").replace("+00:00", "Z")
 
 
 def _proc(dt):
@@ -240,6 +245,17 @@ def write_demo_data(data_dir):
          "text": "Review https://github.com/example/watched-repo/pull/7",
          "targets": ["https://github.com/example/watched-repo/pull/7"], "status": "pending", "reply": ""},
     ])
+
+    # One run mid-way through the files (the pending r4 already shows in Reviewing) and one
+    # that went quiet past the board's staleness window, so --demo shows both card states.
+    pdir = os.path.join(data_dir, review_progress.PROGRESS_SUBDIR)
+    for url, started, updated, step, done, total in (
+        ("https://github.com/example/watched-repo/pull/7", 3, 0.3, "files", 6, 14),
+        ("https://github.com/example/other-repo/pull/44", 40, 25, "diff", None, None),
+    ):
+        review_progress.write_entry(pdir, {
+            "url": url, "started_at": _ago(started), "updated_at": _ago(updated),
+            "step": step, "done": done, "total": total, "error": None})
 
     _write(data_dir, "quickwins.json", {
         "generated_at": NOW, "counts": {"close": 0, "quick_win": 1, "stale": 0, "keep": 0},
