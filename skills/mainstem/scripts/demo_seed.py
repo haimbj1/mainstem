@@ -118,13 +118,31 @@ def write_demo_data(data_dir):
          "author": {"login": "contributor-c"},
          "repository": {"nameWithOwner": "demo-org/watched-repo"},
          "direct": False, "teams": [], "provenance": "watch"},
+        {"number": 15, "title": "Retry flaky uploads",
+         "url": "https://github.com/example/demo-app/pull/15",
+         "isDraft": False, "updatedAt": "2026-09-07T15:00:00Z",
+         "createdAt": "2026-09-04T09:00:00Z", "headRefName": "fix/upload-retry",
+         "baseRefName": "main", "my_review": "CHANGES_REQUESTED",
+         "author": {"login": "contributor-b"},
+         "repository": {"nameWithOwner": "demo-org/demo-app"},
+         "direct": True, "teams": [], "provenance": "direct"},
+        {"number": 21, "title": "Cache warmup on boot",
+         "url": "https://github.com/example/other-repo/pull/21",
+         "isDraft": False, "updatedAt": "2026-09-08T07:00:00Z",
+         "createdAt": "2026-09-03T09:00:00Z", "headRefName": "feat/cache-warmup",
+         "baseRefName": "main", "my_review": None,
+         "author": {"login": "contributor-c"},
+         "repository": {"nameWithOwner": "demo-org/other-repo"},
+         "direct": False, "teams": ["core-team"], "provenance": "team"},
     ])
 
     _write(data_dir, "reviews.json", {
         "https://github.com/example/demo-app/pull/12": {
             "url": "https://github.com/example/demo-app/pull/12", "repo": "demo-app", "pr": 12,
             "title": "Widget resize follow-up", "author": "contributor-a", "status": "drafted",
-            "verdict": "pending", "size": "S", "last_reviewed": NOW,
+            "verdict": "approve-with-comments", "size": "S (+24/\u22126, 2 files)",
+            "depth": "skim-diff", "depth_why": "small diff, one bound to check",
+            "last_reviewed": NOW, "mtime": NOW, "live_head": "deadbeef",
             "last_head_sha": "deadbeef", "summary": "One finding: an off-by-one in resize math.",
             "findings": [{"n": "1", "sev": "med", "conf": "high", "status": "📋 drafted",
                           "loc": "src/widgets.js:42", "issue": "off-by-one in resize bound"}],
@@ -140,7 +158,26 @@ def write_demo_data(data_dir):
                         "file_url": "https://github.com/example/demo-app/pull/12/files"
                                     "#diff-3a7f...R42"}],
             "questions": [],
-        }
+        },
+        "https://github.com/example/demo-app/pull/15": {
+            "url": "https://github.com/example/demo-app/pull/15", "repo": "demo-app", "pr": 15,
+            "title": "Retry flaky uploads", "author": "contributor-b", "status": "posted",
+            "verdict": "request-changes", "size": "M (+140/\u221232, 4 files)",
+            "depth": "read-code", "depth_why": "retry loop touches error handling",
+            "last_reviewed": NOW, "mtime": NOW, "live_head": "c0ffee12",
+            "last_head_sha": "c0ffee12", "summary": "Retries never back off.",
+            "findings": [{"n": "1", "sev": "High", "conf": "high", "status": "\U0001F4AC posted",
+                          "loc": "src/upload.js:88", "issue": "retry loop has no backoff"}],
+            "sev_counts": {"High": 1}, "drafts": [], "questions": [],
+        },
+        "https://github.com/example/other-repo/pull/21": {
+            "url": "https://github.com/example/other-repo/pull/21", "repo": "other-repo", "pr": 21,
+            "title": "Cache warmup on boot", "author": "contributor-c", "status": "drafted",
+            "verdict": "approve", "size": "XS (+9/\u22121, 1 files)", "depth": "decide-here",
+            "last_reviewed": NOW, "mtime": NOW, "live_head": "bbbb2222",
+            "last_head_sha": "aaaa1111", "summary": "Clean; the author pushed since.",
+            "findings": [], "sev_counts": {}, "drafts": [], "questions": [],
+        },
     })
 
     # Not collector-sourced: when present it's an object ({prs, posted, close_after}), not a
@@ -160,6 +197,16 @@ def write_demo_data(data_dir):
     _write(data_dir, "requests.json", [
         {"id": "r1", "when": NOW, "kind": "chat", "text": "how's the widget PR looking?",
          "targets": [], "status": "done", "reply": "Approved, one nit left as a comment."},
+        {"id": "r2", "when": NOW, "kind": "decision", "text": "Request changes on #15 Retry flaky uploads.",
+         "targets": ["https://github.com/example/demo-app/pull/15"], "status": "done",
+         "decision": "request_changes", "reply": "Request Changes posted on demo-app#15.",
+         "extra": {"decision": "request_changes", "drafts": ["F1"],
+                   "item": {"id": "review:https://github.com/example/demo-app/pull/15", "src": "review",
+                            "title": "#15 Retry flaky uploads",
+                            "url": "https://github.com/example/demo-app/pull/15"}}},
+        {"id": "r3", "when": NOW, "kind": "review_pr",
+         "text": "Review https://github.com/example/other-repo/pull/44",
+         "targets": ["https://github.com/example/other-repo/pull/44"], "status": "pending", "reply": ""},
     ])
 
     _write(data_dir, "quickwins.json", {

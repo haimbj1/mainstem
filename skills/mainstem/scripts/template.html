@@ -10,6 +10,11 @@
   --accent:#B87A17; --accent-ink:#8A5A0E; --accent-soft:#F6E9CF;
   --good:#2F8A57; --good-soft:#DDF0E4; --warn:#B8731F; --warn-soft:#F7E8D2; --crit:#C2433A; --crit-soft:#F8DEDB; --info:#3572B8; --info-soft:#DDE8F6;
   --sel:#FFF4DC; --shadow:0 1px 2px rgba(20,26,30,.06),0 6px 20px rgba(20,26,30,.05);
+  /* board status hues: solid (dot, lane bar) · soft (pill fill) · ink (pill text) */
+  --orange:#FF8A3D; --orange-soft:#FFE8D6; --orange-ink:#8F3B00; --blue:#3B82F6; --blue-soft:#DCE9FF; --blue-ink:#1B4A9E;
+  --violet:#7C6CF6; --violet-soft:#E8E4FF; --violet-ink:#4330C2; --green:#22B573; --green-soft:#D8F3E3; --green-ink:#14613A;
+  --red:#F04452; --red-soft:#FFE0E1; --red-ink:#9E1F27; --yellow:#F5B800; --yellow-soft:#FFF0BF; --yellow-ink:#6E5200;
+  --grey:#9AA2A7; --grey-soft:#EDEFEC; --grey-ink:#3F474D; --lift:0 12px 28px rgba(20,26,30,.12);
   --f-display:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",system-ui,sans-serif; --f-body:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",system-ui,sans-serif; --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
 }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
@@ -18,6 +23,10 @@
   --accent:#E0A03A; --accent-ink:#F0BC66; --accent-soft:#3A2D14;
   --good:#4FB477; --good-soft:#173324; --warn:#E39A3B; --warn-soft:#3A2A12; --crit:#E2645A; --crit-soft:#3E1B18; --info:#6AA5E8; --info-soft:#17293D;
   --sel:#241F12; --shadow:0 0 0 1px rgba(255,255,255,.04),0 2px 10px rgba(0,0,0,.35);
+  --orange-soft:rgba(255,138,61,.16); --orange-ink:#FFB27A; --blue-soft:rgba(59,130,246,.18); --blue-ink:#A4C6FF;
+  --violet-soft:rgba(124,108,246,.22); --violet-ink:#C3BAFF; --green-soft:rgba(34,181,115,.16); --green-ink:#86DEAD;
+  --red-soft:rgba(240,68,82,.18); --red-ink:#FFA0A7; --yellow-soft:rgba(245,184,0,.16); --yellow-ink:#F7D063;
+  --grey:#5F6B73; --grey-soft:rgba(255,255,255,.07); --grey-ink:#C2CACF; --lift:0 14px 34px rgba(0,0,0,.55);
 }}
 :root[data-theme="dark"]{
   --bg:#0F1418; --surface:#161C21; --surface-2:#1D242A; --line:#28323A; --line-strong:#3A464F;
@@ -25,6 +34,10 @@
   --accent:#E0A03A; --accent-ink:#F0BC66; --accent-soft:#3A2D14;
   --good:#4FB477; --good-soft:#173324; --warn:#E39A3B; --warn-soft:#3A2A12; --crit:#E2645A; --crit-soft:#3E1B18; --info:#6AA5E8; --info-soft:#17293D;
   --sel:#2A2417; --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
+  --orange-soft:rgba(255,138,61,.16); --orange-ink:#FFB27A; --blue-soft:rgba(59,130,246,.18); --blue-ink:#A4C6FF;
+  --violet-soft:rgba(124,108,246,.22); --violet-ink:#C3BAFF; --green-soft:rgba(34,181,115,.16); --green-ink:#86DEAD;
+  --red-soft:rgba(240,68,82,.18); --red-ink:#FFA0A7; --yellow-soft:rgba(245,184,0,.16); --yellow-ink:#F7D063;
+  --grey:#5F6B73; --grey-soft:rgba(255,255,255,.07); --grey-ink:#C2CACF; --lift:0 14px 34px rgba(0,0,0,.55);
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 var(--f-body);-webkit-font-smoothing:antialiased}
@@ -426,6 +439,55 @@ td.mono{color:var(--ink-2)}
 footer{margin-top:40px;font-size:12px;color:var(--muted);display:flex;gap:16px;flex-wrap:wrap}
 .dcount{opacity:.7;font-size:.92em;margin-left:4px}
 .rvtop{margin-bottom:10px}.rvtop .pill{font-size:13.5px;padding:5px 12px}\n.sum.lead{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;font-size:14.5px}\n.rvlog{margin-top:14px}.rvlog summary{cursor:pointer;color:var(--muted);font-size:12.5px}.rvlog .sum{color:var(--ink-2);font-size:13px;margin-top:8px}
+
+/* ---- board: kanban lanes over the same review state the Reviews tab reads ---- */
+body[data-tab="board"] #s-board{display:block;margin-top:0}
+.bd-seg{display:inline-flex;gap:3px;padding:3px;border-radius:10px;background:var(--surface-2);border:1px solid var(--line)}
+.bd-seg button{padding:4px 12px;border-radius:7px;font-family:var(--f-display);font-weight:600;font-size:13.5px;color:var(--muted);display:inline-flex;gap:7px;align-items:center}
+.bd-seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.bd-count{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:19px;padding:0 6px;border-radius:999px;background:var(--grey-soft);color:var(--grey-ink);font:600 11px/1 var(--f-mono)}
+.bd-seg button[aria-pressed="true"] .bd-count{background:var(--accent);color:#1A1206}
+.bd-repos{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.bd-repos .chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.bd-cols{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(272px,1fr);gap:14px;align-items:start;overflow-x:auto;padding-bottom:8px}
+.bd-lane{display:flex;flex-direction:column;gap:10px;padding:12px;border-radius:14px;background:var(--surface-2);border:1px solid var(--line);min-width:0}
+.bd-lh{display:flex;align-items:center;gap:8px}
+.bd-lh h3{margin:0;font-family:var(--f-display);font-weight:700;font-size:15px}
+.bd-lh .hint{margin-left:auto;font-size:12px;color:var(--muted)}
+.bd-dot{width:10px;height:10px;border-radius:4px;flex:none}
+.bd-bar{height:3px;border-radius:3px}
+.bd-mini{display:flex;flex-wrap:wrap;gap:2px;padding:3px;border-radius:999px;background:var(--bg)}
+.bd-mini button{padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600;color:var(--muted)}
+.bd-mini button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.bd-empty{padding:18px 10px;border:1.5px dashed var(--line-strong);border-radius:12px;text-align:center;font-size:13px;color:var(--muted)}
+.bd-card{width:100%;text-align:left;display:flex;flex-direction:column;gap:9px;padding:12px 13px 10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);transition:transform .16s ease,box-shadow .16s ease}
+.bd-card:hover{transform:translateY(-2px);box-shadow:var(--lift)}
+.bd-row{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;min-width:0}
+.bd-ref{font-family:var(--f-mono);font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bd-title{font-weight:600;font-size:14.5px;line-height:1.35;text-wrap:pretty}
+.bd-chips{display:flex;flex-wrap:wrap;gap:6px}
+.bd-pill{display:inline-flex;align-items:center;gap:6px;height:21px;padding:0 9px;border-radius:999px;font-size:12px;font-weight:600;line-height:1;white-space:nowrap;align-self:flex-start}
+.bd-pill.orange{background:var(--orange-soft);color:var(--orange-ink)} .bd-pill.blue{background:var(--blue-soft);color:var(--blue-ink)}
+.bd-pill.violet{background:var(--violet-soft);color:var(--violet-ink)} .bd-pill.green{background:var(--green-soft);color:var(--green-ink)}
+.bd-pill.red{background:var(--red-soft);color:var(--red-ink)} .bd-pill.yellow{background:var(--yellow-soft);color:var(--yellow-ink)}
+.bd-pill.grey{background:var(--grey-soft);color:var(--grey-ink)}
+.bd-pill svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.bd-depth{display:inline-flex;align-items:center;gap:7px;height:21px;padding:0 9px 0 8px;border-radius:999px;border:1px solid var(--line);font-size:12px;font-weight:600;white-space:nowrap;align-self:flex-start}
+.bd-bars{display:inline-flex;align-items:flex-end;gap:2px;height:10px}
+.bd-bars i{display:block;width:3px;border-radius:1px;background:var(--line-strong)}
+.bd-bars i:nth-child(1){height:4px}.bd-bars i:nth-child(2){height:7px}.bd-bars i:nth-child(3){height:10px}
+.bd-bars i.on{background:var(--accent)}
+.bd-run{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--blue-ink)}
+.bd-live{position:relative;width:8px;height:8px;border-radius:50%;background:var(--blue);flex:none}
+.bd-live::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:2px solid var(--blue);opacity:0;animation:bd-ping 1.6s ease-out infinite}
+@keyframes bd-ping{0%{transform:scale(.6);opacity:.8}100%{transform:scale(1.5);opacity:0}}
+.bd-track{height:4px;border-radius:4px;background:var(--blue-soft);overflow:hidden}
+.bd-track>span{display:block;height:100%;background:var(--blue)}
+.bd-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding-top:8px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
+.bd-foot .who{color:var(--ink-2);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bd-size{font-family:var(--f-mono);display:flex;gap:6px;white-space:nowrap}
+.bd-size .a{color:var(--good)} .bd-size .d{color:var(--crit)}
+@media (prefers-reduced-motion:reduce){.bd-card{transition:none}.bd-live::after{animation:none}}
 </style>
 
 <div class="appshell">
@@ -501,6 +563,17 @@ footer{margin-top:40px;font-size:12px;color:var(--muted);display:flex;gap:16px;f
       <span class="hint">Pull requests waiting on me. Click <b>Review</b> to read the offline review in the drawer and act on it.</span>
     </div>
     <div class="panel wide" id="p-reviews"></div>
+  </section>
+
+  <!-- tab: board -->
+  <section id="s-board">
+    <div class="sec-h">
+      <h2>Board</h2>
+      <span class="cnt" id="bd-cnt"></span>
+      <div class="tools" id="bd-tools"></div>
+    </div>
+    <div class="bd-repos" id="bd-repos" role="group" aria-label="Repository"></div>
+    <div id="bd-body"></div>
   </section>
 
   <!-- tab: tickets -->
@@ -597,7 +670,7 @@ footer{margin-top:40px;font-size:12px;color:var(--muted);display:flex;gap:16px;f
 <datalist id="dg-who"></datalist>
 <div class="toast" id="toast"></div>
 <div class="help" id="help"><div class="card"><h3>Keyboard</h3><table>
-<tr><td><span class="k">&#8679;1</span>&#8230;<span class="k">&#8679;6</span></td><td>Switch tab: Home &#183; Reviews &#183; Tickets &#183; Sessions &amp; work &#183; Log &#183; More. The tab is remembered and written to the URL (<code>#home #reviews #tickets #work #log #more</code>)</td></tr>
+<tr><td><span class="k">&#8679;1</span>&#8230;<span class="k">&#8679;7</span></td><td>Switch tab: Home &#183; Reviews &#183; Tickets &#183; Sessions &amp; work &#183; Log &#183; More &#183; Board. The tab is remembered and written to the URL (<code>#home #reviews #tickets #work #log #more #board</code>)</td></tr>
 <tr><td><span class="k">r</span></td><td>Toggle Reviews &#8646; Home</td></tr>
 <tr><td><span class="k">j</span> / <span class="k">k</span></td><td>Next / previous item in Decide now</td></tr>
 <tr><td><span class="k">o</span> or <span class="k">Enter</span></td><td>Open the item's link</td></tr>
@@ -648,7 +721,7 @@ const store = { get(k,d){ try{ const v=localStorage.getItem('cc:'+k); return v?J
 /* One screen answers "what do I do now"; every other view is one tab away.
    The active tab lives in localStorage and in the URL hash, so a bookmark and a
    reload both land where you left off. #reviews keeps the old bookmark alive. */
-const TABS = [['1','Home','home'],['2','Reviews','reviews'],['3','Tickets','tickets'],['4','Sessions & work','work'],['5','Log','log'],['6','More','more']];
+const TABS = [['1','Home','home'],['2','Reviews','reviews'],['3','Tickets','tickets'],['4','Sessions & work','work'],['5','Log','log'],['6','More','more'],['7','Board','board']];
 const TAB_IDS = TABS.map(t => t[2]);
 const hashTab = h => { const k = String(h || '').replace(/^#/, ''); return k === 'all' ? 'home' : (TAB_IDS.includes(k) ? k : ''); };
 let tab = hashTab(location.hash) || (TAB_IDS.includes(store.get('tab','')) ? store.get('tab','') : 'home');
@@ -712,6 +785,7 @@ $('#dr-body').addEventListener('click', e => {
   }
   if (b.dataset.rva) { const c = b.closest('.rvcard'); rvSend(c.dataset.rvcard, b.dataset.rva, c); return; }
   if (b.dataset.rv) { openReviewDrawer(b.dataset.rv); return; }
+  if (b.dataset.rvrun) { rvRun(b.dataset.rvrun); closeDrawer(); return; }
   if (b.dataset.pdcopy) { const c = b.closest('.pdcard'); const p = PEND.find(x => x.id === c.dataset.pdcard);
     const sec = p && pdSplit(p.body).secs.find(x => x.n === b.dataset.pdcopy); if (sec) copy(sec.raw.join('\n')); return; }
   if (b.dataset.pda) { const c = b.closest('.pdcard'); pdSend(c.dataset.pdcard, b.dataset.pda, c); return; }
@@ -1991,6 +2065,209 @@ $('#zoom-out').addEventListener('click', () => { ccZoom = Math.max(80, ccZoom - 
     + 'Agent spend (last 8):\n'
     + rows.slice(-8).map(r=>`${Math.round(r.tokens/1000)}k · ${r.what}`).join('\n');
 })();
+
+/* ---------- review state shared by the Reviews tab and the Board ---------- */
+// Decided = clicked on the board (rvDec, per browser) OR already approved on GitHub itself.
+// A click stores rvDec locally at once, but the server can refuse the post (stale
+// head) — so a local decision counts as decided only once it actually landed: the
+// review file's status flipped to a posted state, or GitHub shows my review.
+// A decision hides a row only with THAT decision's receipt — a refused click plus an
+// old comment of mine must not read as decided, and "post drafts only" is no verdict.
+const DEC_RECEIPT = { approve:['approved','APPROVED'], approve_with_comments:['approved','APPROVED'], request_changes:['changes-requested','CHANGES_REQUESTED'] };
+function rvIsDecided(url){
+  if (RV_REPLIED[url]) return false;  // the author answered after my review — the ball is back with me
+  const gh = GH_MY_REVIEW[url];
+  if (gh === 'CHANGES_REQUESTED' && rvHeadMoved(url)) return false;  // the author pushed the fix round
+  if (gh === 'APPROVED' || gh === 'CHANGES_REQUESTED') return true;
+  const d = rvDec[url]; if (!d) return false;
+  if (d === 'skip_review' || d === 'close_stale') return true;
+  const m = DEC_RECEIPT[d]; if (!m) return false;
+  return RV[url]?.status === m[0];
+}
+function rvRun(url){
+  if (RV_QUEUED.has(url)) { toast('A review is already queued or running on this PR'); return; }
+  sendRequest('review_pr', `Review ${url}`, [url]); toast('Review queued — the verdict lands on this row when the agent finishes');
+}
+
+/* ---------- board: kanban lanes over the review state ---------- */
+// Merged/closed PRs already leave reviews.json (prune_reviews archives them); the window
+// keeps long-open PRs I decided weeks ago from piling up in the last lane.
+const BOARD_RECENT_DAYS = 14;
+const BOARD_AGE_WARN_D = 2, BOARD_AGE_CRIT_D = 5;
+const BOARD_REPAINT_MS = 120;
+const BD_PROV = { direct:['Requested from you','violet'], team:['Via your team','grey'], watch:['Watched repo','grey'], none:['Not requested','grey'] };
+const BD_DEPTH = { 'decide-here':['Decide from here',1], 'skim-diff':['Skim the diff',2], 'read-code':['Read the code',3] };
+const BD_VERDICT = { 'approve':['Approve','green','approve'], 'approve-with-comments':['Approve with comments','blue','comments'], 'request-changes':['Request changes','red','changes'], 'needs-discussion':['Needs discussion','yellow','discuss'], 'skip-bot':['Bot · skip','grey',''] };
+const BD_OUTCOME = { approved:['Approved','green'], changes:['Changes requested','red'], comment:['Commented','blue'], discuss:['Needs discussion','yellow'], skipped:['Skipped','grey'] };
+// Live GitHub state beats my click, which beats the review file the server rewrote on post.
+const BD_OUTCOME_GH = { APPROVED:'approved', CHANGES_REQUESTED:'changes' };
+const BD_OUTCOME_DEC = { approve:'approved', approve_with_comments:'approved', request_changes:'changes', post_findings:'comment', skip_review:'skipped', close_stale:'skipped' };
+const BD_OUTCOME_FILE = { approved:'approved', 'changes-requested':'changes' };
+// A push after changes or comments hands the PR back (the page's "author pushed — re-review");
+// an approval or a skip stays decided, as rvIsDecided rules.
+const BD_REOPENED_BY_PUSH = new Set(['changes','comment','discuss']);
+const BD_SEVS = [['High','red',r => r <= 1],['Med','orange',r => r === 2],['Low','grey',r => r === 3 || r === 4]];
+const BD_COLS = [
+  { id:'needs', label:'Needs review', hue:'orange', hint:'Waiting on you' },
+  { id:'running', label:'Reviewing', hue:'blue', hint:'Agent at work' },
+  { id:'ready', label:'Ready to decide', hue:'violet', hint:'Drafted, not posted',
+    filters:[['all','All'],['approve','Approve'],['comments','Comments'],['changes','Changes'],['discuss','Discuss']], keyOf: c => c.verdictKey },
+  { id:'done', label:'Reviewed', hue:'green', hint:`Last ${BOARD_RECENT_DAYS} days`,
+    filters:[['all','All'],['approved','Approved'],['changes','Changes'],['comment','Comment'],['discuss','Discuss']], keyOf: c => c.outcome },
+];
+const byNullLast = (a, b, f) => (a == null) - (b == null) || (a == null ? 0 : f(a, b));
+const BD_SORTS = {
+  waiting:  ['Waiting longest', (a, b) => a.waitedTs - b.waitedTs],
+  updated:  ['Recently updated', (a, b) => b.updatedTs - a.updatedTs],
+  priority: ['Priority', (a, b) => byNullLast(a.score, b.score, (x, y) => y - x)],
+  size:     ['Smallest first', (a, b) => byNullLast(a.size, b.size, (x, y) => (x.a + x.d) - (y.a + y.d))],
+};
+// The Home queue's ranking score; it covers the directly requested PRs only, the rest sort last.
+const BD_SCORE = {}; items.forEach(it => { if (it.src === 'review') BD_SCORE[it.url] = it.score; });
+const bdSaved = store.get('board', {});
+let bdView = bdSaved.view === 'work' ? 'work' : 'reviews',
+    bdSort = BD_SORTS[bdSaved.sort] ? bdSaved.sort : 'waiting',
+    bdRepo = bdSaved.repo || 'all',
+    bdColF = bdSaved.colf || {},
+    bdTimer = null;
+const saveBoard = () => store.set('board', { view: bdView, sort: bdSort, repo: bdRepo, colf: bdColF });
+const bdAgeHue = iso => { const d = days(iso); return d >= BOARD_AGE_CRIT_D ? 'red' : d >= BOARD_AGE_WARN_D ? 'orange' : 'grey'; };
+const bdSizeOf = rv => { const m = String(rv?.size || '').match(/\+(\d+)\s*\/\s*[−-](\d+)/); return m ? { a: +m[1], d: +m[2] } : null; };
+/* Milestone 3 fills this from the reviewer's progress file; null hides the bar. */
+const bdProgress = url => null;
+/* The run counts until a review file newer than the request lands for an unchanged head:
+   the agent is done even if the master has not marked the request done yet. */
+const bdRunFinished = (url, run) => { const rv = RV[url]; return !!rv && !rvHeadMoved(url) && Date.parse(rv.mtime) > Date.parse(run.when); };
+function bdOutcome(url, lastDec){
+  if (RV_REPLIED[url]) return null;  // the author answered after my review — the ball is back with me
+  const rv = RV[url], d = rvDec[url];
+  const landed = rvIsDecided(url) || POSTED.has(rv?.status);
+  // A click the server has not answered yet is decided but not posted; a refused one goes back to Ready.
+  if (!landed && !(d && BD_OUTCOME_DEC[d] && lastDec?.status !== 'error')) return null;
+  let outcome = BD_OUTCOME_GH[GH_MY_REVIEW[url]] || BD_OUTCOME_DEC[d] || BD_OUTCOME_FILE[rv?.status] || 'comment';
+  if (outcome === 'comment' && rv?.verdict === 'needs-discussion') outcome = 'discuss';
+  return { outcome, posted: landed, at: lastDec?.when || rv?.mtime || '' };
+}
+function bdPlace(r, run, lastDec){
+  const rv = RV[r.url], moved = rvHeadMoved(r.url);
+  if (run && !bdRunFinished(r.url, run)) return { col:'running' };
+  if (!rv) return { col:'needs' };
+  const o = bdOutcome(r.url, lastDec);
+  if (o && !(moved && BD_REOPENED_BY_PUSH.has(o.outcome))) return days(o.at) > BOARD_RECENT_DAYS ? null : { col:'done', ...o };
+  return moved ? { col:'needs', moved:true } : { col:'ready' };
+}
+function bdReviewCards(){
+  const runs = {}, lastDec = {};
+  DATA.requests.forEach(q => {
+    const u = (q.targets || [])[0];
+    if (q.kind === 'review_pr' && (q.status === 'pending' || q.status === 'working'))
+      (q.targets || []).forEach(t => { if (!runs[t] || runs[t].when < q.when) runs[t] = q; });
+    else if (q.kind === 'decision' && u && BD_OUTCOME_DEC[(q.extra || {}).decision || q.decision] && (!lastDec[u] || lastDec[u].when < q.when)) lastDec[u] = q;
+  });
+  const cards = [];
+  RR_ALL.forEach(r => {
+    const p = bdPlace(r, runs[r.url], lastDec[r.url]); if (!p) return;
+    const rv = RV[r.url], waited = r.createdAt || r.updatedAt, updated = r.updatedAt || rv?.mtime;
+    cards.push({ ...p, r, rv, run: runs[r.url], repo: repoShort(r.repository.nameWithOwner),
+      waitedTs: Date.parse(waited) || 0, updatedTs: Date.parse(updated) || 0, waited,
+      score: BD_SCORE[r.url] ?? null, size: r.additions != null ? { a: r.additions, d: r.deletions || 0 } : bdSizeOf(rv),
+      verdictKey: (BD_VERDICT[rv?.verdict] || [])[2] || '' });
+  });
+  return cards;
+}
+const bdPill = (label, hue, title) => `<span class="bd-pill ${hue}"${title ? ` title="${esc(title)}"` : ''}>${label}</span>`;
+const BD_UP = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>';
+function bdDepth(rv){
+  const d = BD_DEPTH[rv?.depth]; if (!d) return '';
+  return `<span class="bd-depth" title="${esc(rv.depth_why || 'reviewer’s depth call')}"><span class="bd-bars" aria-hidden="true">${[1,2,3].map(n => `<i class="${n <= d[1] ? 'on' : ''}"></i>`).join('')}</span>${d[0]}</span>`;
+}
+function bdChips(c){
+  const { r, rv } = c;
+  if (c.col === 'needs' || c.col === 'running') {
+    const pv = BD_PROV[r.rvOnly ? 'none' : rrProv(r)] || BD_PROV.team;
+    return bdPill(pv[0], pv[1]) + (r.isDraft ? bdPill('Draft', 'grey') : '');
+  }
+  if (c.col === 'ready') {
+    const ranks = (rv.findings || []).map(f => sevRank(f.sev));
+    const v = BD_VERDICT[rv.verdict];
+    return BD_SEVS.map(([lbl, hue, hit]) => { const n = ranks.filter(hit).length; return n ? bdPill(`${n} ${lbl}`, hue) : ''; }).join('')
+      + (v ? bdPill(v[0], v[1]) : '') + (RV_REPLIED[r.url] ? bdPill('Author replied', 'blue') : '');
+  }
+  const o = BD_OUTCOME[c.outcome];
+  return bdPill(o[0], o[1]) + (c.outcome === 'skipped' ? '' : c.posted ? bdPill('Posted', 'grey') : bdPill('Not posted', 'yellow', 'Decided here; the post has not landed on GitHub yet'));
+}
+function bdCardHtml(c){
+  const { r, rv } = c;
+  const age = c.col === 'done' ? bdPill(`${ageText(c.at)} ago`, 'grey')
+    : c.col === 'running' ? bdPill(`Started ${ageText(c.run.when)} ago`, 'grey')
+    : bdPill(`${ageText(c.waited)} waiting`, bdAgeHue(c.waited), `opened ${c.waited}`);
+  const pct = c.col === 'running' ? bdProgress(r.url) : null;
+  const run = c.col === 'running' ? `<span class="bd-run"><span class="bd-live" aria-hidden="true"></span>Reviewing…</span>${pct == null ? '' : `<span class="bd-track"><span style="width:${pct}%"></span></span>`}` : '';
+  const chips = bdChips(c);
+  const size = c.size ? `<span class="bd-size"><span class="a">+${c.size.a}</span><span class="d">−${c.size.d}</span></span>` : '';
+  return `<button type="button" class="bd-card" data-bdopen="${esc(r.url)}">`
+    + `<span class="bd-row"><span class="bd-ref">${esc(c.repo)} #${r.number}</span>${age}</span>`
+    + (c.moved ? bdPill(`${BD_UP}Head moved since your review`, 'yellow') : '')
+    + (c.col === 'ready' ? bdDepth(rv) : '')
+    + `<span class="bd-title">${esc(r.title)}</span>${run}`
+    + (chips ? `<span class="bd-chips">${chips}</span>` : '')
+    + `<span class="bd-foot"><span class="who">${esc(r.author.login)}</span>${size}</span></button>`;
+}
+function bdLaneHtml(col, cards){
+  const active = col.filters ? (bdColF[col.id] || 'all') : 'all';
+  const list = active === 'all' ? cards : cards.filter(c => col.keyOf(c) === active);
+  const mini = col.filters ? `<div class="bd-mini" role="group" aria-label="${esc(col.label)} filter">${col.filters.map(([k, l]) => `<button type="button" data-bdcol="${col.id}" data-bdcolf="${k}" aria-pressed="${active === k}">${l}</button>`).join('')}</div>` : '';
+  return `<div class="bd-lane" role="region" aria-label="${esc(col.label)}"><div class="bd-lh"><span class="bd-dot" style="background:var(--${col.hue})"></span><h3>${col.label}</h3><span class="bd-count">${list.length}</span><span class="hint">${col.hint}</span></div>`
+    + `<div class="bd-bar" style="background:var(--${col.hue})"></div>${mini}`
+    + (list.length ? list.sort(BD_SORTS[bdSort][1]).map(bdCardHtml).join('') : '<div class="bd-empty">Nothing here</div>') + `</div>`;
+}
+const bdActionable = cards => cards.filter(c => c.col !== 'done').length;
+function renderBoard(){
+  clearTimeout(bdTimer);
+  const cards = bdView === 'reviews' ? bdReviewCards() : [];
+  const repos = [...new Set(cards.map(c => c.repo))].sort();
+  if (bdRepo !== 'all' && !repos.includes(bdRepo)) bdRepo = 'all';
+  const q = query.trim().toLowerCase();
+  const shown = cards.filter(c => (bdRepo === 'all' || c.repo === bdRepo)
+    && (!q || `${c.r.title} ${c.r.repository.nameWithOwner} #${c.r.number}`.toLowerCase().includes(q)));
+  const byCol = {}; BD_COLS.forEach(col => byCol[col.id] = []);
+  shown.forEach(c => byCol[c.col].push(c));
+  const nAct = bdActionable(cards);
+  $('#bd-tools').innerHTML = `<div class="bd-seg" role="group" aria-label="Board view">`
+    + `<button type="button" data-bdview="work" aria-pressed="${bdView === 'work'}">My work</button>`
+    + `<button type="button" data-bdview="reviews" aria-pressed="${bdView === 'reviews'}">Reviews<span class="bd-count">${nAct}</span></button></div>`
+    + `<select class="chip sel" data-bdsort aria-label="Sort cards">${Object.entries(BD_SORTS).map(([k, [l]]) => `<option value="${k}" ${bdSort === k ? 'selected' : ''}>${l}</option>`).join('')}</select>`;
+  $('#bd-repos').innerHTML = ['all', ...repos].map(k => `<button type="button" class="chip" data-bdrepo="${esc(k)}" aria-pressed="${bdRepo === k}">${k === 'all' ? 'All repos' : esc(k)}</button>`).join('');
+  $('#bd-cnt').textContent = bdView === 'reviews' ? `${nAct} to act on · ${cards.length - nAct} reviewed in ${BOARD_RECENT_DAYS}d` : '';
+  $('#bd-body').innerHTML = bdView === 'reviews'
+    ? `<div class="bd-cols">${BD_COLS.map(col => bdLaneHtml(col, byCol[col.id])).join('')}</div>`
+    : '<div class="bd-empty">My work board — coming next</div>';
+}
+function scheduleBoard(){ clearTimeout(bdTimer); bdTimer = setTimeout(renderBoard, BOARD_REPAINT_MS); }
+/* A card with a review file opens the review card; one without opens the same drawer with
+   the row's pills, where the run-review button already lives. */
+function bdOpen(url){
+  if (RV[url]) { openReviewDrawer(url); return; }
+  const r = RR_ALL.find(x => x.url === url); if (!r) return;
+  const title = `#${r.number} ${r.title}`;
+  openDrawer(title, `<div class="rvcard" data-rvcard="${esc(url)}"><div class="rvh">${rvPills(url)}</div>`
+    + `<div class="sum">${esc(r.repository.nameWithOwner)} · by ${esc(r.author.login)} · open ${ageText(r.createdAt || r.updatedAt)}</div>`
+    + `<div class="decform">${sessBtnPR(url, r.title, '')}</div></div>`, { kind:'review', url });
+}
+$('#s-board').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.bdopen) { bdOpen(b.dataset.bdopen); return; }
+  if (b.dataset.bdview) bdView = b.dataset.bdview;
+  else if (b.dataset.bdrepo) bdRepo = b.dataset.bdrepo;
+  else if (b.dataset.bdcolf) bdColF[b.dataset.bdcol] = b.dataset.bdcolf;
+  else return;
+  saveBoard(); renderBoard();
+});
+$('#s-board').addEventListener('change', e => {
+  if (!e.target.matches('select[data-bdsort]')) return;
+  bdSort = e.target.value; saveBoard(); renderBoard();
+});
+
 let rvSel = new Set();
 let rvUpdOnly = false;
 function renderReviews(){
@@ -2002,24 +2279,7 @@ function renderReviews(){
   // when only the decided-hide would swallow it).
   const hasNew = r => rvNewReplies(r.url).length > 0;
   const updCount = base.filter(hasNew).length;
-  // Decided = clicked on the board (rvDec, per browser) OR already approved on GitHub itself.
-  // A click stores rvDec locally at once, but the server can refuse the post (stale
-  // head) — so a local decision counts as decided only once it actually landed: the
-  // review file's status flipped to a posted state, or GitHub shows my review.
-  // A decision hides a row only with THAT decision's receipt — a refused click plus an
-  // old comment of mine must not read as decided, and "post drafts only" is no verdict.
-  const DEC_RECEIPT = { approve:['approved','APPROVED'], approve_with_comments:['approved','APPROVED'], request_changes:['changes-requested','CHANGES_REQUESTED'] };
-  const headMoved = r => rvHeadMoved(r.url);
-  const isDec = r => {
-    if (RV_REPLIED[r.url]) return false;  // the author answered after my review — the ball is back with me
-    const gh = GH_MY_REVIEW[r.url];
-    if (gh === 'CHANGES_REQUESTED' && headMoved(r)) return false;  // the author pushed the fix round
-    if (gh === 'APPROVED' || gh === 'CHANGES_REQUESTED') return true;
-    const d = rvDec[r.url]; if (!d) return false;
-    if (d === 'skip_review' || d === 'close_stale') return true;
-    const m = DEC_RECEIPT[d]; if (!m) return false;
-    return RV[r.url]?.status === m[0];
-  };
+  const isDec = r => rvIsDecided(r.url);
   const isAppr = r => GH_MY_REVIEW[r.url] === 'APPROVED' || RV[r.url]?.status === 'approved';
   const list = (rvUpdOnly ? base.filter(hasNew)
     : base.filter(r=>!authorF||r.author.login===authorF)
@@ -2058,6 +2318,9 @@ function renderReviews(){
   panel('#p-reviews', authorF?`Reviews from ${esc(authorF)}`:(rrMode==='direct'?'Reviews asked of me directly':rrMode==='team'?'Reviews asked of the team':rrMode==='watch'?'Open PRs in watched repos':'All review requests'),
     `${list.length}${authorF?' of '+base.length:''} · ${base.filter(r=>RV[r.url]).length} reviewed offline`, body, tools);
   const c = $('#rv-cnt'); if (c) c.textContent = `${DATA.review_requests.filter(r=>r.direct).length} asked of me · ${DATA.review_requests.length} requested · ${RR_ALL.length} total${RV_ONLY.length?` · ${RV_ONLY.length} reviewed without a request`:''}`;
+  // Every review-state change (a decision, a queued run, a drawer close, the / filter) already
+  // repaints through here, so the Board follows them all without its own call sites.
+  if (tab === 'board') scheduleBoard();
 }
 renderReviews();
 $('#p-reviews').addEventListener('change', e => {
@@ -2070,10 +2333,7 @@ $('#p-reviews').addEventListener('change', e => {
 });
 $('#p-reviews').addEventListener('click', e => {
   const b = e.target.closest('button');
-  if (b?.dataset.rvrun) {
-    if (RV_QUEUED.has(b.dataset.rvrun)) { toast('A review is already queued or running on this PR'); return; }
-    sendRequest('review_pr', `Review ${b.dataset.rvrun}`, [b.dataset.rvrun]); toast('Review queued — the verdict lands on this row when the agent finishes'); return;
-  }
+  if (b?.dataset.rvrun) { rvRun(b.dataset.rvrun); return; }
   const ck = e.target.closest('input[data-rvsel]'); if (ck) { ck.checked ? rvSel.add(ck.dataset.rvsel) : rvSel.delete(ck.dataset.rvsel); renderReviews(); return; }
   if (b?.id === 'rv-runall') {
     const urls = (rvSel.size ? [...rvSel]
@@ -2180,6 +2440,7 @@ const TAB_COUNT = {
   work: () => DATA.sessions.length + DATA.my_prs.length,
   log: () => decisions().filter(r=>r.status==='pending').length,
   more: () => DATA.calendar.filter(e=>(new Date(e.end)-NOW)>0).length + DATA.notes.length + DATA.artifacts.length,
+  board: () => bdActionable(bdReviewCards()),
 };
 function renderTabs(){
   $('#tabs').innerHTML = TABS.map(t => {
@@ -2207,6 +2468,7 @@ function setTab(next){
   if (location.hash !== '#' + tab) location.hash = '#' + tab;
   closeDrawer();
   renderTabs(); renderReviews(); renderLog();
+  if (tab === 'board') renderBoard();
   try { window.scrollTo(0, 0); } catch {}
 }
 window.addEventListener('hashchange', () => { const t = hashTab(location.hash); if (t && t !== tab) setTab(t); });
