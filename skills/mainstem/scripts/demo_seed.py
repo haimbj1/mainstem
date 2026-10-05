@@ -206,7 +206,10 @@ def write_demo_data(data_dir):
                             "url": "https://github.com/example/demo-app/pull/15"}}},
         {"id": "r3", "when": NOW, "kind": "review_pr",
          "text": "Review https://github.com/example/other-repo/pull/44",
-         "targets": ["https://github.com/example/other-repo/pull/44"], "status": "pending", "reply": ""},
+         "targets": ["https://github.com/example/other-repo/pull/44"], "status": "working", "reply": ""},
+        {"id": "r4", "when": NOW, "kind": "review_pr",
+         "text": "Review https://github.com/example/watched-repo/pull/7",
+         "targets": ["https://github.com/example/watched-repo/pull/7"], "status": "pending", "reply": ""},
     ])
 
     _write(data_dir, "quickwins.json", {

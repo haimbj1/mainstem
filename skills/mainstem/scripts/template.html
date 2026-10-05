@@ -460,11 +460,25 @@ body[data-tab="board"] #s-board{display:block;margin-top:0}
 .bd-mini button{padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600;color:var(--muted)}
 .bd-mini button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
 .bd-empty{padding:18px 10px;border:1.5px dashed var(--line-strong);border-radius:12px;text-align:center;font-size:13px;color:var(--muted)}
-.bd-card{width:100%;text-align:left;display:flex;flex-direction:column;gap:9px;padding:12px 13px 10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);transition:transform .16s ease,box-shadow .16s ease}
+.bd-card{cursor:pointer;display:flex;flex-direction:column;gap:9px;padding:12px 13px 10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);transition:transform .16s ease,box-shadow .16s ease}
 .bd-card:hover{transform:translateY(-2px);box-shadow:var(--lift)}
 .bd-row{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;min-width:0}
-.bd-ref{font-family:var(--f-mono);font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.bd-title{font-weight:600;font-size:14.5px;line-height:1.35;text-wrap:pretty}
+.bd-ref{font-family:var(--f-mono);font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0;border-radius:4px}
+.bd-ref:hover{color:var(--accent-ink);text-decoration:underline}
+.bd-title{font-weight:600;font-size:14.5px;line-height:1.35;text-wrap:pretty;color:var(--ink);text-decoration:underline;text-decoration-color:var(--line-strong);text-underline-offset:3px}
+.bd-title:hover{color:var(--accent-ink);text-decoration-color:currentColor}
+.bd-acts{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.bd-btn{height:28px;padding:0 11px;border-radius:999px;border:1px solid var(--line);background:var(--surface);font-size:12.5px;font-weight:600;color:var(--ink-2);display:inline-flex;align-items:center;gap:6px}
+.bd-btn:hover{border-color:var(--line-strong)}
+.bd-btn.primary{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.bd-btn.armed{background:var(--orange);border-color:var(--orange);color:#1A1206}
+.bd-btn.ghost{border-color:transparent;background:none;color:var(--muted)}
+.bd-btn:disabled{cursor:default;opacity:.75}
+.bd-why{flex:1;min-width:120px;height:28px;border:1px solid var(--line);border-radius:7px;background:var(--surface);color:var(--ink);font:13px var(--f-body);padding:0 8px}
+.bd-spin{width:11px;height:11px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;flex:none;animation:bd-rot .8s linear infinite}
+@keyframes bd-rot{to{transform:rotate(360deg)}}
+[data-bdrefresh]{display:inline-flex;align-items:center;gap:6px}
+body:not([data-local]) [data-bdrefresh]{display:none}
 .bd-chips{display:flex;flex-wrap:wrap;gap:6px}
 .bd-pill{display:inline-flex;align-items:center;gap:6px;height:21px;padding:0 9px;border-radius:999px;font-size:12px;font-weight:600;line-height:1;white-space:nowrap;align-self:flex-start}
 .bd-pill.orange{background:var(--orange-soft);color:var(--orange-ink)} .bd-pill.blue{background:var(--blue-soft);color:var(--blue-ink)}
@@ -487,7 +501,7 @@ body[data-tab="board"] #s-board{display:block;margin-top:0}
 .bd-foot .who{color:var(--ink-2);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bd-size{font-family:var(--f-mono);display:flex;gap:6px;white-space:nowrap}
 .bd-size .a{color:var(--good)} .bd-size .d{color:var(--crit)}
-@media (prefers-reduced-motion:reduce){.bd-card{transition:none}.bd-live::after{animation:none}}
+@media (prefers-reduced-motion:reduce){.bd-card{transition:none}.bd-live::after,.bd-spin{animation:none}}
 </style>
 
 <div class="appshell">
@@ -824,7 +838,7 @@ const RV = DATA.reviews || {};
    orphan review so the panel is the union, never a subset. */
 const RR_REQUESTED = new Set(DATA.review_requests.map(r => r.url));
 const orgOfUrl = u => (String(u || '').match(/github\.com\/([^/]+)\//) || [])[1] || '';
-const RV_ONLY = Object.values(RV).filter(v => v.url && !RR_REQUESTED.has(v.url)).map(v => ({
+const rvOnlyRow = v => ({
   url: v.url,
   number: v.pr,
   title: String(v.title || '').replace(/^"|"$/g, ''),
@@ -835,7 +849,8 @@ const RV_ONLY = Object.values(RV).filter(v => v.url && !RR_REQUESTED.has(v.url))
   createdAt: v.opened || v.last_reviewed || v.mtime,
   updatedAt: v.mtime,
   rvOnly: true,
-}));
+});
+const RV_ONLY = Object.values(RV).filter(v => v.url && !RR_REQUESTED.has(v.url)).map(rvOnlyRow);
 const RR_ALL = [...DATA.review_requests, ...RV_ONLY];
 const rrProv = r => r.provenance || (r.direct ? 'direct' : 'team');
 let rvDec = store.get('rv', {}), rvOpenQ = null, rvOpenP = null;
@@ -885,6 +900,9 @@ const rvTitle = rv => String(rv.title||'').replace(/^["']+|["']+$/g,'');
 const rvBlank = v => !v || /^(none|null|n\/a|-|\[\s*\])$/i.test(String(v).trim());
 const rvTopSev = rv => (rv.findings||[]).map(f=>f.sev).sort((a,b)=>sevRank(a)-sevRank(b))[0] || '';
 const rvDraftSev = (rv,id) => ((rv.findings||[]).find(f=>String(f.n)===String(id).replace(/\D/g,'')) || {}).sev || '';
+/* High/Med drafts start ticked; the board's one-click actions post exactly this default set. */
+const rvPreticked = sev => sevRank(sev) <= 2;
+const rvDefaultDrafts = rv => (rv.drafts || []).filter(d => rvPreticked(rvDraftSev(rv, d.id))).map(d => d.id);
 /* A PR whose base branch is another open PR's head is stacked: the child's diff is measured
    against the parent, so the parent must be reviewed (and merged) first. */
 const STACK = (() => {
@@ -1027,14 +1045,14 @@ function rvCard(rv, title){
   const fCard = f => {
     const d = draftByN[String(f.n)];
     if (!d) return `<div class="draftrow nodraft"><span class="pill ${sevCls(f.sev)}">${esc(f.sev)}</span> <span class="mono">${esc(f.loc)}</span><span class="iss">${esc(f.issue)}</span><span class="age">${esc(f.status)}</span></div>`;
-    return `<div class="draftrow"><label class="pst"><input type="checkbox" data-draft="${esc(d.id)}"${sevRank(f.sev)<=2?' checked':''}> post</label>
+    return `<div class="draftrow"><label class="pst"><input type="checkbox" data-draft="${esc(d.id)}"${rvPreticked(f.sev)?' checked':''}> post</label>
       <details><summary><span class="mono">${esc(d.id)} · ${esc(d.loc)}</span><span class="pill ${sevCls(f.sev)}">${esc(f.sev)}</span><span class="age">${esc(f.status)}</span></summary>
       <div class="iss ${sevCls(f.sev)}">${esc(f.issue)}</div>${excerptHtml(d)}<textarea class="draft" data-dredit="${esc(d.id)}" spellcheck="false">${esc(d.text)}</textarea><div class="drbtns"><button class="cmd" data-copy-draft="${esc(d.id)}">${ICON.copy}Copy</button><button class="cmd dsave" data-write data-dsave="${esc(d.id)}" hidden>Save edit</button></div></details></div>`;
   };
   const covered = new Set(fs.map(f => String(f.n)));
   const orphans = drafts.filter(d => !covered.has(String(d.id).replace(/^F/,''))).map(d => {
     const sev = rvDraftSev(rv, d.id);
-    return `<div class="draftrow"><label class="pst"><input type="checkbox" data-draft="${esc(d.id)}"${sevRank(sev)<=2?' checked':''}> post</label>
+    return `<div class="draftrow"><label class="pst"><input type="checkbox" data-draft="${esc(d.id)}"${rvPreticked(sev)?' checked':''}> post</label>
       <details><summary><span class="mono">${esc(d.id)} · ${esc(d.loc)}</span>${sev?`<span class="pill ${sevCls(sev)}">${esc(sev)}</span>`:''}</summary>
       ${excerptHtml(d)}<textarea class="draft" data-dredit="${esc(d.id)}" spellcheck="false">${esc(d.text)}</textarea><div class="drbtns"><button class="cmd" data-copy-draft="${esc(d.id)}">${ICON.copy}Copy</button><button class="cmd dsave" data-write data-dsave="${esc(d.id)}" hidden>Save edit</button></div></details></div>`;
   });
@@ -1085,17 +1103,22 @@ function rvSaveDraft(url, id, card){
   const b = card.querySelector(`[data-dsave="${CSS.escape(id)}"]`); if (b) b.hidden = true;
 }
 function rvSend(url, action, card){
-  const rv = RV[url]; if (!rv || !card) return;
+  if (!RV[url] || !card) return;
   // unsaved inline edits must reach the .md before the server reads it to post
   [...card.querySelectorAll('textarea[data-dredit]')].forEach(ta => rvSaveDraft(url, ta.dataset.dredit, card));
   const ids = [...card.querySelectorAll('input[data-draft]:checked')].map(i=>i.dataset.draft);
   const val = k => card.querySelector(`[data-rvf="${k}"]`)?.value.trim() || '';
-  const q = val('question');
   const why = action==='close_stale' ? (val('why') || 'No answer to the still-relevant comment in 7 days.') : val('why');
-  if ((action==='request_changes' || action==='post_findings' || action==='pre_review') && !ids.length) { toast('Select at least one draft first'); return; }
-  if (action==='review_question' && !q) { toast('Type the question first'); return; }
-  if (action==='skip_review' && !why) { toast('Say why you skip it'); return; }
-  const t = card.dataset.rvtitle || `#${rv.pr} ${rvTitle(rv)}`;
+  rvDecide(url, action, { ids, q: val('question'), why, title: card.dataset.rvtitle });
+}
+const RV_NEEDS_DRAFTS = new Set(['request_changes', 'post_findings', 'pre_review']);
+/* Returns false when the decision is incomplete (the toast says what is missing). */
+function rvDecide(url, action, { ids, q = '', why = '', title = '' }){
+  const rv = RV[url]; if (!rv) return false;
+  if (RV_NEEDS_DRAFTS.has(action) && !ids.length) { toast('Select at least one draft first'); return false; }
+  if (action==='review_question' && !q) { toast('Type the question first'); return false; }
+  if (action==='skip_review' && !why) { toast('Say why you skip it'); return false; }
+  const t = title || `#${rv.pr} ${rvTitle(rv)}`;
   const extra = { decision:action, item:{ id:'review:'+url, src:'review', title:t, url }, drafts:ids, review_path:rv.path || '' };
   if (action==='review_question') extra.question = q;
   if (action==='skip_review' || action==='close_stale') extra.why = why;
@@ -1105,6 +1128,7 @@ function rvSend(url, action, card){
   queueDecision(newReq('decision', rvLine(action, t, ids, q, why), [url], extra));
   closeDrawer();
   renderQueue(); renderReviews(); renderLog(); renderTabs();
+  return true;
 }
 /* the review card renders into the drawer — the list behind it never moves */
 /* The card pre-ticks High/Med only, so the post buttons say how many drafts go out
@@ -2095,11 +2119,19 @@ function rvRun(url){
 const BOARD_RECENT_DAYS = 14;
 const BOARD_AGE_WARN_D = 2, BOARD_AGE_CRIT_D = 5;
 const BOARD_REPAINT_MS = 120;
+const BOARD_POLL_MS = 5000;
+const BOARD_CONFIRM_MS = 4000;
+const BOARD_MOVE_MS = 300;
+const BD_REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)');
 const BD_PROV = { direct:['Requested from you','violet'], team:['Via your team','grey'], watch:['Watched repo','grey'], none:['Not requested','grey'] };
 const BD_DEPTH = { 'decide-here':['Decide from here',1], 'skim-diff':['Skim the diff',2], 'read-code':['Read the code',3] };
 const BD_VERDICT = { 'approve':['Approve','green','approve'], 'approve-with-comments':['Approve with comments','blue','comments'], 'request-changes':['Request changes','red','changes'], 'needs-discussion':['Needs discussion','yellow','discuss'], 'skip-bot':['Bot · skip','grey',''] };
+// The suggested verdict's one-click action, named as the drawer's decisions; a discussion
+// has no verdict to give, so its findings go out as comments ("Post drafts only").
+const BD_PRIMARY = { 'approve':'approve', 'approve-with-comments':'approve_with_comments', 'request-changes':'request_changes', 'needs-discussion':'post_findings' };
+const BD_ACTION_LABEL = { approve:'Approve', approve_with_comments:'Approve with comments', request_changes:'Request changes', post_findings:'Post findings' };
 const BD_OUTCOME = { approved:['Approved','green'], changes:['Changes requested','red'], comment:['Commented','blue'], discuss:['Needs discussion','yellow'], skipped:['Skipped','grey'] };
-// Live GitHub state beats my click, which beats the review file the server rewrote on post.
+// Live GitHub state beats my decision, which beats the review file the server rewrote on post.
 const BD_OUTCOME_GH = { APPROVED:'approved', CHANGES_REQUESTED:'changes' };
 const BD_OUTCOME_DEC = { approve:'approved', approve_with_comments:'approved', request_changes:'changes', post_findings:'comment', skip_review:'skipped', close_stale:'skipped' };
 const BD_OUTCOME_FILE = { approved:'approved', 'changes-requested':'changes' };
@@ -2117,7 +2149,8 @@ const BD_COLS = [
 ];
 const byNullLast = (a, b, f) => (a == null) - (b == null) || (a == null ? 0 : f(a, b));
 const BD_SORTS = {
-  waiting:  ['Waiting longest', (a, b) => a.waitedTs - b.waitedTs],
+  waiting:  ['Waiting longest', (a, b) => a.openedTs - b.openedTs],
+  newest:   ['Newest', (a, b) => b.openedTs - a.openedTs],
   updated:  ['Recently updated', (a, b) => b.updatedTs - a.updatedTs],
   priority: ['Priority', (a, b) => byNullLast(a.score, b.score, (x, y) => y - x)],
   size:     ['Smallest first', (a, b) => byNullLast(a.size, b.size, (x, y) => (x.a + x.d) - (y.a + y.d))],
@@ -2128,9 +2161,13 @@ const bdSaved = store.get('board', {});
 let bdView = bdSaved.view === 'work' ? 'work' : 'reviews',
     bdSort = BD_SORTS[bdSaved.sort] ? bdSaved.sort : 'waiting',
     bdRepo = bdSaved.repo || 'all',
+    bdPerson = bdSaved.person || '',
     bdColF = bdSaved.colf || {},
-    bdTimer = null;
-const saveBoard = () => store.set('board', { view: bdView, sort: bdSort, repo: bdRepo, colf: bdColF });
+    bdTimer = null, bdPollTimer = null, bdArmTimer = null,
+    bdArmed = null, bdSkip = null, bdRefreshing = false, bdLastCol = null;
+/* Decisions sent from a card, url → ISO send time, until requests.json shows the answer. */
+const bdInFlight = new Map();
+const saveBoard = () => store.set('board', { view: bdView, sort: bdSort, repo: bdRepo, person: bdPerson, colf: bdColF });
 const bdAgeHue = iso => { const d = days(iso); return d >= BOARD_AGE_CRIT_D ? 'red' : d >= BOARD_AGE_WARN_D ? 'orange' : 'grey'; };
 const bdSizeOf = rv => { const m = String(rv?.size || '').match(/\+(\d+)\s*\/\s*[−-](\d+)/); return m ? { a: +m[1], d: +m[2] } : null; };
 /* Milestone 3 fills this from the reviewer's progress file; null hides the bar. */
@@ -2138,38 +2175,59 @@ const bdProgress = url => null;
 /* The run counts until a review file newer than the request lands for an unchanged head:
    the agent is done even if the master has not marked the request done yet. */
 const bdRunFinished = (url, run) => { const rv = RV[url]; return !!rv && !rvHeadMoved(url) && Date.parse(rv.mtime) > Date.parse(run.when); };
+/* Rows rebuilt from the live data, so a re-fetch shows new reviews without a reload. */
+function bdRows(){
+  const requested = new Set(DATA.review_requests.map(r => r.url));
+  return [...DATA.review_requests, ...Object.values(RV).filter(v => v.url && !requested.has(v.url)).map(rvOnlyRow)];
+}
+function bdIndexRequests(){
+  const runs = {}, lastDec = {};
+  const isWorking = q => q.status === 'working';
+  DATA.requests.forEach(q => {
+    if (q.kind === 'review_pr' && (q.status === 'pending' || isWorking(q))) {
+      // a started run outranks a newer queued one: it is what the agent is doing now
+      (q.targets || []).forEach(t => { const cur = runs[t];
+        if (!cur || isWorking(q) > isWorking(cur) || (isWorking(q) === isWorking(cur) && cur.when < q.when)) runs[t] = q; });
+      return;
+    }
+    const u = (q.targets || [])[0];
+    if (q.kind === 'decision' && u && BD_OUTCOME_DEC[(q.extra || {}).decision || q.decision] && (!lastDec[u] || lastDec[u].when < q.when)) lastDec[u] = q;
+  });
+  return { runs, lastDec };
+}
 function bdOutcome(url, lastDec){
   if (RV_REPLIED[url]) return null;  // the author answered after my review — the ball is back with me
-  const rv = RV[url], d = rvDec[url];
-  const landed = rvIsDecided(url) || POSTED.has(rv?.status);
-  // A click the server has not answered yet is decided but not posted; a refused one goes back to Ready.
-  if (!landed && !(d && BD_OUTCOME_DEC[d] && lastDec?.status !== 'error')) return null;
-  let outcome = BD_OUTCOME_GH[GH_MY_REVIEW[url]] || BD_OUTCOME_DEC[d] || BD_OUTCOME_FILE[rv?.status] || 'comment';
+  const rv = RV[url];
+  const dec = lastDec ? ((lastDec.extra || {}).decision || lastDec.decision) : rvDec[url];
+  const receipt = rvIsDecided(url) || POSTED.has(rv?.status);
+  // The server answers a decision request only after the post: done = it landed (reviews.json
+  // catches up on the next collect), pending = the master owns the post. A click with no
+  // answer yet, or a refused one, stays in Ready to decide.
+  const answered = !!lastDec && lastDec.status !== 'error';
+  if (!receipt && !answered) return null;
+  let outcome = BD_OUTCOME_GH[GH_MY_REVIEW[url]] || BD_OUTCOME_DEC[dec] || BD_OUTCOME_FILE[rv?.status] || 'comment';
   if (outcome === 'comment' && rv?.verdict === 'needs-discussion') outcome = 'discuss';
-  return { outcome, posted: landed, at: lastDec?.when || rv?.mtime || '' };
+  return { outcome, posted: receipt || lastDec?.status === 'done', at: lastDec?.when || rv?.mtime || '' };
 }
 function bdPlace(r, run, lastDec){
   const rv = RV[r.url], moved = rvHeadMoved(r.url);
-  if (run && !bdRunFinished(r.url, run)) return { col:'running' };
-  if (!rv) return { col:'needs' };
+  const open = !!run && !bdRunFinished(r.url, run);
+  // Only `working` says the agent picked the run up; `pending` is a place in the master's queue.
+  if (open && run.status === 'working') return { col:'running' };
+  if (!rv) return { col:'needs', queued: open };
   const o = bdOutcome(r.url, lastDec);
   if (o && !(moved && BD_REOPENED_BY_PUSH.has(o.outcome))) return days(o.at) > BOARD_RECENT_DAYS ? null : { col:'done', ...o };
-  return moved ? { col:'needs', moved:true } : { col:'ready' };
+  return moved || open ? { col:'needs', moved, queued: open } : { col:'ready' };
 }
 function bdReviewCards(){
-  const runs = {}, lastDec = {};
-  DATA.requests.forEach(q => {
-    const u = (q.targets || [])[0];
-    if (q.kind === 'review_pr' && (q.status === 'pending' || q.status === 'working'))
-      (q.targets || []).forEach(t => { if (!runs[t] || runs[t].when < q.when) runs[t] = q; });
-    else if (q.kind === 'decision' && u && BD_OUTCOME_DEC[(q.extra || {}).decision || q.decision] && (!lastDec[u] || lastDec[u].when < q.when)) lastDec[u] = q;
-  });
+  const { runs, lastDec } = bdIndexRequests();
+  for (const [u, at] of bdInFlight) if (lastDec[u] && lastDec[u].when >= at) bdInFlight.delete(u);
   const cards = [];
-  RR_ALL.forEach(r => {
+  bdRows().forEach(r => {
     const p = bdPlace(r, runs[r.url], lastDec[r.url]); if (!p) return;
-    const rv = RV[r.url], waited = r.createdAt || r.updatedAt, updated = r.updatedAt || rv?.mtime;
-    cards.push({ ...p, r, rv, run: runs[r.url], repo: repoShort(r.repository.nameWithOwner),
-      waitedTs: Date.parse(waited) || 0, updatedTs: Date.parse(updated) || 0, waited,
+    const rv = RV[r.url], opened = r.createdAt || r.updatedAt;
+    cards.push({ ...p, r, rv, run: runs[r.url], repo: repoShort(r.repository.nameWithOwner), opened,
+      openedTs: Date.parse(opened) || 0, updatedTs: Date.parse(r.updatedAt || rv?.mtime) || 0,
       score: BD_SCORE[r.url] ?? null, size: r.additions != null ? { a: r.additions, d: r.deletions || 0 } : bdSizeOf(rv),
       verdictKey: (BD_VERDICT[rv?.verdict] || [])[2] || '' });
   });
@@ -2177,6 +2235,7 @@ function bdReviewCards(){
 }
 const bdPill = (label, hue, title) => `<span class="bd-pill ${hue}"${title ? ` title="${esc(title)}"` : ''}>${label}</span>`;
 const BD_UP = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>';
+const BD_SPIN = '<span class="bd-spin" aria-hidden="true"></span>';
 function bdDepth(rv){
   const d = BD_DEPTH[rv?.depth]; if (!d) return '';
   return `<span class="bd-depth" title="${esc(rv.depth_why || 'reviewer’s depth call')}"><span class="bd-bars" aria-hidden="true">${[1,2,3].map(n => `<i class="${n <= d[1] ? 'on' : ''}"></i>`).join('')}</span>${d[0]}</span>`;
@@ -2194,24 +2253,44 @@ function bdChips(c){
       + (v ? bdPill(v[0], v[1]) : '') + (RV_REPLIED[r.url] ? bdPill('Author replied', 'blue') : '');
   }
   const o = BD_OUTCOME[c.outcome];
-  return bdPill(o[0], o[1]) + (c.outcome === 'skipped' ? '' : c.posted ? bdPill('Posted', 'grey') : bdPill('Not posted', 'yellow', 'Decided here; the post has not landed on GitHub yet'));
+  return bdPill(o[0], o[1]) + (c.outcome === 'skipped' ? '' : c.posted ? bdPill('Posted', 'grey') : bdPill('Not posted', 'yellow', 'Decided here; the master session has not posted it to GitHub yet'));
+}
+function bdNeedsActions(c){
+  const u = esc(c.r.url);
+  return c.queued
+    ? `<div class="bd-acts"><button type="button" class="bd-btn" disabled>${BD_SPIN}Queued…</button></div>`
+    : `<div class="bd-acts"><button type="button" class="bd-btn primary" data-write data-bdrun="${u}" title="Run the offline review agent on this PR — ~150k tokens">Review</button></div>`;
+}
+/* GitHub writes take two clicks on the card: the first arms the button for a few seconds. */
+function bdReadyActions(c){
+  const url = c.r.url, u = esc(url);
+  if (bdInFlight.has(url)) return `<div class="bd-acts"><span class="bd-run">${BD_SPIN}Posting…</span></div>`;
+  if (bdSkip === url) return `<div class="bd-acts"><input class="bd-why" data-bdwhy="${u}" placeholder="skip because…" aria-label="Why skip this review">`
+    + `<button type="button" class="bd-btn primary" data-write data-bdskipgo="${u}" title="Drop the review — Claude removes you as reviewer">Skip</button><button type="button" class="bd-btn ghost" data-bdskipx>Cancel</button></div>`;
+  const action = BD_PRIMARY[c.rv.verdict];
+  const ready = action && !(RV_NEEDS_DRAFTS.has(action) && !rvDefaultDrafts(c.rv).length);
+  const armed = ready && bdArmed?.url === url && bdArmed.action === action;
+  const primary = !ready ? `<button type="button" class="bd-btn primary" data-bdopen="${u}">Open review</button>`
+    : `<button type="button" class="bd-btn ${armed ? 'armed' : 'primary'}" data-write data-bdact="${action}" data-bdurl="${u}" title="Posts to GitHub with the High/Med drafts the review card pre-ticks">${armed ? `Confirm ${BD_ACTION_LABEL[action].toLowerCase()}?` : BD_ACTION_LABEL[action]}</button>`;
+  return `<div class="bd-acts">${primary}<button type="button" class="bd-btn ghost" data-write data-bdskip="${u}">Skip</button></div>`;
 }
 function bdCardHtml(c){
-  const { r, rv } = c;
+  const { r, rv } = c, u = esc(r.url);
   const age = c.col === 'done' ? bdPill(`${ageText(c.at)} ago`, 'grey')
     : c.col === 'running' ? bdPill(`Started ${ageText(c.run.when)} ago`, 'grey')
-    : bdPill(`${ageText(c.waited)} waiting`, bdAgeHue(c.waited), `opened ${c.waited}`);
+    : bdPill(`${ageText(c.opened)} waiting`, bdAgeHue(c.opened), `opened ${c.opened}`);
   const pct = c.col === 'running' ? bdProgress(r.url) : null;
-  const run = c.col === 'running' ? `<span class="bd-run"><span class="bd-live" aria-hidden="true"></span>Reviewing…</span>${pct == null ? '' : `<span class="bd-track"><span style="width:${pct}%"></span></span>`}` : '';
+  const run = c.col === 'running' ? `<div class="bd-run"><span class="bd-live" aria-hidden="true"></span>Reviewing…</div>${pct == null ? '' : `<div class="bd-track"><span style="width:${pct}%"></span></div>`}` : '';
   const chips = bdChips(c);
+  const acts = c.col === 'needs' ? bdNeedsActions(c) : c.col === 'ready' ? bdReadyActions(c) : '';
   const size = c.size ? `<span class="bd-size"><span class="a">+${c.size.a}</span><span class="d">−${c.size.d}</span></span>` : '';
-  return `<button type="button" class="bd-card" data-bdopen="${esc(r.url)}">`
-    + `<span class="bd-row"><span class="bd-ref">${esc(c.repo)} #${r.number}</span>${age}</span>`
+  return `<article class="bd-card" data-bdcard="${u}">`
+    + `<div class="bd-row"><button type="button" class="bd-ref" data-bdopen="${u}" title="Open the review drawer">${esc(c.repo)} #${r.number}</button>${age}</div>`
     + (c.moved ? bdPill(`${BD_UP}Head moved since your review`, 'yellow') : '')
     + (c.col === 'ready' ? bdDepth(rv) : '')
-    + `<span class="bd-title">${esc(r.title)}</span>${run}`
-    + (chips ? `<span class="bd-chips">${chips}</span>` : '')
-    + `<span class="bd-foot"><span class="who">${esc(r.author.login)}</span>${size}</span></button>`;
+    + `<a class="bd-title" href="${u}" target="_blank" rel="noopener">${esc(r.title)}</a>${run}`
+    + (chips ? `<div class="bd-chips">${chips}</div>` : '') + acts
+    + `<div class="bd-foot"><span class="who">${esc(r.author.login)}</span>${size}</div></article>`;
 }
 function bdLaneHtml(col, cards){
   const active = col.filters ? (bdColF[col.id] || 'all') : 'all';
@@ -2222,13 +2301,42 @@ function bdLaneHtml(col, cards){
     + (list.length ? list.sort(BD_SORTS[bdSort][1]).map(bdCardHtml).join('') : '<div class="bd-empty">Nothing here</div>') + `</div>`;
 }
 const bdActionable = cards => cards.filter(c => c.col !== 'done').length;
+const BD_FOCUS_KEYS = ['bdopen', 'bdact', 'bdrun', 'bdskip'];
+/* A repaint replaces the cards, so the focused control is found again by what it does. */
+function bdFocusKey(){
+  const el = document.activeElement; if (!el?.closest?.('#bd-body')) return null;
+  const k = BD_FOCUS_KEYS.find(k => el.dataset[k] != null);
+  return k ? `[data-${k}="${CSS.escape(el.dataset[k])}"]` : null;
+}
+function bdCardRects(urls){
+  const out = {};
+  $('#bd-body').querySelectorAll('.bd-card').forEach(el => { if (urls.has(el.dataset.bdcard)) out[el.dataset.bdcard] = el.getBoundingClientRect(); });
+  return out;
+}
+/* FLIP: a card that changed lane starts where it was and slides to its new place. */
+function bdAnimateMoves(before){
+  if (BD_REDUCED_MOTION.matches) return;
+  $('#bd-body').querySelectorAll('.bd-card').forEach(el => {
+    const old = before[el.dataset.bdcard]; if (!old?.width) return;
+    const now = el.getBoundingClientRect();
+    el.animate([{ transform: `translate(${old.left - now.left}px, ${old.top - now.top}px)` }, { transform: 'none' }], { duration: BOARD_MOVE_MS, easing: 'ease' });
+  });
+}
 function renderBoard(){
   clearTimeout(bdTimer);
+  // never pull the skip reason out from under the user's hands
+  if (document.activeElement?.matches?.('#bd-body input')) { scheduleBoard(); return; }
   const cards = bdView === 'reviews' ? bdReviewCards() : [];
+  const movedUrls = new Set(bdLastCol ? cards.filter(c => bdLastCol[c.r.url] && bdLastCol[c.r.url] !== c.col).map(c => c.r.url) : []);
+  const before = movedUrls.size ? bdCardRects(movedUrls) : null;
+  const focus = bdFocusKey();
   const repos = [...new Set(cards.map(c => c.repo))].sort();
   if (bdRepo !== 'all' && !repos.includes(bdRepo)) bdRepo = 'all';
+  const inRepo = cards.filter(c => bdRepo === 'all' || c.repo === bdRepo);
+  const people = {}; inRepo.forEach(c => { const a = c.r.author.login; people[a] = (people[a] || 0) + 1; });
+  if (bdPerson && !people[bdPerson]) bdPerson = '';
   const q = query.trim().toLowerCase();
-  const shown = cards.filter(c => (bdRepo === 'all' || c.repo === bdRepo)
+  const shown = inRepo.filter(c => (!bdPerson || c.r.author.login === bdPerson)
     && (!q || `${c.r.title} ${c.r.repository.nameWithOwner} #${c.r.number}`.toLowerCase().includes(q)));
   const byCol = {}; BD_COLS.forEach(col => byCol[col.id] = []);
   shown.forEach(c => byCol[c.col].push(c));
@@ -2236,36 +2344,115 @@ function renderBoard(){
   $('#bd-tools').innerHTML = `<div class="bd-seg" role="group" aria-label="Board view">`
     + `<button type="button" data-bdview="work" aria-pressed="${bdView === 'work'}">My work</button>`
     + `<button type="button" data-bdview="reviews" aria-pressed="${bdView === 'reviews'}">Reviews<span class="bd-count">${nAct}</span></button></div>`
-    + `<select class="chip sel" data-bdsort aria-label="Sort cards">${Object.entries(BD_SORTS).map(([k, [l]]) => `<option value="${k}" ${bdSort === k ? 'selected' : ''}>${l}</option>`).join('')}</select>`;
-  $('#bd-repos').innerHTML = ['all', ...repos].map(k => `<button type="button" class="chip" data-bdrepo="${esc(k)}" aria-pressed="${bdRepo === k}">${k === 'all' ? 'All repos' : esc(k)}</button>`).join('');
+    + `<select class="chip sel" data-bdsort aria-label="Sort cards">${Object.entries(BD_SORTS).map(([k, [l]]) => `<option value="${k}" ${bdSort === k ? 'selected' : ''}>${l}</option>`).join('')}</select>`
+    + `<button type="button" class="chip" data-write data-bdrefresh ${bdRefreshing ? 'disabled' : ''} title="Re-collect review requests and review files — scripts only, no model">${bdRefreshing ? BD_SPIN + 'Refreshing…' : '&#8635; Refresh'}</button>`;
+  $('#bd-repos').innerHTML = ['all', ...repos].map(k => `<button type="button" class="chip" data-bdrepo="${esc(k)}" aria-pressed="${bdRepo === k}">${k === 'all' ? 'All repos' : esc(k)}</button>`).join('')
+    + `<select class="chip sel" data-bdperson aria-label="Filter by author"><option value="">Everyone</option>`
+    + Object.entries(people).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([a, n]) => `<option value="${esc(a)}" ${bdPerson === a ? 'selected' : ''}>${esc(a)} · ${n}</option>`).join('') + `</select>`;
   $('#bd-cnt').textContent = bdView === 'reviews' ? `${nAct} to act on · ${cards.length - nAct} reviewed in ${BOARD_RECENT_DAYS}d` : '';
   $('#bd-body').innerHTML = bdView === 'reviews'
     ? `<div class="bd-cols">${BD_COLS.map(col => bdLaneHtml(col, byCol[col.id])).join('')}</div>`
     : '<div class="bd-empty">My work board — coming next</div>';
+  bdLastCol = Object.fromEntries(cards.map(c => [c.r.url, c.col]));
+  if (before) bdAnimateMoves(before);
+  if (focus) $('#bd-body').querySelector(focus)?.focus();
+  bdPollEnsure();
 }
 function scheduleBoard(){ clearTimeout(bdTimer); bdTimer = setTimeout(renderBoard, BOARD_REPAINT_MS); }
+/* Pull the review state the server keeps writing, without a page reload (that would drop the
+   lane animation and any armed button). */
+async function bdReload(){
+  const fetchData = async name => { const res = await fetch(`/data/${name}.json`, { cache:'no-store' });
+    if (!res.ok) throw new Error(`${name}.json: HTTP ${res.status}`); return res.json(); };
+  const [requests, reviews, reviewRequests] = await Promise.all(['requests', 'reviews', 'review_requests'].map(fetchData));
+  DATA.requests = requests; DATA.review_requests = reviewRequests;
+  for (const k in RV) delete RV[k];
+  Object.assign(RV, reviews);
+  reviewRequests.forEach(r => { if (r.my_review) GH_MY_REVIEW[r.url] = r.my_review; });
+  rvQueuedSync();
+  renderBoard(); renderTabs();
+}
+/* Poll only while something on the board is about to change, the tab is on screen, and a
+   local server is there to answer; idle boards cost nothing. */
+const bdBusy = () => bdInFlight.size > 0 || DATA.requests.some(q => (q.kind === 'review_pr' && (q.status === 'pending' || q.status === 'working'))
+  || (q.kind === 'decision' && q.status === 'pending' && q.item?.src === 'review'));
+function bdPollEnsure(){
+  if (bdPollTimer || !LOCAL || tab !== 'board' || document.hidden || !bdBusy()) return;
+  bdPollTimer = setTimeout(async () => {
+    bdPollTimer = null;
+    if (tab !== 'board' || document.hidden) return;
+    // a failed poll stops polling (the next board action restarts it) instead of toasting every 5s
+    try { await bdReload(); } catch (e) { toast('Board update failed: ' + (e.message || e)); }
+  }, BOARD_POLL_MS);
+}
+document.addEventListener('visibilitychange', bdPollEnsure);
+/* The same collect the Reviews panel's refresh runs: collect.sh reviews + reviews_index +
+   prune_reviews, executed by the local server — no master session, no model. */
+async function bdRefresh(){
+  if (bdRefreshing) return;
+  bdRefreshing = true; renderBoard();
+  try {
+    const [rec] = await publishLocal([newReq('refresh', 'Refresh the reviews panel.', [], { panel: 'reviews' })]);
+    if (rec?.status === 'done') await bdReload();
+  } catch (e) { toast('Board refresh failed: ' + (e.message || e)); }
+  finally { bdRefreshing = false; renderBoard(); }
+}
 /* A card with a review file opens the review card; one without opens the same drawer with
    the row's pills, where the run-review button already lives. */
 function bdOpen(url){
   if (RV[url]) { openReviewDrawer(url); return; }
-  const r = RR_ALL.find(x => x.url === url); if (!r) return;
+  const r = bdRows().find(x => x.url === url); if (!r) return;
   const title = `#${r.number} ${r.title}`;
   openDrawer(title, `<div class="rvcard" data-rvcard="${esc(url)}"><div class="rvh">${rvPills(url)}</div>`
     + `<div class="sum">${esc(r.repository.nameWithOwner)} · by ${esc(r.author.login)} · open ${ageText(r.createdAt || r.updatedAt)}</div>`
     + `<div class="decform">${sessBtnPR(url, r.title, '')}</div></div>`, { kind:'review', url });
 }
+/* Same decision request as the drawer's buttons, with the drafts its card pre-ticks. */
+function bdSend(url, action, why = ''){
+  const r = bdRows().find(x => x.url === url); if (!r || !RV[url]) return;
+  const sentAt = new Date().toISOString();
+  document.activeElement?.blur?.();
+  if (!rvDecide(url, action, { ids: rvDefaultDrafts(RV[url]), why, title: `#${r.number} ${r.title}` })) return;
+  bdInFlight.set(url, sentAt); bdSkip = null;
+  renderBoard();
+}
+function bdArmOrSend(url, action){
+  clearTimeout(bdArmTimer);
+  if (bdArmed?.url === url && bdArmed.action === action) { bdArmed = null; bdSend(url, action); return; }
+  bdArmed = { url, action };
+  bdArmTimer = setTimeout(() => { bdArmed = null; renderBoard(); }, BOARD_CONFIRM_MS);
+  renderBoard();
+}
 $('#s-board').addEventListener('click', e => {
-  const b = e.target.closest('button'); if (!b) return;
-  if (b.dataset.bdopen) { bdOpen(b.dataset.bdopen); return; }
-  if (b.dataset.bdview) bdView = b.dataset.bdview;
-  else if (b.dataset.bdrepo) bdRepo = b.dataset.bdrepo;
-  else if (b.dataset.bdcolf) bdColF[b.dataset.bdcol] = b.dataset.bdcolf;
+  if (e.target.closest('a, input, select')) return;  // the title link opens GitHub on its own
+  const b = e.target.closest('button');
+  if (!b) { const card = e.target.closest('.bd-card'); if (card) bdOpen(card.dataset.bdcard); return; }
+  const d = b.dataset;
+  if (d.bdopen) { bdOpen(d.bdopen); return; }
+  if (d.bdrun) { b.disabled = true; rvRun(d.bdrun); return; }
+  if (d.bdact) { bdArmOrSend(d.bdurl, d.bdact); return; }
+  if (d.bdskipgo) { bdSend(d.bdskipgo, 'skip_review', b.parentElement.querySelector('input[data-bdwhy]').value.trim()); return; }
+  if (d.bdskip) { bdSkip = d.bdskip; bdArmed = null; renderBoard(); $('#bd-body input[data-bdwhy]')?.focus(); return; }
+  if (d.bdskipx != null) { bdSkip = null; renderBoard(); return; }
+  if (d.bdrefresh != null) { bdRefresh(); return; }
+  if (d.bdview) bdView = d.bdview;
+  else if (d.bdrepo) bdRepo = d.bdrepo;
+  else if (d.bdcolf) bdColF[d.bdcol] = d.bdcolf;
   else return;
   saveBoard(); renderBoard();
 });
+$('#s-board').addEventListener('keydown', e => {
+  // Enter on a focused card control is that control's click, not the Home queue's "open item" key.
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.closest?.('button')) { e.stopPropagation(); return; }
+  const why = e.target.closest?.('input[data-bdwhy]'); if (!why) return;
+  if (e.key === 'Enter') { e.preventDefault(); bdSend(why.dataset.bdwhy, 'skip_review', why.value.trim()); }
+  else if (e.key === 'Escape') { bdSkip = null; why.blur(); renderBoard(); }
+});
 $('#s-board').addEventListener('change', e => {
-  if (!e.target.matches('select[data-bdsort]')) return;
-  bdSort = e.target.value; saveBoard(); renderBoard();
+  if (e.target.matches('select[data-bdsort]')) bdSort = e.target.value;
+  else if (e.target.matches('select[data-bdperson]')) bdPerson = e.target.value;
+  else return;
+  saveBoard(); renderBoard();
 });
 
 let rvSel = new Set();
@@ -2549,6 +2736,8 @@ async function publishLocal(reqs){
     if (rec.reply) toast(rec.reply);
   }
   if (rvQueuedSync()) renderReviews();
+  // a request's answer is what moves a board card (Posting… → Reviewed)
+  if (tab === 'board') scheduleBoard();
   renderRequests(); renderLog(); renderTabs();
   return out;
 }
