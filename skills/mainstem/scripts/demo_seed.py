@@ -88,6 +88,27 @@ def write_demo_data(data_dir):
          "commits": {"nodes": [{"commit": {"statusCheckRollup": {"state": "SUCCESS"}}}]},
          "reviews": {"nodes": [{"state": "APPROVED", "author": {"login": "contributor-a"}}]},
          "comments": {"totalCount": 2}},
+        # The branch names DEMO-3, so the Board shows that ticket on this card, not on its own.
+        {"number": 13, "title": "Rate-limit the export endpoint",
+         "url": "https://github.com/example/demo-app/pull/13",
+         "isDraft": False, "updatedAt": "2026-09-08T07:00:00Z",
+         "createdAt": "2026-09-07T15:00:00Z", "headRefName": "demo-3-export-rate-limit",
+         "baseRefName": "main", "additions": 64, "deletions": 5,
+         "reviewDecision": "REVIEW_REQUIRED", "mergeable": "MERGEABLE",
+         "repository": {"nameWithOwner": "demo-org/demo-app"},
+         "commits": {"nodes": [{"commit": {"statusCheckRollup": {"state": "SUCCESS"}}}]},
+         "reviews": {"nodes": []}, "comments": {"totalCount": 0}},
+        {"number": 14, "title": "Move uploads to the job queue",
+         "url": "https://github.com/example/demo-app/pull/14",
+         "isDraft": False, "updatedAt": "2026-09-08T06:00:00Z",
+         "createdAt": "2026-09-05T11:00:00Z", "headRefName": "feat/upload-queue",
+         "baseRefName": "main", "additions": 210, "deletions": 90,
+         "reviewDecision": "CHANGES_REQUESTED", "mergeable": "MERGEABLE",
+         "repository": {"nameWithOwner": "demo-org/demo-app"},
+         "commits": {"nodes": [{"commit": {"statusCheckRollup": {"state": "FAILURE"}}}]},
+         "reviews": {"nodes": [{"state": "CHANGES_REQUESTED", "author": {"login": "contributor-a"}}]},
+         "reviewThreads": {"nodes": [{"isResolved": False, "comments": {"nodes": [{"author": {"login": "contributor-a"}}]}}]},
+         "comments": {"totalCount": 3}},
     ]}}}})
 
     # Shape = collect.sh's jq projection of the review-requested + watch-repo search results.
@@ -185,7 +206,15 @@ def write_demo_data(data_dir):
     # own default when the file is absent.
     _write(data_dir, "nudges.json", None)
 
-    _write(data_dir, "jira.json", [])
+    # Shape = jira_fetch.sh's projection; one ticket per My work lane the PRs above leave empty.
+    _write(data_dir, "jira.json", [
+        {"key": "DEMO-1", "summary": "Document the widget API", "status": "To Do", "priority": "Low",
+         "type": "Task", "updated": "2026-09-02T10:00:00Z", "project": "DEMO", "due": None, "labels": []},
+        {"key": "DEMO-2", "summary": "Cache the health check result", "status": "In Progress", "priority": "High",
+         "type": "Story", "updated": "2026-09-08T08:30:00Z", "project": "DEMO", "due": None, "labels": []},
+        {"key": "DEMO-3", "summary": "Rate-limit exports", "status": "In Progress", "priority": "Medium",
+         "type": "Story", "updated": "2026-09-07T15:00:00Z", "project": "DEMO", "due": None, "labels": []},
+    ])
     _write(data_dir, "calendar.json", [])
     _write(data_dir, "gmail.json", [])
     # A fresh stamp, so the demo never shows the staleness banner.
@@ -213,8 +242,12 @@ def write_demo_data(data_dir):
     ])
 
     _write(data_dir, "quickwins.json", {
-        "generated_at": NOW, "counts": {"close": 0, "quick_win": 0, "stale": 0, "keep": 0},
-        "items": [],
+        "generated_at": NOW, "counts": {"close": 0, "quick_win": 1, "stale": 0, "keep": 0},
+        "items": [
+            {"key": "DEMO-1", "summary": "Document the widget API", "status": "To Do", "priority": "Low", "verdict": "quick_win",
+             "estimate": "30m", "confidence": "high", "reason": "The API is merged; only the README section is missing.",
+             "action": "Add the widget API section to the README", "evidence": [], "plan": ""},
+        ],
     })
 
     _write(data_dir, "artifacts.json", [])
