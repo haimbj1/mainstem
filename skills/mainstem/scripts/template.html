@@ -441,14 +441,27 @@ footer{margin-top:40px;font-size:12px;color:var(--muted);display:flex;gap:16px;f
 .rvtop{margin-bottom:10px}.rvtop .pill{font-size:13.5px;padding:5px 12px}\n.sum.lead{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;font-size:14.5px}\n.rvlog{margin-top:14px}.rvlog summary{cursor:pointer;color:var(--muted);font-size:12.5px}.rvlog .sum{color:var(--ink-2);font-size:13px;margin-top:8px}
 
 /* ---- board: kanban lanes over the same review state the Reviews tab reads ---- */
-body[data-tab="board"] #s-board{display:block;margin-top:0}
+body[data-tab="board"] #s-board{display:block;margin-top:0;position:relative}
 .bd-seg{display:inline-flex;gap:3px;padding:3px;border-radius:10px;background:var(--surface-2);border:1px solid var(--line)}
 .bd-seg button{padding:4px 12px;border-radius:7px;font-family:var(--f-display);font-weight:600;font-size:13.5px;color:var(--muted);display:inline-flex;gap:7px;align-items:center}
 .bd-seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
 .bd-count{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:19px;padding:0 6px;border-radius:999px;background:var(--grey-soft);color:var(--grey-ink);font:600 11px/1 var(--f-mono)}
 .bd-seg button[aria-pressed="true"] .bd-count{background:var(--accent);color:#1A1206}
-.bd-repos{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
-.bd-repos .chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.bd-dd{display:inline-flex;align-items:center;gap:5px}
+.bd-dd b{font-weight:600;color:var(--ink);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bd-dd .caret{font-size:10px;color:var(--muted)}
+.bd-dd[aria-expanded="true"]{border-color:var(--accent)}
+.bd-pop{position:absolute;z-index:30;width:260px;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:var(--lift);padding:8px;display:flex;flex-direction:column;gap:6px}
+.bd-pop-q{height:28px;border:1px solid var(--line);border-radius:7px;background:var(--surface);color:var(--ink);font:13px var(--f-body);padding:0 8px}
+.bd-pop-acts{display:flex;justify-content:space-between;padding:0 2px}
+.bd-pop-acts button{font-size:12px;font-weight:600;color:var(--accent-ink)}
+.bd-pop-acts button:hover{text-decoration:underline}
+.bd-opts{max-height:280px;overflow:auto;display:flex;flex-direction:column}
+.bd-opt{display:flex;align-items:center;gap:8px;padding:5px 6px;border-radius:6px;font-size:13px;cursor:pointer}
+.bd-opt:hover{background:var(--surface-2)}
+.bd-opt[hidden]{display:none}
+.bd-opt .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bd-opt .n{font:11.5px var(--f-mono);color:var(--muted)}
 .bd-cols{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(272px,1fr);gap:14px;align-items:start;overflow-x:auto;padding-bottom:8px}
 .bd-lane{display:flex;flex-direction:column;gap:10px;padding:12px;border-radius:14px;background:var(--surface-2);border:1px solid var(--line);min-width:0}
 .bd-lh{display:flex;align-items:center;gap:8px}
@@ -474,6 +487,7 @@ body[data-tab="board"] #s-board{display:block;margin-top:0}
 .bd-btn.armed{background:var(--orange);border-color:var(--orange);color:#1A1206}
 .bd-btn.ghost{border-color:transparent;background:none;color:var(--muted)}
 .bd-btn:disabled{cursor:default;opacity:.75}
+.bd-btn.stale{opacity:1;border-style:dashed;border-color:var(--warn);background:var(--warn-soft);color:var(--warn);height:auto;min-height:28px;white-space:normal;text-align:left}
 .bd-why{flex:1;min-width:120px;height:28px;border:1px solid var(--line);border-radius:7px;background:var(--surface);color:var(--ink);font:13px var(--f-body);padding:0 8px}
 .bd-spin{width:11px;height:11px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;flex:none;animation:bd-rot .8s linear infinite}
 @keyframes bd-rot{to{transform:rotate(360deg)}}
@@ -586,7 +600,6 @@ body:not([data-local]) [data-bdrefresh]{display:none}
       <span class="cnt" id="bd-cnt"></span>
       <div class="tools" id="bd-tools"></div>
     </div>
-    <div class="bd-repos" id="bd-repos" role="group" aria-label="Repository"></div>
     <div id="bd-body"></div>
   </section>
 
@@ -2122,6 +2135,8 @@ const BOARD_REPAINT_MS = 120;
 const BOARD_POLL_MS = 5000;
 const BOARD_CONFIRM_MS = 4000;
 const BOARD_MOVE_MS = 300;
+// past this a queued run is not "about to start" any more: nobody is picking the queue up
+const BOARD_QUEUE_STALE_MIN = 10;
 const BD_REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)');
 const BD_PROV = { direct:['Requested from you','violet'], team:['Via your team','grey'], watch:['Watched repo','grey'], none:['Not requested','grey'] };
 const BD_DEPTH = { 'decide-here':['Decide from here',1], 'skim-diff':['Skim the diff',2], 'read-code':['Read the code',3] };
@@ -2160,21 +2175,33 @@ const BD_SCORE = {}; items.forEach(it => { if (it.src === 'review') BD_SCORE[it.
 const bdSaved = store.get('board', {});
 let bdView = bdSaved.view === 'work' ? 'work' : 'reviews',
     bdSort = BD_SORTS[bdSaved.sort] ? bdSaved.sort : 'waiting',
-    bdRepo = bdSaved.repo || 'all',
-    bdPerson = bdSaved.person || '',
     bdColF = bdSaved.colf || {},
     bdTimer = null, bdPollTimer = null, bdArmTimer = null,
-    bdArmed = null, bdSkip = null, bdRefreshing = false, bdLastCol = null;
+    bdArmed = null, bdSkip = null, bdRefreshing = false, bdLastCol = null, bdPollFailing = false;
 /* Decisions sent from a card, url → ISO send time, until requests.json shows the answer. */
 const bdInFlight = new Map();
-const saveBoard = () => store.set('board', { view: bdView, sort: bdSort, repo: bdRepo, person: bdPerson, colf: bdColF });
+/* Multi-select filters: an empty selection means everything; OR within one, AND across both. */
+const BD_FILTERS = {
+  repos:  { label:'Repos', all:'All', of: c => c.repo },
+  people: { label:'People', all:'Everyone', of: c => c.r.author.login },
+};
+const BD_POP_SEARCH_MIN = 8;
+// earlier builds stored one repo ('all' = none) and one person ('' = none)
+const bdLegacy = (v, none) => v && v !== none ? [v] : [];
+const bdSel = { repos: Array.isArray(bdSaved.repos) ? bdSaved.repos : bdLegacy(bdSaved.repo, 'all'),
+                people: Array.isArray(bdSaved.people) ? bdSaved.people : bdLegacy(bdSaved.person, '') };
+/* [value, count] per filter from the last render; a selected value with no cards keeps a 0 row so it can be unticked. */
+const bdOptions = { repos: [], people: [] };
+let bdDD = null;
+const saveBoard = () => store.set('board', { view: bdView, sort: bdSort, repos: bdSel.repos, people: bdSel.people, colf: bdColF });
 const bdAgeHue = iso => { const d = days(iso); return d >= BOARD_AGE_CRIT_D ? 'red' : d >= BOARD_AGE_WARN_D ? 'orange' : 'grey'; };
 const bdSizeOf = rv => { const m = String(rv?.size || '').match(/\+(\d+)\s*\/\s*[−-](\d+)/); return m ? { a: +m[1], d: +m[2] } : null; };
 /* Milestone 3 fills this from the reviewer's progress file; null hides the bar. */
 const bdProgress = url => null;
 /* The run counts until a review file newer than the request lands for an unchanged head:
    the agent is done even if the master has not marked the request done yet. */
-const bdRunFinished = (url, run) => { const rv = RV[url]; return !!rv && !rvHeadMoved(url) && Date.parse(rv.mtime) > Date.parse(run.when); };
+// mtime is the file's real write time; last_reviewed is a bare date (midnight) and only a fallback.
+const bdRunFinished = (url, run) => { const rv = RV[url]; return !!rv && !rvHeadMoved(url) && (Date.parse(rv.mtime) || Date.parse(rv.last_reviewed)) > Date.parse(run.when); };
 /* Rows rebuilt from the live data, so a re-fetch shows new reviews without a reload. */
 function bdRows(){
   const requested = new Set(DATA.review_requests.map(r => r.url));
@@ -2257,6 +2284,8 @@ function bdChips(c){
 }
 function bdNeedsActions(c){
   const u = esc(c.r.url);
+  if (c.queued && hrs(c.run.when) * 60 > BOARD_QUEUE_STALE_MIN)
+    return `<div class="bd-acts"><button type="button" class="bd-btn stale" disabled title="Queued ${ageText(c.run.when)} ago and not picked up — the master session reads the queue">Still queued · is the master running?</button></div>`;
   return c.queued
     ? `<div class="bd-acts"><button type="button" class="bd-btn" disabled>${BD_SPIN}Queued…</button></div>`
     : `<div class="bd-acts"><button type="button" class="bd-btn primary" data-write data-bdrun="${u}" title="Run the offline review agent on this PR — ~150k tokens">Review</button></div>`;
@@ -2301,10 +2330,10 @@ function bdLaneHtml(col, cards){
     + (list.length ? list.sort(BD_SORTS[bdSort][1]).map(bdCardHtml).join('') : '<div class="bd-empty">Nothing here</div>') + `</div>`;
 }
 const bdActionable = cards => cards.filter(c => c.col !== 'done').length;
-const BD_FOCUS_KEYS = ['bdopen', 'bdact', 'bdrun', 'bdskip'];
+const BD_FOCUS_KEYS = ['bdopen', 'bdact', 'bdrun', 'bdskip', 'bddd'];
 /* A repaint replaces the cards, so the focused control is found again by what it does. */
 function bdFocusKey(){
-  const el = document.activeElement; if (!el?.closest?.('#bd-body')) return null;
+  const el = document.activeElement; if (!el?.closest?.('#bd-body, #bd-tools')) return null;
   const k = BD_FOCUS_KEYS.find(k => el.dataset[k] != null);
   return k ? `[data-${k}="${CSS.escape(el.dataset[k])}"]` : null;
 }
@@ -2330,13 +2359,16 @@ function renderBoard(){
   const movedUrls = new Set(bdLastCol ? cards.filter(c => bdLastCol[c.r.url] && bdLastCol[c.r.url] !== c.col).map(c => c.r.url) : []);
   const before = movedUrls.size ? bdCardRects(movedUrls) : null;
   const focus = bdFocusKey();
-  const repos = [...new Set(cards.map(c => c.repo))].sort();
-  if (bdRepo !== 'all' && !repos.includes(bdRepo)) bdRepo = 'all';
-  const inRepo = cards.filter(c => bdRepo === 'all' || c.repo === bdRepo);
-  const people = {}; inRepo.forEach(c => { const a = c.r.author.login; people[a] = (people[a] || 0) + 1; });
-  if (bdPerson && !people[bdPerson]) bdPerson = '';
+  const filters = Object.entries(BD_FILTERS);
+  const picked = {};
+  for (const [k, f] of filters) {
+    const counts = {}; cards.forEach(c => { const v = f.of(c); counts[v] = (counts[v] || 0) + 1; });
+    bdSel[k].forEach(v => { counts[v] ||= 0; });
+    bdOptions[k] = Object.entries(counts).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+    picked[k] = new Set(bdSel[k]);
+  }
   const q = query.trim().toLowerCase();
-  const shown = inRepo.filter(c => (!bdPerson || c.r.author.login === bdPerson)
+  const shown = cards.filter(c => filters.every(([k, f]) => !picked[k].size || picked[k].has(f.of(c)))
     && (!q || `${c.r.title} ${c.r.repository.nameWithOwner} #${c.r.number}`.toLowerCase().includes(q)));
   const byCol = {}; BD_COLS.forEach(col => byCol[col.id] = []);
   shown.forEach(c => byCol[c.col].push(c));
@@ -2344,20 +2376,53 @@ function renderBoard(){
   $('#bd-tools').innerHTML = `<div class="bd-seg" role="group" aria-label="Board view">`
     + `<button type="button" data-bdview="work" aria-pressed="${bdView === 'work'}">My work</button>`
     + `<button type="button" data-bdview="reviews" aria-pressed="${bdView === 'reviews'}">Reviews<span class="bd-count">${nAct}</span></button></div>`
+    + filters.map(([k]) => bdDropdownBtn(k)).join('')
     + `<select class="chip sel" data-bdsort aria-label="Sort cards">${Object.entries(BD_SORTS).map(([k, [l]]) => `<option value="${k}" ${bdSort === k ? 'selected' : ''}>${l}</option>`).join('')}</select>`
     + `<button type="button" class="chip" data-write data-bdrefresh ${bdRefreshing ? 'disabled' : ''} title="Re-collect review requests and review files — scripts only, no model">${bdRefreshing ? BD_SPIN + 'Refreshing…' : '&#8635; Refresh'}</button>`;
-  $('#bd-repos').innerHTML = ['all', ...repos].map(k => `<button type="button" class="chip" data-bdrepo="${esc(k)}" aria-pressed="${bdRepo === k}">${k === 'all' ? 'All repos' : esc(k)}</button>`).join('')
-    + `<select class="chip sel" data-bdperson aria-label="Filter by author"><option value="">Everyone</option>`
-    + Object.entries(people).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([a, n]) => `<option value="${esc(a)}" ${bdPerson === a ? 'selected' : ''}>${esc(a)} · ${n}</option>`).join('') + `</select>`;
   $('#bd-cnt').textContent = bdView === 'reviews' ? `${nAct} to act on · ${cards.length - nAct} reviewed in ${BOARD_RECENT_DAYS}d` : '';
   $('#bd-body').innerHTML = bdView === 'reviews'
     ? `<div class="bd-cols">${BD_COLS.map(col => bdLaneHtml(col, byCol[col.id])).join('')}</div>`
     : '<div class="bd-empty">My work board — coming next</div>';
   bdLastCol = Object.fromEntries(cards.map(c => [c.r.url, c.col]));
   if (before) bdAnimateMoves(before);
-  if (focus) $('#bd-body').querySelector(focus)?.focus();
+  if (focus) $('#s-board').querySelector(focus)?.focus();
   bdPollEnsure();
 }
+function bdDropdownBtn(k){
+  const f = BD_FILTERS[k], sel = bdSel[k];
+  const summary = !sel.length || sel.length === bdOptions[k].length ? f.all : sel.length === 1 ? sel[0] : `${sel.length} selected`;
+  return `<button type="button" class="chip bd-dd" data-bddd="${k}" aria-haspopup="listbox" aria-expanded="${bdDD === k}" aria-controls="bd-pop">${f.label}: <b>${esc(summary)}</b><span class="caret" aria-hidden="true">▾</span></button>`;
+}
+/* The popover lives outside the repainted toolbar, so a data poll never closes it or eats the search text. */
+function bdOpenPop(k, btn){
+  const f = BD_FILTERS[k], sel = new Set(bdSel[k]), opts = bdOptions[k];
+  const pop = document.createElement('div');
+  pop.className = 'bd-pop'; pop.id = 'bd-pop'; pop.dataset.bdpop = k;
+  pop.setAttribute('role', 'group'); pop.setAttribute('aria-label', `Filter ${f.label.toLowerCase()}`);
+  pop.innerHTML = (opts.length > BD_POP_SEARCH_MIN ? `<input type="search" class="bd-pop-q" data-bdpopq placeholder="Search ${f.label.toLowerCase()}…" aria-label="Search ${f.label.toLowerCase()}">` : '')
+    + `<div class="bd-pop-acts"><button type="button" data-bdpopall>Select all</button><button type="button" data-bdpopnone>Clear</button></div>`
+    + `<div class="bd-opts">${opts.map(([v, n]) => `<label class="bd-opt"><input type="checkbox" data-bdopt value="${esc(v)}" ${sel.has(v) ? 'checked' : ''}><span class="nm">${esc(v)}</span><span class="n">${n}</span></label>`).join('')}</div>`;
+  const host = $('#s-board'), hr = host.getBoundingClientRect(), br = btn.getBoundingClientRect();
+  pop.style.top = `${br.bottom - hr.top + 4}px`;
+  pop.style.left = `${Math.max(0, Math.min(br.left - hr.left, hr.width - 260))}px`;
+  host.appendChild(pop);
+  bdDD = k; btn.setAttribute('aria-expanded', 'true');
+  pop.querySelector('input')?.focus();
+}
+function bdClosePop(returnFocus){
+  if (!bdDD) return;
+  const k = bdDD; bdDD = null;
+  $('#bd-pop')?.remove();
+  const btn = $(`#bd-tools [data-bddd="${k}"]`);
+  btn?.setAttribute('aria-expanded', 'false');
+  if (returnFocus) btn?.focus();
+}
+function bdPopSet(k, values){
+  bdSel[k] = values;
+  $('#bd-pop').querySelectorAll('input[data-bdopt]').forEach(i => { i.checked = values.includes(i.value); });
+  saveBoard(); renderBoard();
+}
+document.addEventListener('click', e => { if (bdDD && !e.target.closest?.('#bd-pop, [data-bddd]')) bdClosePop(false); });
 function scheduleBoard(){ clearTimeout(bdTimer); bdTimer = setTimeout(renderBoard, BOARD_REPAINT_MS); }
 /* Pull the review state the server keeps writing, without a page reload (that would drop the
    lane animation and any armed button). */
@@ -2381,8 +2446,10 @@ function bdPollEnsure(){
   bdPollTimer = setTimeout(async () => {
     bdPollTimer = null;
     if (tab !== 'board' || document.hidden) return;
-    // a failed poll stops polling (the next board action restarts it) instead of toasting every 5s
-    try { await bdReload(); } catch (e) { toast('Board update failed: ' + (e.message || e)); }
+    // A collect rewrites reviews.json in place, so one read can catch it half-written: keep
+    // polling, and say so once per failure streak instead of every 5s.
+    try { await bdReload(); bdPollFailing = false; }
+    catch (e) { if (!bdPollFailing) toast('Board update failed, retrying: ' + (e.message || e)); bdPollFailing = true; bdPollEnsure(); }
   }, BOARD_POLL_MS);
 }
 document.addEventListener('visibilitychange', bdPollEnsure);
@@ -2435,22 +2502,33 @@ $('#s-board').addEventListener('click', e => {
   if (d.bdskip) { bdSkip = d.bdskip; bdArmed = null; renderBoard(); $('#bd-body input[data-bdwhy]')?.focus(); return; }
   if (d.bdskipx != null) { bdSkip = null; renderBoard(); return; }
   if (d.bdrefresh != null) { bdRefresh(); return; }
+  if (d.bddd) { const open = bdDD === d.bddd; bdClosePop(open); if (!open) bdOpenPop(d.bddd, b); return; }
+  if (d.bdpopall != null) { const pop = $('#bd-pop'); bdPopSet(pop.dataset.bdpop, [...pop.querySelectorAll('.bd-opt:not([hidden]) input')].map(i => i.value)); return; }
+  if (d.bdpopnone != null) { bdPopSet($('#bd-pop').dataset.bdpop, []); return; }
   if (d.bdview) bdView = d.bdview;
-  else if (d.bdrepo) bdRepo = d.bdrepo;
   else if (d.bdcolf) bdColF[d.bdcol] = d.bdcolf;
   else return;
   saveBoard(); renderBoard();
 });
 $('#s-board').addEventListener('keydown', e => {
+  if (e.key === 'Escape' && bdDD && e.target.closest?.('#bd-pop, [data-bddd]')) { e.preventDefault(); e.stopPropagation(); bdClosePop(true); return; }
   // Enter on a focused card control is that control's click, not the Home queue's "open item" key.
   if ((e.key === 'Enter' || e.key === ' ') && e.target.closest?.('button')) { e.stopPropagation(); return; }
   const why = e.target.closest?.('input[data-bdwhy]'); if (!why) return;
   if (e.key === 'Enter') { e.preventDefault(); bdSend(why.dataset.bdwhy, 'skip_review', why.value.trim()); }
   else if (e.key === 'Escape') { bdSkip = null; why.blur(); renderBoard(); }
 });
+$('#s-board').addEventListener('input', e => {
+  if (!e.target.matches('input[data-bdpopq]')) return;
+  const q = e.target.value.trim().toLowerCase();
+  $('#bd-pop').querySelectorAll('.bd-opt').forEach(l => { l.hidden = !!q && !l.textContent.toLowerCase().includes(q); });
+});
 $('#s-board').addEventListener('change', e => {
   if (e.target.matches('select[data-bdsort]')) bdSort = e.target.value;
-  else if (e.target.matches('select[data-bdperson]')) bdPerson = e.target.value;
+  else if (e.target.matches('input[data-bdopt]')) {
+    const k = e.target.closest('#bd-pop').dataset.bdpop, v = e.target.value;
+    bdSel[k] = e.target.checked ? [...bdSel[k], v] : bdSel[k].filter(x => x !== v);
+  }
   else return;
   saveBoard(); renderBoard();
 });
