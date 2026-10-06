@@ -37,7 +37,7 @@ code,.mono{font-family:var(--f-mono);font-size:12.5px}
 
 .pdraw{margin:8px 0}.pdraw summary{cursor:pointer;font-size:12.5px;color:var(--muted)}.pdfile{margin:8px 0 0;white-space:pre-wrap;font:12px/1.5 var(--f-mono);color:var(--ink-2);background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:10px;max-height:320px;overflow:auto}
 /* ---- top bar ---- */
-.shell{display:grid;grid-template-columns:216px minmax(0,1fr);min-height:100vh}
+.appshell{display:grid;grid-template-columns:216px minmax(0,1fr);min-height:100vh}
 .side{position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:14px;padding:16px 10px 14px;background:color-mix(in srgb,var(--surface) 72%,transparent);backdrop-filter:blur(22px) saturate(1.15);border-right:1px solid var(--line)}
 .side .brand{padding:2px 10px 8px}
 .side-foot{margin-top:auto;display:flex;flex-direction:column;gap:8px;padding:12px 6px 0;border-top:1px solid var(--line)}
@@ -46,7 +46,7 @@ code,.mono{font-family:var(--f-mono);font-size:12.5px}
 .main{min-width:0}
 .top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
 .top-in{max-width:1480px;margin:0 auto;padding:8px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
-@media (max-width:900px){.shell{grid-template-columns:1fr}.side{position:static;height:auto;flex-direction:row;align-items:center;border-right:0;border-bottom:1px solid var(--line)}.side .tabs{flex-direction:row;flex-wrap:wrap}.side-foot{margin-top:0;flex-direction:row}}
+@media (max-width:900px){.appshell{grid-template-columns:1fr}.side{position:static;height:auto;flex-direction:row;align-items:center;border-right:0;border-bottom:1px solid var(--line)}.side .tabs{flex-direction:row;flex-wrap:wrap}.side-foot{margin-top:0;flex-direction:row}}
 .brand{font-family:var(--f-display);font-weight:700;font-size:17px;letter-spacing:.01em;display:flex;align-items:center;gap:10px}
 .brand{padding-right:2px}
 .brand-sep{width:1px;align-self:stretch;background:var(--line);margin:2px 8px}
@@ -425,11 +425,12 @@ footer{margin-top:40px;font-size:12px;color:var(--muted);display:flex;gap:16px;f
 .rvtop{margin-bottom:10px}.rvtop .pill{font-size:13.5px;padding:5px 12px}\n.sum.lead{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;font-size:14.5px}\n.rvlog{margin-top:14px}.rvlog summary{cursor:pointer;color:var(--muted);font-size:12.5px}.rvlog .sum{color:var(--ink-2);font-size:13px;margin-top:8px}
 </style>
 
-<div class="shell">
+<div class="appshell">
 <aside class="side">
   <div class="brand"><span class="dot"></span><span id="brand-name">MainStem</span></div>
   <nav class="tabs" id="tabs"></nav>
   <div class="side-foot">
+    <button class="chip" data-write id="ms-tips" title="Ask the assistant to scan the board and suggest cleanups — things to close, clear or delete. Optional; the answer lands in the chat log.">✨ Tips</button>
     <button class="chip" data-write id="jump-master" title="Open the master session in iTerm2">⌥ master</button>
     <button class="btn danger" data-write id="rotate-master" title="Retire the master session and boot a fresh one in the same tab (or launch one if none is running). Not a data refresh — this resets the master's context.">♻ New master</button>
   </div>
@@ -2148,6 +2149,10 @@ function renderTabs(){
   }).join('');
 }
 $('#tabs').addEventListener('click', e => { const b=e.target.closest('button'); if (b) setTab(b.dataset.tab); });
+$('#ms-tips')?.addEventListener('click', () => {
+  sendRequest('chat', 'Assistant: scan the board and suggest cleanups in one short list — reviews that can close, decided rows to clear, worktrees safe to delete, stale defers, unread replies safe to mark seen. One line each, with the action.');
+  toast('Asked the assistant — the suggestions land in the chat log in a minute');
+});
 $('#q-toggle')?.addEventListener('click', () => { const q=$('#s-queue'); q.classList.toggle('collapsed'); $('#q-toggle').textContent = q.classList.contains('collapsed') ? 'show' : 'hide'; });
 const ASK_PH = { all: $('#ask-txt').placeholder, reviews: "Ask about a PR, e.g. 'is #920 safe to merge before #64?'" };
 function setTab(next){
