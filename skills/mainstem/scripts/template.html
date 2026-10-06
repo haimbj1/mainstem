@@ -1903,10 +1903,30 @@ function renderReviews(){
     .filter(r => rvShow || rvFilter==='waiting' || rvFilter==='decided' || rvFilter==='approved' || !isDec(r)))
     .filter(r => !q || `#${r.number} ${r.title} ${r.author.login} ${r.repository.nameWithOwner}`.toLowerCase().includes(q))
     .sort((a,b)=>(hasNew(b)-hasNew(a)) || ((a.isDraft?1:0)-(b.isDraft?1:0)) || new Date(a.createdAt||a.updatedAt)-new Date(b.createdAt||b.updatedAt));
+  /* One status per row, colored by WHO ACTS: warn = you, info = the author, good = done,
+     neutral = nothing or in progress. Everything else lives in the tooltip and the drawer. */
+  const rvStatus = r => {
+    const url = r.url, rv = RV[url];
+    const n = (rv?.findings || []).filter(f => !/\u2705|\u274C/.test(f.status || '')).length;
+    const S = (txt, cls, tip) => `<span class="pill ${cls}" ${rv?`data-rv="${esc(url)}" style="cursor:pointer"`:''} title="${esc(tip || 'Click for the full review card')}">${txt}</span>`;
+    if (RV_QUEUED.has(url)) return S('\u231B reviewing \u2014 wait', 'neutral', 'The agent is working; the verdict lands here.');
+    if (r.isDraft) return S('\u270E draft \u2014 nothing to do', 'neutral', 'The author has not asked for a review yet.');
+    const gh = GH_MY_REVIEW[url];
+    if (RV_REPLIED[url]) return S(`\uD83D\uDCAC ${esc(RV_REPLIED[url].by)} replied \u2014 read it, then decide`, 'warn',
+      `Answered ${ageText(RV_REPLIED[url].at)} ago, after your last review. A reassess runs automatically; your post clears this.`);
+    if (gh === 'CHANGES_REQUESTED' && headMoved(r)) return S('\u27F2 author pushed \u2014 the reassess lands here', 'warn', 'The fix round arrived after your request-changes.');
+    if (gh === 'APPROVED') return S('\u2713 approved \u2014 done', 'good', 'Your approval stands on GitHub.');
+    if (gh === 'CHANGES_REQUESTED' || POSTED.has(rv?.status)) return S('\u23F3 waiting on the author', 'info', 'Your review is posted; nothing to do until they respond.');
+    if (rv?.pending_review) return S(`\uD83D\uDC41 staged \u2014 check on GitHub, then give the verdict (${n})`, 'warn',
+      `${n} open finding${n===1?'':'s'} sit on the PR as a pending review only you can see. Annotate with >> lines, or decide from the card.`);
+    if (rv) return S(`\u25CF your verdict needed (${n})`, 'warn', `${n} open finding${n===1?'':'s'}; the agent suggests ${esc(rv.verdict)}.`);
+    return LOCAL ? `<button class="pill model" data-write data-rvrun="${esc(url)}" title="Run the offline review agent \u2014 ~150k tokens">\u2726 run review</button>`
+                 : S('not reviewed', 'neutral', 'No offline review yet.');
+  };
   const body = list.map(r=>{
     const rv = RV[r.url];
     const ck = (LOCAL && !rv && !r.isDraft && !RV_QUEUED.has(r.url)) ? `<input type="checkbox" class="rvck" data-rvsel="${esc(r.url)}" ${rvSel.has(r.url)?'checked':''} title="Select for review">` : '';
-    return `<div class="row ${r.isDraft ? 'rvdim' : isDec(r) && !rvNewReplies(r.url).length ? 'rvdim':''} ${rvOpenP===r.url?'checked':''}" style="grid-template-columns:auto 1fr auto"><div>${ck}</div><div><div class="t"><a href="${esc(r.url)}" target="_blank" rel="noopener">#${r.number} ${esc(r.title)}</a></div><div class="s">${esc(repoShort(r.repository.nameWithOwner))} · <button class="chip" style="padding:0 7px" data-author="${esc(r.author.login)}">${esc(r.author.login)}</button>${rv?` · <button class="dec" data-rv="${esc(r.url)}" title="Read the offline review in the drawer">Review</button>`:''}</div></div><div class="r">${ssPill(ssFor('#'+r.number))}${rvPills(r.url)}${pdPill(r.url)}${sessBtnPR(r.url, r.title, '')}${(()=>{const pv={direct:'me',team:'team',watch:'watch'}[r.provenance]||(r.rvOnly?'not requested':r.direct?'me':'team'); return pv==='not requested'?'<span class="pill neutral" title="Reviewed on request from a Claude session \u2014 GitHub has no review request for you on this PR">not requested</span>':pv==='me'?'<span class="pill accent">me</span>':pv==='watch'?'<span class="pill info" title="Open PR in a repo you watch \u2014 no review request from anyone">watch</span>':'<span class="pill neutral">team</span>';})()}${r.isDraft?'<span class="pill neutral">draft</span>':''}<span class="${ageCls(r.createdAt||r.updatedAt,7,21)}" title="opened">${ageText(r.createdAt||r.updatedAt)}</span></div></div>`;
+    return `<div class="row ${r.isDraft ? 'rvdim' : isDec(r) && !rvNewReplies(r.url).length ? 'rvdim':''} ${rvOpenP===r.url?'checked':''}" style="grid-template-columns:auto 1fr auto"><div>${ck}</div><div><div class="t"><a href="${esc(r.url)}" target="_blank" rel="noopener">#${r.number} ${esc(r.title)}</a></div><div class="s">${esc(repoShort(r.repository.nameWithOwner))} · <button class="chip" style="padding:0 7px" data-author="${esc(r.author.login)}">${esc(r.author.login)}</button>${rv?` · <button class="dec" data-rv="${esc(r.url)}" title="Read the offline review in the drawer">Review</button>`:''}</div></div><div class="r">${rvStatus(r)}${pdPill(r.url)}<span class="${ageCls(r.createdAt||r.updatedAt,7,21)}" title="opened">${ageText(r.createdAt||r.updatedAt)}</span></div></div>`;
   }).join('');
   const nUnrev = base.filter(r => !RV[r.url] && !r.isDraft && !RV_QUEUED.has(r.url)).length;
   const tools = REFRESH_BTN('reviews')
