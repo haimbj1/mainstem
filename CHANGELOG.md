@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.2.0
+
+The review loop release: the board now closes the loop between the offline reviews,
+GitHub, and the developer — with as few clicks as possible.
+
+- Pre-review staging: stage drafts as a GitHub PENDING review — inline with the code,
+  visible only to you, nothing posted. Annotate a staged comment with `>>` lines to talk
+  to the reviewer; "Reread pre-review" acts on every note, syncs your edits, and
+  refreshes the staged copy. Staging all drafts is now the default after every review run.
+- Auto-reassess: an author reply after a posted review queues the re-review on its own
+  (once per reply, at most 3 per cycle); resolved findings get marked and the verdict moves.
+- "⟲ Reassess" button on every review card for the manual case.
+- Tokenless 5-minute reviews refresh: the server re-collects GitHub review state and an
+  open page reloads itself when fresh data lands (never while you type or a drawer is open).
+- Author replies and pushed fix rounds return a decided row to open work, with pills.
+- Truthful row states: a decision hides a row only with that decision's own landed receipt;
+  GitHub-approved PRs file under decided; an explicit "✓ approved" state filter.
+- Resume for refused posting clicks: a stale-head refusal re-applies your decision to the
+  drafts that survive the re-review, and bounces back only when the verdict flipped.
+- Post buttons show `selected of total · N unticked`, so a partial post is never silent.
+- Review posting hardening: whole-PR draft locations parse; a partial draft match refuses
+  instead of posting quietly.
+- Master lock: an flock on `<dataDir>/master.lock` makes the one-master check
+  deterministic; `master_watch.py` replaces the ad-hoc watch loop.
+- prune_reviews treats a PR that no longer resolves (re-created repo) as gone instead of
+  failing the whole run.
+- New config keys: `reviewsRefreshSeconds` (default 300, 0 disables).
+
 ## 0.1.2
 
 - Scheduled tokenless bake: `bake.sh` runs `jira_fetch.sh` + the new `google_fetch.py`
