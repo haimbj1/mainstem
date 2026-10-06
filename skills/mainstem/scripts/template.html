@@ -1640,16 +1640,19 @@ function queuePills(it){
   const ss = ssPill(ssNamesForItem(it)); if (ss) out.push(ss);
   return out.slice(0, 2);
 }
+let tipSel = new Set();
 function renderTips(){
   const el = $('#s-tips'); if (!el) return;
   const t = DATA.tips || {};
-  if (!(t.items || []).length) { el.innerHTML = ''; return; }
+  if (!(t.items || []).length) { el.innerHTML = ''; tipSel.clear(); return; }
   const rows = t.items.map((it, i) => `<div class="needs-row">
-    <div class="t">${esc(it.text)}${it.why ? ` <span class="why">— ${esc(it.why)}</span>` : ''}</div>
+    <label class="pst"><input type="checkbox" data-tipsel="${i}" ${tipSel.has(i)?'checked':''}></label>
+    <div class="t">${esc(it.text)}${it.why ? ` <span class="why">— ${esc(it.why)}</span>` : ''}
+      ${it.action ? `<div class="why">→ will do: ${esc(it.action)}</div>` : ''}</div>
     ${it.cmd ? `<button class="cmd" data-cmd="${esc(it.cmd)}" title="Copy the command">${ICON.copy}copy</button>` : ''}
-    ${it.req ? `<button class="dec" data-write data-tipact="${i}" title="Send this action to the master/server">${esc(it.req.label || 'do it')}</button>` : ''}
   </div>`).join('');
-  el.innerHTML = `<div class="sec-h"><h2>✨ Assistant tips</h2><span class="cnt">${t.items.length}</span><span class="hint">from the last analysis, ${esc(ageText(t.when))} ago — ✨ Tips in the sidebar re-runs it</span></div>${rows}`;
+  const nSel = tipSel.size;
+  el.innerHTML = `<div class="sec-h"><h2>✨ Assistant tips</h2><span class="cnt">${t.items.length}</span><span class="hint">tick what the assistant should do for you — nothing runs until you click</span><div class="tools">${nSel ? `<button class="btn model" data-write id="tips-run">Run selected (${nSel})</button>` : ''}<span class="age">analysis ${esc(ageText(t.when))} ago</span></div></div>${rows}`;
   /* arrival signal: badge the sidebar button until the tips were seen on Home */
   const seen = store.get('tipsSeen', '') === t.when;
   const btn = $('#ms-tips');
@@ -1658,9 +1661,19 @@ function renderTips(){
   else if (!seen && !renderTips._toasted) { renderTips._toasted = true; toast(`✨ ${t.items.length} assistant tips landed — they are on Home`); }
 }
 $('#s-tips')?.addEventListener('click', e => {
+  const ck = e.target.closest('input[data-tipsel]');
+  if (ck) { ck.checked ? tipSel.add(+ck.dataset.tipsel) : tipSel.delete(+ck.dataset.tipsel); renderTips(); return; }
   const b = e.target.closest('button'); if (!b) return;
   if (b.dataset.cmd) { copy(b.dataset.cmd); b.classList.add('copied'); setTimeout(()=>b.classList.remove('copied'),1200); return; }
-  if (b.dataset.tipact != null) { const it = (DATA.tips.items||[])[+b.dataset.tipact]; if (it?.req) { sendRequest(it.req.kind, it.req.text, it.req.targets || [], it.req.extra || {}); toast('Sent'); } }
+  if (b.id === 'tips-run') {
+    const items = (DATA.tips.items||[]);
+    const picked = [...tipSel].map(i => items[i]).filter(Boolean);
+    if (!picked.length) return;
+    sendRequest('board_tips_exec', `Execute ${picked.length} picked assistant tips: ${picked.map(p=>p.id||p.text.slice(0,40)).join('; ')}`,
+      [], { picked: picked.map(p => p.id ?? p.text), tips_when: DATA.tips.when });
+    tipSel.clear(); renderTips();
+    toast('Sent — the assistant executes the picked items and reports in the chat log');
+  }
 });
 function rvNeedsMe(url){
   if (RV_QUEUED.has(url) || RR_DRAFT.has(url)) return null;

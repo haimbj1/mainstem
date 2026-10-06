@@ -67,7 +67,7 @@ DOCTYPE = ('<!doctype html>\n<html><head><meta charset="utf-8">'
 
 PANELS = {"prs", "sessions", "worktrees", "reviews", "jira"}
 # Kinds this server refuses to guess about; the master session answers them.
-MODEL_KINDS = {"chat", "decision", "review_question", "quickwins", "review_pr", "board_tips"}
+MODEL_KINDS = {"chat", "decision", "review_question", "quickwins", "review_pr", "board_tips", "board_tips_exec"}
 
 build_lock = threading.Lock()
 req_lock = threading.Lock()
