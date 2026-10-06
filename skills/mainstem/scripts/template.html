@@ -320,6 +320,9 @@ body[data-tab="home"] #brief{display:grid}
 body[data-tab="home"] #now{display:grid}
 body[data-tab="home"] #s-needs{display:block}
 #s-needs{display:none}
+body[data-tab="home"] #s-tips{display:block}
+#s-tips{display:none}
+#s-tips .why{color:var(--muted);font-size:12px}
 body[data-tab="home"] #s-queue{margin-top:14px}
 #s-queue.collapsed > *:not(.sec-h){display:none}
 #s-queue.collapsed .sec-h{opacity:.75}
@@ -458,6 +461,7 @@ footer{margin-top:40px;font-size:12px;color:var(--muted);display:flex;gap:16px;f
     <div class="sec-h"><h2>Needs you</h2><span class="cnt" id="needs-cnt"></span><span class="hint">Everything amber, one line each — empty means you are done.</span></div>
     <div id="needs"></div>
   </section>
+  <section id="s-tips"></section>
   <section id="s-queue" class="collapsed">
     <div class="sec-h">
       <h2>Decide now</h2><button class="chip" id="q-toggle" title="This ranked decision list is optional — the inbox above covers what needs you">show</button>
@@ -1636,6 +1640,22 @@ function queuePills(it){
   const ss = ssPill(ssNamesForItem(it)); if (ss) out.push(ss);
   return out.slice(0, 2);
 }
+function renderTips(){
+  const el = $('#s-tips'); if (!el) return;
+  const t = DATA.tips || {};
+  if (!(t.items || []).length) { el.innerHTML = ''; return; }
+  const rows = t.items.map((it, i) => `<div class="needs-row">
+    <div class="t">${esc(it.text)}${it.why ? ` <span class="why">— ${esc(it.why)}</span>` : ''}</div>
+    ${it.cmd ? `<button class="cmd" data-cmd="${esc(it.cmd)}" title="Copy the command">${ICON.copy}copy</button>` : ''}
+    ${it.req ? `<button class="dec" data-write data-tipact="${i}" title="Send this action to the master/server">${esc(it.req.label || 'do it')}</button>` : ''}
+  </div>`).join('');
+  el.innerHTML = `<div class="sec-h"><h2>✨ Assistant tips</h2><span class="cnt">${t.items.length}</span><span class="hint">from the last analysis, ${esc(ageText(t.when))} ago — ✨ Tips in the sidebar re-runs it</span></div>${rows}`;
+}
+$('#s-tips')?.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.cmd) { copy(b.dataset.cmd); b.classList.add('copied'); setTimeout(()=>b.classList.remove('copied'),1200); return; }
+  if (b.dataset.tipact != null) { const it = (DATA.tips.items||[])[+b.dataset.tipact]; if (it?.req) { sendRequest(it.req.kind, it.req.text, it.req.targets || [], it.req.extra || {}); toast('Sent'); } }
+});
 function rvNeedsMe(url){
   if (RV_QUEUED.has(url) || RR_DRAFT.has(url)) return null;
   const rv = RV[url], gh = GH_MY_REVIEW[url];
@@ -1659,7 +1679,7 @@ function renderNeeds(){
   el.innerHTML = items.length ? items.map(i => i.html).join('') : '<div class="empty">Nothing needs you. Enjoy it.</div>';
 }
 function renderQueue(){
-  renderNeeds();
+  renderNeeds(); renderTips();
   const all = visibleItems(), vis = queueAll ? all : all.slice(0, QUEUE_TOP);
   $('#q-cnt').textContent = `${vis.length} of ${all.length} · ${Object.keys(done).length} done · ${Object.keys(snoozed).length} snoozed`;
   const sa = $('#q-showall');
@@ -2150,8 +2170,9 @@ function renderTabs(){
 }
 $('#tabs').addEventListener('click', e => { const b=e.target.closest('button'); if (b) setTab(b.dataset.tab); });
 $('#ms-tips')?.addEventListener('click', () => {
-  sendRequest('chat', 'Assistant: scan the board and suggest cleanups in one short list — reviews that can close, decided rows to clear, worktrees safe to delete, stale defers, unread replies safe to mark seen. One line each, with the action.');
-  toast('Asked the assistant — the suggestions land in the chat log in a minute');
+  if (DATA.requests.some(r => r.kind === 'board_tips' && (r.status === 'pending' || r.status === 'working'))) { toast('An analysis is already running'); return; }
+  sendRequest('board_tips', 'Scan the whole board and write tips.json: cleanups, closable items, hygiene.');
+  toast('Analysis queued — the tips land on Home when it finishes');
 });
 $('#q-toggle')?.addEventListener('click', () => { const q=$('#s-queue'); q.classList.toggle('collapsed'); $('#q-toggle').textContent = q.classList.contains('collapsed') ? 'show' : 'hide'; });
 const ASK_PH = { all: $('#ask-txt').placeholder, reviews: "Ask about a PR, e.g. 'is #920 safe to merge before #64?'" };
