@@ -10,7 +10,7 @@
   --accent:#B87A17; --accent-ink:#8A5A0E; --accent-soft:#F6E9CF;
   --good:#2F8A57; --good-soft:#DDF0E4; --warn:#B8731F; --warn-soft:#F7E8D2; --crit:#C2433A; --crit-soft:#F8DEDB; --info:#3572B8; --info-soft:#DDE8F6;
   --sel:#FFF4DC; --shadow:0 1px 2px rgba(20,26,30,.06),0 6px 20px rgba(20,26,30,.05);
-  --f-display:"IBM Plex Sans Condensed",system-ui,sans-serif; --f-body:"IBM Plex Sans",system-ui,sans-serif; --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --f-display:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",system-ui,sans-serif; --f-body:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",system-ui,sans-serif; --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
 }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
   --bg:#0F1418; --surface:#161C21; --surface-2:#1D242A; --line:#26303740; --line:#28323A; --line-strong:#3A464F;
@@ -37,8 +37,15 @@ code,.mono{font-family:var(--f-mono);font-size:12.5px}
 
 .pdraw{margin:8px 0}.pdraw summary{cursor:pointer;font-size:12.5px;color:var(--muted)}.pdfile{margin:8px 0 0;white-space:pre-wrap;font:12px/1.5 var(--f-mono);color:var(--ink-2);background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:10px;max-height:320px;overflow:auto}
 /* ---- top bar ---- */
-.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
-.top-in{max-width:1480px;margin:0 auto;padding:10px 20px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.shell{display:grid;grid-template-columns:216px minmax(0,1fr);min-height:100vh}
+.side{position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:14px;padding:16px 10px 14px;background:color-mix(in srgb,var(--surface) 72%,transparent);backdrop-filter:blur(22px) saturate(1.15);border-right:1px solid var(--line)}
+.side .brand{padding:2px 10px 8px}
+.side-foot{margin-top:auto;display:flex;flex-direction:column;gap:8px;padding:0 6px}
+.side-foot .chip,.side-foot .btn{justify-content:center;display:flex}
+.main{min-width:0}
+.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.top-in{max-width:1480px;margin:0 auto;padding:8px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+@media (max-width:900px){.shell{grid-template-columns:1fr}.side{position:static;height:auto;flex-direction:row;align-items:center;border-right:0;border-bottom:1px solid var(--line)}.side .tabs{flex-direction:row;flex-wrap:wrap}.side-foot{margin-top:0;flex-direction:row}}
 .brand{font-family:var(--f-display);font-weight:700;font-size:17px;letter-spacing:.01em;display:flex;align-items:center;gap:10px}
 .brand{padding-right:2px}
 .brand-sep{width:1px;align-self:stretch;background:var(--line);margin:2px 8px}
@@ -288,10 +295,12 @@ a.dec:hover{text-decoration:none;border-color:var(--accent);background:var(--acc
 .pdcard .decform{margin-top:10px}
 
 /* ---- top tabs ---- */
-.tabs{display:flex;gap:3px;margin-left:auto;flex-wrap:wrap}
-.tabs button{padding:5px 11px;border-radius:7px;font-family:var(--f-display);font-weight:600;font-size:13.5px;color:var(--muted);display:flex;gap:7px;align-items:center;border:1px solid transparent}
+.tabs{display:flex;flex-direction:column;gap:2px}
+.tabs button{padding:7px 10px;border-radius:8px;font-family:var(--f-display);font-weight:600;font-size:13.5px;color:var(--muted);display:flex;gap:8px;align-items:center;border:1px solid transparent;width:100%;text-align:left}
+.tabs button .c{margin-left:auto;font-family:var(--f-mono);font-size:11px;color:var(--faint)}
 .tabs button:hover{background:var(--surface-2);color:var(--ink-2)}
-.tabs button.on{background:var(--surface);border-color:var(--line);color:var(--ink);box-shadow:var(--shadow)}
+.tabs button.on{background:var(--accent-soft);color:var(--accent-ink)}
+.tabs button.on .c{color:var(--accent-ink)}
 .tabs button .k{font-family:var(--f-mono);font-size:10.5px;color:var(--faint);border:1px solid var(--line);border-radius:4px;padding:0 4px}
 .tabs button .c{font-family:var(--f-mono);font-size:11px;color:var(--muted)}
 .tabs button.on .c{color:var(--accent-ink)}
@@ -401,23 +410,30 @@ td.mono{color:var(--ink-2)}
 .standup.show{display:block}
 footer{margin-top:40px;font-size:12px;color:var(--muted);display:flex;gap:16px;flex-wrap:wrap}
 .dcount{opacity:.7;font-size:.92em;margin-left:4px}
-.rvtop{margin-bottom:10px}.rvtop .pill{font-size:13.5px;padding:5px 12px}
+.rvtop{margin-bottom:10px}.rvtop .pill{font-size:13.5px;padding:5px 12px}\n.sum.lead{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;font-size:14.5px}\n.rvlog{margin-top:14px}.rvlog summary{cursor:pointer;color:var(--muted);font-size:12.5px}.rvlog .sum{color:var(--ink-2);font-size:13px;margin-top:8px}
 </style>
 
-<div class="top"><div class="top-in">
+<div class="shell">
+<aside class="side">
   <div class="brand"><span class="dot"></span><span id="brand-name">MainStem</span></div>
-  <button class="chip" data-write id="jump-master" title="Open the master session in iTerm2">⌥ master</button>
-  <span class="brand-sep" aria-hidden="true"></span>
+  <nav class="tabs" id="tabs"></nav>
+  <div class="side-foot">
+    <button class="chip" data-write id="jump-master" title="Open the master session in iTerm2">⌥ master</button>
+    <button class="btn danger" data-write id="rotate-master" title="Retire the master session and boot a fresh one in the same tab (or launch one if none is running). Not a data refresh — this resets the master's context.">♻ New master</button>
+  </div>
+</aside>
+
+<div class="main">
+<div class="top"><div class="top-in">
   <div class="clock" id="clock"></div>
   <div class="stamp" id="stamp"></div>
   <span class="stamp" id="cc-usage" title=""></span>
+  <span style="flex:1"></span>
   <button class="chip" id="zoom-out" title="Smaller text (this browser only)">A−</button>
   <button class="chip" id="zoom-in" title="Larger text (this browser only)">A+</button>
   <button class="chip" id="theme" title="Theme: follows your system — click to force dark or light (this browser only)">◐</button>
   <button class="btn" data-write id="refresh" title="Ask the master session to re-collect everything and rewrite the brief">↻ Refresh</button>
   <div class="search"><span>⌕</span><input id="q" placeholder="Filter this tab…" aria-label="Filter"><span class="k">/</span></div>
-  <nav class="tabs" id="tabs"></nav>
-  <button class="btn danger" data-write id="rotate-master" title="Retire the master session and boot a fresh one in the same tab (or launch one if none is running). Not a data refresh — this resets the master's context.">♻ New master</button>
 </div></div>
 
 <div class="wrap">
@@ -575,6 +591,7 @@ footer{margin-top:40px;font-size:12px;color:var(--muted);display:flex;gap:16px;f
 </table></div></div>
 
 <script type="text/plain" id="tpl">/*__TPL__*/</script>
+</div></div><!-- /main /shell -->
 <script>
 const DATA = /*__DATA__*/null;
 DATA.requests ||= [];
@@ -880,7 +897,13 @@ function rvCard(rv, title){
     + `${rv.last_reviewed?`<span class="age" title="${esc(rv.last_reviewed)}">reviewed ${ageText(rv.last_reviewed)} ago</span>`:''}`
     + `${rvBlank(rv.depends_on)?'':`<span class="pill info">depends on ${esc(rv.depends_on)}</span>`}`
     + `${rv.path?`<button class="cmd" data-cmd="${esc(rv.path)}" title="Copy the file path — file:// links do not open from a published page">${ICON.copy}path</button>`:''}</div>`;
-  const sum = rv.summary ? `<div class="sum">${esc(rv.summary)}</div>` : '';
+  /* The card leads with 2-3 lines: where we're at, what to do. The rest of the
+     summary is working notes — a log, collapsed next to the thread. */
+  const sumParas = (rv.summary || '').split(/\n+/).map(t => t.trim()).filter(Boolean);
+  const sum = sumParas.length ? `<div class="sum lead">${esc(sumParas[0])}</div>` : '';
+  const sumLog = sumParas.length > 1
+    ? `<details class="rvlog"><summary>Review notes & log (${sumParas.length - 1})</summary><div class="sum">${sumParas.slice(1).map(esc).join('<br><br>')}</div></details>`
+    : '';
   const tbl = fs.length ? '' : `<div class="lbl">Findings</div><div class="none">No findings.</div>`;
   const drafts = rv.drafts || [];
   /* the finding's code, like a GitHub review card: diff-colored rows, target highlighted,
@@ -936,7 +959,7 @@ function rvCard(rv, title){
     <input class="free" data-rvf="question" placeholder="ask the review agent one question…"><button class="dec" data-write data-rva="review_question" title="Claude answers in the Decision log — no GitHub write">Ask agent</button>
     <input class="free" data-rvf="why" placeholder="skip because…"><button class="dec" data-write data-rva="skip_review" title="Drop the review — Claude removes you as reviewer">Skip</button>
     ${nudgeDue() && nudgeOf(url) ? `<button class="dec" data-write data-rva="close_stale" title="The nudge comment got no answer — close the PR">Close (no answer)</button>` : ''}</div>`;
-  return `<div class="rvcard" data-rvcard="${esc(url)}" data-rvtitle="${esc(title||('#'+rv.pr+' '+rvTitle(rv)))}"><div class="rvtop">${rvStatus(url)}</div>${hdr}${sum}${tbl}${dh}${qs}${acts}${rvThread(url)}</div>`;
+  return `<div class="rvcard" data-rvcard="${esc(url)}" data-rvtitle="${esc(title||('#'+rv.pr+' '+rvTitle(rv)))}"><div class="rvtop">${rvStatus(url)}</div>${hdr}${sum}${tbl}${dh}${qs}${acts}${sumLog}${rvThread(url)}</div>`;
 }
 function rvLine(a, t, ids, q, why){
   const n = ids.length, c = `${n} inline comment${n===1?'':'s'} (${ids.join(', ')})`;
