@@ -76,14 +76,18 @@ def diff_lines(repo, pr):
     return valid
 
 
-def _set_pending_fm(path, rid):
-    """Record (or clear) the GitHub pending-review id in the review file's frontmatter."""
+def _set_pending_fm(path, rid, staged=None):
+    """Record (or clear) the GitHub pending-review id and WHICH drafts are staged."""
     if not path or not os.path.exists(path):
         return
     t = open(path).read()
     t = re.sub(r"^pending_review:.*\n", "", t, flags=re.M)
+    t = re.sub(r"^staged:.*\n", "", t, flags=re.M)
     if rid:
-        t = t.replace("\n---\n", "\npending_review: %s\n---\n" % rid, 1)
+        line = "\npending_review: %s\n" % rid
+        if staged:
+            line += "staged: %s\n" % " ".join(staged)
+        t = t.replace("\n---\n", line + "---\n", 1)
     open(path, "w").write(t)
 
 
@@ -225,7 +229,7 @@ def execute(rec):
         return "error", "post failed: " + (err or out)[:300]
     rid = json.loads(out).get("id", "?")
     if event == "PENDING":
-        _set_pending_fm(path, rid)
+        _set_pending_fm(path, rid, staged=[f for f, _ in chosen])
         return "done", "Pre-review staged on %s#%d (pending review %s): %d inline, %d in the body (%s) — visible only to you on GitHub; >> lines in a comment talk to the reviewer.%s" % (
             repo.split("/")[-1], pr, rid, len(comments), len(moved), ", ".join(f for f, _ in chosen), note)
     status = "approved" if event == "APPROVE" else "posted"
