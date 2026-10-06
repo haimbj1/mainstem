@@ -10,11 +10,16 @@
   --accent:#B87A17; --accent-ink:#8A5A0E; --accent-soft:#F6E9CF;
   --good:#2F8A57; --good-soft:#DDF0E4; --warn:#B8731F; --warn-soft:#F7E8D2; --crit:#C2433A; --crit-soft:#F8DEDB; --info:#3572B8; --info-soft:#DDE8F6;
   --sel:#FFF4DC; --shadow:0 1px 2px rgba(20,26,30,.06),0 6px 20px rgba(20,26,30,.05);
-  /* board status hues: solid (dot, lane bar) · soft (pill fill) · ink (pill text) */
-  --orange:#FF8A3D; --orange-soft:#FFE8D6; --orange-ink:#8F3B00; --blue:#3B82F6; --blue-soft:#DCE9FF; --blue-ink:#1B4A9E;
-  --violet:#7C6CF6; --violet-soft:#E8E4FF; --violet-ink:#4330C2; --green:#22B573; --green-soft:#D8F3E3; --green-ink:#14613A;
-  --red:#F04452; --red-soft:#FFE0E1; --red-ink:#9E1F27; --yellow:#F5B800; --yellow-soft:#FFF0BF; --yellow-ink:#6E5200;
-  --grey:#9AA2A7; --grey-soft:#EDEFEC; --grey-ink:#3F474D; --lift:0 12px 28px rgba(20,26,30,.12);
+  /* board hues: solid (dot, lane bar) · soft (pill fill) · ink (pill text). The ones that mean
+     what a status pill means alias its tokens, so both themes follow the shell: amber you act,
+     blue someone else, green done, red blocked, gray nothing. Violet and yellow have no status. */
+  --orange:var(--warn); --orange-soft:var(--warn-soft); --orange-ink:var(--warn);
+  --blue:var(--info); --blue-soft:var(--info-soft); --blue-ink:var(--info);
+  --green:var(--good); --green-soft:var(--good-soft); --green-ink:var(--good);
+  --red:var(--crit); --red-soft:var(--crit-soft); --red-ink:var(--crit);
+  --grey:var(--faint); --grey-soft:var(--surface-2); --grey-ink:var(--muted);
+  --violet:#6F5FD0; --violet-soft:#E9E6F8; --violet-ink:#5546B5; --yellow:#A8890F; --yellow-soft:#F3ECCB; --yellow-ink:#7D6608;
+  --lift:0 1px 2px rgba(20,26,30,.06),0 8px 22px rgba(20,26,30,.09);
   --f-display:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",system-ui,sans-serif; --f-body:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",system-ui,sans-serif; --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
 }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
@@ -23,10 +28,8 @@
   --accent:#E0A03A; --accent-ink:#F0BC66; --accent-soft:#3A2D14;
   --good:#4FB477; --good-soft:#173324; --warn:#E39A3B; --warn-soft:#3A2A12; --crit:#E2645A; --crit-soft:#3E1B18; --info:#6AA5E8; --info-soft:#17293D;
   --sel:#241F12; --shadow:0 0 0 1px rgba(255,255,255,.04),0 2px 10px rgba(0,0,0,.35);
-  --orange-soft:rgba(255,138,61,.16); --orange-ink:#FFB27A; --blue-soft:rgba(59,130,246,.18); --blue-ink:#A4C6FF;
-  --violet-soft:rgba(124,108,246,.22); --violet-ink:#C3BAFF; --green-soft:rgba(34,181,115,.16); --green-ink:#86DEAD;
-  --red-soft:rgba(240,68,82,.18); --red-ink:#FFA0A7; --yellow-soft:rgba(245,184,0,.16); --yellow-ink:#F7D063;
-  --grey:#5F6B73; --grey-soft:rgba(255,255,255,.07); --grey-ink:#C2CACF; --lift:0 14px 34px rgba(0,0,0,.55);
+  --violet:#9A8CEB; --violet-soft:#221F38; --violet-ink:#B6ABF3; --yellow:#D3B23C; --yellow-soft:#2E2710; --yellow-ink:#E0C25A;
+  --lift:0 0 0 1px rgba(255,255,255,.06),0 8px 22px rgba(0,0,0,.5);
 }}
 :root[data-theme="dark"]{
   --bg:#0F1418; --surface:#161C21; --surface-2:#1D242A; --line:#28323A; --line-strong:#3A464F;
@@ -34,10 +37,8 @@
   --accent:#E0A03A; --accent-ink:#F0BC66; --accent-soft:#3A2D14;
   --good:#4FB477; --good-soft:#173324; --warn:#E39A3B; --warn-soft:#3A2A12; --crit:#E2645A; --crit-soft:#3E1B18; --info:#6AA5E8; --info-soft:#17293D;
   --sel:#2A2417; --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
-  --orange-soft:rgba(255,138,61,.16); --orange-ink:#FFB27A; --blue-soft:rgba(59,130,246,.18); --blue-ink:#A4C6FF;
-  --violet-soft:rgba(124,108,246,.22); --violet-ink:#C3BAFF; --green-soft:rgba(34,181,115,.16); --green-ink:#86DEAD;
-  --red-soft:rgba(240,68,82,.18); --red-ink:#FFA0A7; --yellow-soft:rgba(245,184,0,.16); --yellow-ink:#F7D063;
-  --grey:#5F6B73; --grey-soft:rgba(255,255,255,.07); --grey-ink:#C2CACF; --lift:0 14px 34px rgba(0,0,0,.55);
+  --violet:#9A8CEB; --violet-soft:#221F38; --violet-ink:#B6ABF3; --yellow:#D3B23C; --yellow-soft:#2E2710; --yellow-ink:#E0C25A;
+  --lift:0 0 0 1px rgba(255,255,255,.06),0 8px 22px rgba(0,0,0,.5);
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 var(--f-body);-webkit-font-smoothing:antialiased}
@@ -442,16 +443,16 @@ footer{margin-top:40px;font-size:12px;color:var(--muted);display:flex;gap:16px;f
 
 /* ---- board: kanban lanes over the same review state the Reviews tab reads ---- */
 body[data-tab="board"] #s-board{display:block;margin-top:0;position:relative}
-.bd-seg{display:inline-flex;gap:3px;padding:3px;border-radius:10px;background:var(--surface-2);border:1px solid var(--line)}
-.bd-seg button{padding:4px 12px;border-radius:7px;font-family:var(--f-display);font-weight:600;font-size:13.5px;color:var(--muted);display:inline-flex;gap:7px;align-items:center}
+.bd-seg{display:inline-flex;gap:2px;padding:2px;border-radius:8px;background:var(--surface-2);border:1px solid var(--line)}
+.bd-seg button{padding:3px 10px;border-radius:6px;font-family:var(--f-display);font-weight:600;font-size:12.5px;color:var(--muted);display:inline-flex;gap:7px;align-items:center}
 .bd-seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
-.bd-count{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:19px;padding:0 6px;border-radius:999px;background:var(--grey-soft);color:var(--grey-ink);font:600 11px/1 var(--f-mono)}
-.bd-seg button[aria-pressed="true"] .bd-count{background:var(--accent);color:#1A1206}
+.bd-count{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:17px;padding:0 5px;border-radius:5px;background:var(--grey-soft);color:var(--grey-ink);font:500 11px/1 var(--f-mono)}
+.bd-seg button[aria-pressed="true"] .bd-count{background:var(--accent-soft);color:var(--accent-ink)}
 .bd-dd{display:inline-flex;align-items:center;gap:5px}
 .bd-dd b{font-weight:600;color:var(--ink);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bd-dd .caret{font-size:10px;color:var(--muted)}
 .bd-dd[aria-expanded="true"]{border-color:var(--accent)}
-.bd-pop{position:absolute;z-index:30;width:260px;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:var(--lift);padding:8px;display:flex;flex-direction:column;gap:6px}
+.bd-pop{position:absolute;z-index:30;width:260px;background:color-mix(in srgb,var(--surface) 88%,transparent);backdrop-filter:blur(22px) saturate(1.15);border:1px solid var(--line);border-radius:10px;box-shadow:var(--lift);padding:8px;display:flex;flex-direction:column;gap:6px}
 .bd-pop-q{height:28px;border:1px solid var(--line);border-radius:7px;background:var(--surface);color:var(--ink);font:13px var(--f-body);padding:0 8px}
 .bd-pop-acts{display:flex;justify-content:space-between;padding:0 2px}
 .bd-pop-acts button{font-size:12px;font-weight:600;color:var(--accent-ink)}
@@ -462,70 +463,73 @@ body[data-tab="board"] #s-board{display:block;margin-top:0;position:relative}
 .bd-opt[hidden]{display:none}
 .bd-opt .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bd-opt .n{font:11.5px var(--f-mono);color:var(--muted)}
-.bd-cols{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(272px,1fr);gap:14px;align-items:start;overflow-x:auto;padding-bottom:8px}
-.bd-lane{display:flex;flex-direction:column;gap:10px;padding:12px;border-radius:14px;background:var(--surface-2);border:1px solid var(--line);min-width:0}
+.bd-cols{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(264px,1fr);gap:12px;align-items:start;overflow-x:auto;padding-bottom:8px}
+.bd-lane{display:flex;flex-direction:column;gap:8px;padding:10px;border-radius:12px;background:color-mix(in srgb,var(--surface-2) 60%,transparent);border:1px solid var(--line);min-width:0}
 .bd-lh{display:flex;align-items:center;gap:8px}
-.bd-lh h3{margin:0;font-family:var(--f-display);font-weight:700;font-size:15px}
+.bd-lh h3{margin:0;font-family:var(--f-display);font-weight:600;font-size:13.5px}
 .bd-lh .hint{margin-left:auto;font-size:12px;color:var(--muted)}
-.bd-dot{width:10px;height:10px;border-radius:4px;flex:none}
-.bd-bar{height:3px;border-radius:3px}
-.bd-mini{display:flex;flex-wrap:wrap;gap:2px;padding:3px;border-radius:999px;background:var(--bg)}
-.bd-mini button{padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600;color:var(--muted)}
+.bd-dot{width:8px;height:8px;border-radius:50%;flex:none}
+.bd-bar{height:2px;border-radius:2px;opacity:.7}
+.bd-mini{display:flex;flex-wrap:wrap;gap:2px;padding:2px;border-radius:7px;background:var(--bg);border:1px solid var(--line)}
+.bd-mini button{padding:1px 8px;border-radius:5px;font-size:11.5px;font-weight:500;color:var(--muted)}
 .bd-mini button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
-.bd-empty{padding:18px 10px;border:1.5px dashed var(--line-strong);border-radius:12px;text-align:center;font-size:13px;color:var(--muted)}
-.bd-card{cursor:pointer;display:flex;flex-direction:column;gap:9px;padding:12px 13px 10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);transition:transform .16s ease,box-shadow .16s ease}
-.bd-card:hover{transform:translateY(-2px);box-shadow:var(--lift)}
+.bd-empty{padding:16px 10px;border:1px dashed var(--line-strong);border-radius:10px;text-align:center;font-size:12.5px;color:var(--faint)}
+.bd-card{cursor:pointer;display:flex;flex-direction:column;gap:8px;padding:11px 12px 9px;background:var(--surface);border:1px solid var(--line);border-radius:10px;transition:border-color .16s ease,box-shadow .16s ease}
+.bd-card:hover{border-color:var(--line-strong);box-shadow:var(--lift)}
 .bd-row{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;min-width:0}
 .bd-ref{font-family:var(--f-mono);font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0;border-radius:4px}
 .bd-ref:hover{color:var(--accent-ink);text-decoration:underline}
-.bd-title{font-weight:600;font-size:14.5px;line-height:1.35;text-wrap:pretty;color:var(--ink);text-decoration:underline;text-decoration-color:var(--line-strong);text-underline-offset:3px}
-.bd-title:hover{color:var(--accent-ink);text-decoration-color:currentColor}
+.bd-title{font-weight:600;font-size:14px;line-height:1.35;text-wrap:pretty;color:var(--ink);text-underline-offset:3px}
+.bd-title:hover{color:var(--accent-ink);text-decoration:underline}
 .bd-acts{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
-.bd-btn{height:28px;padding:0 11px;border-radius:999px;border:1px solid var(--line);background:var(--surface);font-size:12.5px;font-weight:600;color:var(--ink-2);display:inline-flex;align-items:center;gap:6px}
-.bd-btn:hover{border-color:var(--line-strong)}
+.bd-btn{height:26px;padding:0 10px;border-radius:7px;border:1px solid var(--line);background:var(--surface);font-size:12.5px;font-weight:500;color:var(--ink-2);display:inline-flex;align-items:center;gap:6px}
+.bd-btn:hover{border-color:var(--line-strong);background:var(--surface-2)}
 a.bd-btn{text-decoration:none}
-.bd-btn.primary{background:var(--ink);border-color:var(--ink);color:var(--bg)}
-.bd-btn.armed{background:var(--orange);border-color:var(--orange);color:#1A1206}
+.bd-btn.primary{background:var(--accent);border-color:var(--accent);color:#1A1206;font-weight:600}
+.bd-btn.primary:hover{filter:brightness(1.06)}
+.bd-btn.armed{background:var(--ink);border-color:var(--ink);color:var(--bg);font-weight:600;box-shadow:0 0 0 3px var(--accent-soft)}
 .bd-btn.ghost{border-color:transparent;background:none;color:var(--muted)}
 .bd-btn:disabled{cursor:default;opacity:.75}
-.bd-btn.stale{opacity:1;border-style:dashed;border-color:var(--warn);background:var(--warn-soft);color:var(--warn);height:auto;min-height:28px;white-space:normal;text-align:left}
-.bd-why{flex:1;min-width:120px;height:28px;border:1px solid var(--line);border-radius:7px;background:var(--surface);color:var(--ink);font:13px var(--f-body);padding:0 8px}
+.bd-btn.stale{opacity:1;border-style:dashed;border-color:var(--warn);background:var(--warn-soft);color:var(--warn);height:auto;min-height:26px;white-space:normal;text-align:left}
+.bd-why{flex:1;min-width:120px;height:26px;border:1px solid var(--line);border-radius:7px;background:var(--surface);color:var(--ink);font:13px var(--f-body);padding:0 8px}
 .bd-spin{width:11px;height:11px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;flex:none;animation:bd-rot .8s linear infinite}
 @keyframes bd-rot{to{transform:rotate(360deg)}}
 [data-bdrefresh]{display:inline-flex;align-items:center;gap:6px}
 body:not([data-local]) [data-bdrefresh]{display:none}
 .bd-chips{display:flex;flex-wrap:wrap;gap:6px}
-.bd-pill{display:inline-flex;align-items:center;gap:6px;height:21px;padding:0 9px;border-radius:999px;font-size:12px;font-weight:600;line-height:1;white-space:nowrap;align-self:flex-start}
+/* the shell's .pill metrics, so a status reads the same on a card and on a Reviews row */
+.bd-pill{display:inline-flex;align-items:center;gap:5px;height:20px;padding:0 7px;border-radius:5px;font-family:var(--f-display);font-size:11.5px;font-weight:500;letter-spacing:.02em;line-height:1;white-space:nowrap;align-self:flex-start;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 .bd-pill.orange{background:var(--orange-soft);color:var(--orange-ink)} .bd-pill.blue{background:var(--blue-soft);color:var(--blue-ink)}
 .bd-pill.violet{background:var(--violet-soft);color:var(--violet-ink)} .bd-pill.green{background:var(--green-soft);color:var(--green-ink)}
 .bd-pill.red{background:var(--red-soft);color:var(--red-ink)} .bd-pill.yellow{background:var(--yellow-soft);color:var(--yellow-ink)}
 .bd-pill.grey{background:var(--grey-soft);color:var(--grey-ink)}
 .bd-pill svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
-.bd-depth{display:inline-flex;align-items:center;gap:7px;height:21px;padding:0 9px 0 8px;border-radius:999px;border:1px solid var(--line);font-size:12px;font-weight:600;white-space:nowrap;align-self:flex-start}
+.bd-depth{display:inline-flex;align-items:center;gap:7px;height:20px;padding:0 7px;border-radius:5px;border:1px solid var(--line);font-size:11.5px;font-weight:500;color:var(--ink-2);white-space:nowrap;align-self:flex-start}
 .bd-bars{display:inline-flex;align-items:flex-end;gap:2px;height:10px}
 .bd-bars i{display:block;width:3px;border-radius:1px;background:var(--line-strong)}
 .bd-bars i:nth-child(1){height:4px}.bd-bars i:nth-child(2){height:7px}.bd-bars i:nth-child(3){height:10px}
 .bd-bars i.on{background:var(--accent)}
-.bd-run{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--blue-ink)}
+.bd-run{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:500;color:var(--blue-ink)}
 .bd-live{position:relative;width:8px;height:8px;border-radius:50%;background:var(--blue);flex:none}
 .bd-live::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:2px solid var(--blue);opacity:0;animation:bd-ping 1.6s ease-out infinite}
 @keyframes bd-ping{0%{transform:scale(.6);opacity:.8}100%{transform:scale(1.5);opacity:0}}
-.bd-track{height:4px;border-radius:4px;background:var(--blue-soft);overflow:hidden}
+.bd-track{height:3px;border-radius:3px;background:var(--blue-soft);overflow:hidden}
 .bd-track>span{display:block;height:100%;background:var(--blue);transition:width .4s ease}
 .bd-run.stalled{font-weight:500;color:var(--yellow-ink)}
 .bd-track.stalled>span{background:var(--grey-ink)}
-.bd-pill.fail{display:inline-block;line-height:21px;max-width:100%;overflow:hidden;text-overflow:ellipsis}
-.bd-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding-top:8px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
-.bd-foot .who{color:var(--ink-2);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bd-pill.fail{display:inline-block;line-height:20px}
+.bd-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding-top:7px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
+.bd-foot .who{color:var(--ink-2);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bd-size{font-family:var(--f-mono);display:flex;gap:6px;white-space:nowrap}
 .bd-size .a{color:var(--good)} .bd-size .d{color:var(--crit)}
 .bd-foot .bd-size{margin-left:auto}
 .bd-claude{display:flex;align-items:center;gap:7px;min-width:0}
-.bd-claude b{font-weight:600;color:var(--green-ink);white-space:nowrap}
+.bd-claude b{font-weight:500;color:var(--green-ink);white-space:nowrap}
 .bd-claude .doing{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bd-pulse{width:8px;height:8px;border-radius:50%;background:var(--green);flex:none;animation:pulse 1.8s infinite}
 .bd-claude.idle b{color:var(--muted)} .bd-claude.idle .bd-pulse{background:var(--grey);animation:none}
 .bd-wt{font-family:var(--f-mono);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (max-width:900px){.bd-cols{grid-auto-columns:minmax(240px,86vw)}}
 @media (prefers-reduced-motion:reduce){.bd-card{transition:none}.bd-live::after,.bd-spin,.bd-pulse{animation:none}}
 </style>
 
@@ -2566,6 +2570,14 @@ const BD_VIEWS = {
              refreshTip: 'Re-collect my PRs — CI, reviews, conflicts — scripts only, no model' },
 };
 const bdActionable = cards => cards.filter(c => c.col !== 'done').length;
+/* The sidebar's Board count: review cards whose next move is mine — a verdict to give (not one
+   already sent), or a review to run on a direct request, a failed run, a stale head — plus My
+   work's Needs you and Ready to merge. Queued, running and draft PRs wait on someone else. */
+const BD_WORK_MINE = new Set(['needs', 'merge']);
+function bdMine(c){
+  if (c.col === 'ready') return !c.sending && !bdInFlight.has(c.key);
+  return c.col === 'needs' && !c.queued && !RR_DRAFT.has(c.key) && !!(c.failed || c.rv || bdDirect(c.r));
+}
 const BD_FOCUS_KEYS = ['bdopen', 'bdact', 'bdwact', 'bdrun', 'bdskip', 'bddd'];
 /* A repaint replaces the cards, so the focused control is found again by what it does. */
 function bdFocusKey(){
@@ -2966,7 +2978,7 @@ const TAB_COUNT = {
   work: () => DATA.sessions.length + DATA.my_prs.length,
   log: () => decisions().filter(r=>r.status==='pending').length,
   more: () => DATA.calendar.filter(e=>(new Date(e.end)-NOW)>0).length + DATA.notes.length + DATA.artifacts.length,
-  board: () => bdActionable(bdReviewCards()),
+  board: () => bdReviewCards().filter(bdMine).length + bdWorkCards().filter(c => BD_WORK_MINE.has(c.col)).length,
 };
 function renderTabs(){
   $('#tabs').innerHTML = TABS.map(t => {
@@ -3136,12 +3148,21 @@ document.addEventListener('click', e => {
 /* The server re-collects the reviews panel every few minutes (reviewsRefreshSeconds).
    When fresh data landed, reload — but never under the user's hands: not with the
    drawer open, and not while they type. GET / rebuilds the page from the new data. */
-if (LOCAL) { let baseStamp = DATA.collected_at; setInterval(async () => {
+if (LOCAL) { let baseStamp = DATA.collected_at, boardStamp = baseStamp; setInterval(async () => {
   try {
     const res = await fetch('/freshness', { cache:'no-store' });
     if (!res.ok) return;
     const { collected_at } = await res.json();
     if (!collected_at || collected_at === baseStamp) return;
+    // The Board re-renders from the fresh files in place — a reload would drop its armed
+    // buttons, open filters, skip reason and lane animation. Its own poll, when running,
+    // fetches them anyway. The rest of the page still reloads on the first tick after you
+    // leave the Board, because baseStamp has not moved.
+    if (tab === 'board') {
+      if (collected_at !== boardStamp && !bdPollTimer) await bdReload({ work: true });
+      boardStamp = collected_at;
+      return;
+    }
     const typing = /^(TEXTAREA|INPUT)$/.test(document.activeElement?.tagName || '');
     if (document.body.hasAttribute('data-drawer-open') || typing) return;
     location.reload();
@@ -3149,6 +3170,7 @@ if (LOCAL) { let baseStamp = DATA.collected_at; setInterval(async () => {
 }, 60000); }
 /* Replies land in requests.json, written by the server or by the master session. */
 if (LOCAL) setInterval(async () => {
+  if (tab === 'board' && bdPollTimer) return;  // the Board's poll reads requests.json and repaints the log itself
   try {
     const res = await fetch('/data/requests.json', { cache:'no-store' });
     if (!res.ok) return;
