@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.3.0
+
+The shell release: the board looks and reads like a macOS app, and the assistant starts
+doing board chores on request.
+
+- macOS shell: navigation moves to a translucent left sidebar (vertical tabs with counts,
+  master controls at the foot); slim toolbar; system font stack; near-black dark palette
+  with hairline separators; zoom scales the content, never the chrome.
+- One status per review row: a single colored pill says who acts — amber you, blue the
+  author, green done, gray nothing — with the action in the phrase. The same headline tops
+  every review card; the card leads with 3 summary lines and folds the rest into a
+  collapsed notes-and-log; drafts start collapsed.
+- Home becomes the inbox: a "Needs you" list leads (one line per item, across sources);
+  the Decide-now queue collapses behind a chip.
+- ✨ Assistant tips: a sidebar button runs a whole-board hygiene analysis (the quickwins
+  pattern) into tips.json; tips render on Home as PROPOSED actions — tick what the
+  assistant should do, "Run selected" executes only the picked items through the existing
+  flows; arrival badges the button and toasts.
+- The unread-replies chip names what it holds and offers mark-all-seen.
+- New request kinds: board_tips, board_tips_exec.
+- Fixes: refused posting clicks cannot hide a row; a decision hides a row only with its
+  own landed receipt; whole-PR draft locations post to the review body; a partial draft
+  match refuses instead of posting quietly.
+
 ## 0.2.0
 
 The review loop release: the board now closes the loop between the offline reviews,
