@@ -1910,7 +1910,16 @@ function renderReviews(){
   }).join('');
   const nUnrev = base.filter(r => !RV[r.url] && !r.isDraft && !RV_QUEUED.has(r.url)).length;
   const tools = REFRESH_BTN('reviews')
-    + (updCount || rvUpdOnly ? `<button class="chip ${rvUpdOnly?'on':''}" data-rvupd="1" title="Rows where an agent acted or answered since you last looked — shown regardless of the other filters">⟲ ${updCount} update${updCount===1?'':'s'}</button>` : '')
+    + (updCount || rvUpdOnly ? (() => {
+        const lines = base.filter(hasNew).slice(0, 8).map(r => {
+          const n = rvNewReplies(r.url); const last = n[n.length - 1];
+          const lbl = (RV_DEC[last.decision] || [last.kind === 'review_question' ? 'answered' : 'agent update'])[0];
+          return `#${r.number} ${lbl}: ${(last.reply || '').replace(/\s+/g, ' ').slice(0, 70)}`;
+        });
+        const more = updCount > 8 ? `\n…and ${updCount - 8} more` : '';
+        return `<button class="chip ${rvUpdOnly?'on':''}" data-rvupd="1" title="${esc('Agent replies since you last opened each card — click to filter to them:\n' + lines.join('\n') + more)}">✉ ${updCount} unread repl${updCount===1?'y':'ies'}</button>`
+          + (rvUpdOnly ? `<button class="chip" data-rvseenall="1" title="Mark every listed update seen without opening the cards">✓ mark all seen</button>` : '');
+      })() : '')
     + (LOCAL && rvSel.size ? `<button class="btn model" data-write id="rv-runall" title="Run the offline review agent on the selected PRs — ~150k tokens each">✦ Review selected (${rvSel.size})</button>`
        : LOCAL && nUnrev ? `<button class="btn model" data-write id="rv-runall" title="No PRs ticked — this runs the agent on every un-reviewed PR shown. Tick rows to narrow it. ~150k tokens each">✦ Review all ${nUnrev} un-reviewed</button>` : '')
     + `<select class="chip sel" data-rvsel-name="mode" title="Who the review was requested from">`
@@ -1952,6 +1961,7 @@ $('#p-reviews').addEventListener('click', e => {
   if (b?.dataset.cmd) { copy(b.dataset.cmd); b.classList.add('copied'); setTimeout(()=>b.classList.remove('copied'),1200); return; }
   if (b?.dataset.rv) { openReviewDrawer(b.dataset.rv); return; }
   if (b?.dataset.rvupd) { rvUpdOnly = !rvUpdOnly; renderReviews(); return; }
+  if (b?.dataset.rvseenall) { RR_ALL.forEach(r => rvMarkSeen(r.url)); rvUpdOnly = false; renderReviews(); renderTabs(); return; }
   if (b?.dataset.rvfilter) { rvFilter = b.dataset.rvfilter; rvUpdOnly = false; renderReviews(); return; }
   if (b?.dataset.rvshow) { rvShow = !rvShow; renderReviews(); return; }
   const m=e.target.closest('[data-rr]'); if(m){ rrMode=m.dataset.rr; authorF=null; saveRvFilters(); renderReviews(); return; }
