@@ -40,7 +40,8 @@ code,.mono{font-family:var(--f-mono);font-size:12.5px}
 .shell{display:grid;grid-template-columns:216px minmax(0,1fr);min-height:100vh}
 .side{position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:14px;padding:16px 10px 14px;background:color-mix(in srgb,var(--surface) 72%,transparent);backdrop-filter:blur(22px) saturate(1.15);border-right:1px solid var(--line)}
 .side .brand{padding:2px 10px 8px}
-.side-foot{margin-top:auto;display:flex;flex-direction:column;gap:8px;padding:0 6px}
+.side-foot{margin-top:auto;display:flex;flex-direction:column;gap:8px;padding:12px 6px 0;border-top:1px solid var(--line)}
+.side-foot .btn.danger{margin-top:14px}
 .side-foot .chip,.side-foot .btn{justify-content:center;display:flex}
 .main{min-width:0}
 .top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
@@ -1910,7 +1911,8 @@ let authorF = rvSaved.author || null,
 const saveRvFilters = () => store.set('rvfilters', { author: authorF, mode: rrMode, state: rvFilter });
 /* Text size is a per-viewer convenience: zoom the whole page, remember it in this browser. */
 let ccZoom = Math.min(150, Math.max(80, +store.get('zoom', 100) || 100));
-const applyZoom = () => { document.body.style.zoom = ccZoom + '%'; };
+/* zoom the content, not the chrome — the sidebar keeps its size like an app's */
+const applyZoom = () => { const m = document.querySelector('.main'); if (m) m.style.zoom = ccZoom + '%'; };
 applyZoom();
 $('#rotate-master')?.addEventListener('click', () => {
   if (!LOCAL) { toast('Rotation runs on the local board only'); return; }
