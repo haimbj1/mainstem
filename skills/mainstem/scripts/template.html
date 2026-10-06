@@ -13,11 +13,11 @@
   --f-display:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",system-ui,sans-serif; --f-body:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",system-ui,sans-serif; --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
 }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
-  --bg:#0F1418; --surface:#161C21; --surface-2:#1D242A; --line:#26303740; --line:#28323A; --line-strong:#3A464F;
+  --bg:#0B0C0E; --surface:#131519; --surface-2:#1A1D22; --line:#23272E; --line-strong:#353B44;
   --ink:#E8ECEE; --ink-2:#C2CACF; --muted:#8A959C; --faint:#5F6B73;
   --accent:#E0A03A; --accent-ink:#F0BC66; --accent-soft:#3A2D14;
   --good:#4FB477; --good-soft:#173324; --warn:#E39A3B; --warn-soft:#3A2A12; --crit:#E2645A; --crit-soft:#3E1B18; --info:#6AA5E8; --info-soft:#17293D;
-  --sel:#2A2417; --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
+  --sel:#241F12; --shadow:0 0 0 1px rgba(255,255,255,.04),0 2px 10px rgba(0,0,0,.35);
 }}
 :root[data-theme="dark"]{
   --bg:#0F1418; --surface:#161C21; --surface-2:#1D242A; --line:#28323A; --line-strong:#3A464F;
@@ -298,6 +298,7 @@ a.dec:hover{text-decoration:none;border-color:var(--accent);background:var(--acc
 .tabs{display:flex;flex-direction:column;gap:2px}
 .tabs button{padding:7px 10px;border-radius:8px;font-family:var(--f-display);font-weight:600;font-size:13.5px;color:var(--muted);display:flex;gap:8px;align-items:center;border:1px solid transparent;width:100%;text-align:left}
 .tabs button .c{margin-left:auto;font-family:var(--f-mono);font-size:11px;color:var(--faint)}
+.tabs button{transition:background .2s ease-out,color .2s ease-out}
 .tabs button:hover{background:var(--surface-2);color:var(--ink-2)}
 .tabs button.on{background:var(--accent-soft);color:var(--accent-ink)}
 .tabs button.on .c{color:var(--accent-ink)}
@@ -316,7 +317,17 @@ body[data-tab="log"] #s-log,body[data-tab="log"] #s-ask,
 body[data-tab="more"] #s-comms,body[data-tab="more"] #s-notes,body[data-tab="more"] #s-artifacts{display:block}
 body[data-tab="home"] #brief{display:grid}
 body[data-tab="home"] #now{display:grid}
-body[data-tab="home"] #s-queue{margin-top:0}
+body[data-tab="home"] #s-needs{display:block}
+#s-needs{display:none}
+body[data-tab="home"] #s-queue{margin-top:14px}
+#s-queue.collapsed > *:not(.sec-h){display:none}
+#s-queue.collapsed .sec-h{opacity:.75}
+.needs-row{display:flex;align-items:center;gap:12px;padding:9px 12px;border-bottom:1px solid var(--line)}
+.needs-row:last-child{border-bottom:0}
+.needs-row .t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.needs-row .t a{color:var(--ink);text-decoration:none}
+.needs-row .t a:hover{text-decoration:underline}
+.needs-row .meta{color:var(--muted);font-size:12px;white-space:nowrap}
 body[data-tab="reviews"] #s-reviews,body[data-tab="tickets"] #s-tickets,body[data-tab="work"] #s-efforts,
 body[data-tab="log"] #s-log,body[data-tab="more"] #s-comms{margin-top:0}
 body[data-tab="reviews"] #p-reviews .p-b,body[data-tab="tickets"] #p-tickets .p-b{max-height:none}
@@ -441,9 +452,13 @@ footer{margin-top:40px;font-size:12px;color:var(--muted);display:flex;gap:16px;f
   <div class="now" id="now"></div>
 
   <!-- tab: home -->
-  <section id="s-queue">
+  <section id="s-needs">
+    <div class="sec-h"><h2>Needs you</h2><span class="cnt" id="needs-cnt"></span><span class="hint">Everything amber, one line each — empty means you are done.</span></div>
+    <div id="needs"></div>
+  </section>
+  <section id="s-queue" class="collapsed">
     <div class="sec-h">
-      <h2>Decide now</h2>
+      <h2>Decide now</h2><button class="chip" id="q-toggle" title="This ranked decision list is optional — the inbox above covers what needs you">show</button>
       <span class="cnt" id="q-cnt"></span>
       <span class="hint">The top of one ranked list. <b>j/k</b> move &#183; <b>o</b> open &#183; <b>1</b> do &#183; <b>2</b> delegate &#183; <b>3</b> drop &#183; <b>4</b> defer &#183; <b>c</b> copy command &#183; <b>&#8901;&#8901;&#8901;</b> everything else</span>
       <div class="tools">
@@ -1619,7 +1634,30 @@ function queuePills(it){
   const ss = ssPill(ssNamesForItem(it)); if (ss) out.push(ss);
   return out.slice(0, 2);
 }
+function rvNeedsMe(url){
+  if (RV_QUEUED.has(url) || RR_DRAFT.has(url)) return null;
+  const rv = RV[url], gh = GH_MY_REVIEW[url];
+  if (RV_REPLIED[url]) return 'replied';
+  if (gh === 'CHANGES_REQUESTED' && rvHeadMoved(url)) return 'pushed';
+  if (gh === 'APPROVED' || gh === 'CHANGES_REQUESTED' || POSTED.has(rv?.status)) return null;
+  if (rv?.pending_review) return 'staged';
+  if (rv) return 'verdict';
+  return null;
+}
+function renderNeeds(){
+  const el = $('#needs'); if (!el) return;
+  const items = [];
+  RR_ALL.forEach(r => { if (rvNeedsMe(r.url)) items.push({
+    html: `<div class="needs-row"><div class="t"><a href="${esc(r.url)}" target="_blank" rel="noopener">#${r.number} ${esc(r.title)}</a></div><span class="meta">${esc(repoShort(r.repository.nameWithOwner))} · ${esc(r.author.login)}</span>${rvStatus(r.url)}<span class="meta">${ageText(r.createdAt||r.updatedAt)}</span></div>`,
+    at: r.updatedAt || r.createdAt }); });
+  (DATA.pending || []).filter(p => !p.status || p.status === 'pending').forEach(p => items.push({
+    html: `<div class="needs-row"><div class="t">${esc(p.what || p.id)}</div><span class="pill warn">pending approval — open the card</span></div>`, at: p.when || '' }));
+  items.sort((a,b) => String(a.at).localeCompare(String(b.at)));
+  $('#needs-cnt').textContent = String(items.length);
+  el.innerHTML = items.length ? items.map(i => i.html).join('') : '<div class="empty">Nothing needs you. Enjoy it.</div>';
+}
 function renderQueue(){
+  renderNeeds();
   const all = visibleItems(), vis = queueAll ? all : all.slice(0, QUEUE_TOP);
   $('#q-cnt').textContent = `${vis.length} of ${all.length} · ${Object.keys(done).length} done · ${Object.keys(snoozed).length} snoozed`;
   const sa = $('#q-showall');
@@ -2108,6 +2146,7 @@ function renderTabs(){
   }).join('');
 }
 $('#tabs').addEventListener('click', e => { const b=e.target.closest('button'); if (b) setTab(b.dataset.tab); });
+$('#q-toggle')?.addEventListener('click', () => { const q=$('#s-queue'); q.classList.toggle('collapsed'); $('#q-toggle').textContent = q.classList.contains('collapsed') ? 'show' : 'hide'; });
 const ASK_PH = { all: $('#ask-txt').placeholder, reviews: "Ask about a PR, e.g. 'is #920 safe to merge before #64?'" };
 function setTab(next){
   if (!TAB_IDS.includes(next)) next = 'home';
