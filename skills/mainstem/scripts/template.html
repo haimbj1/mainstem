@@ -401,6 +401,7 @@ td.mono{color:var(--ink-2)}
 .standup.show{display:block}
 footer{margin-top:40px;font-size:12px;color:var(--muted);display:flex;gap:16px;flex-wrap:wrap}
 .dcount{opacity:.7;font-size:.92em;margin-left:4px}
+.rvtop{margin-bottom:10px}.rvtop .pill{font-size:13.5px;padding:5px 12px}
 </style>
 
 <div class="top"><div class="top-in">
@@ -853,6 +854,26 @@ function rvThread(url){
       <div class="txt">${esc(txt)}</div>${r.reply?`<div class="reply">${esc(r.reply)}</div>`:''}${r.status==='needs_confirmation'?`<div style="margin-top:6px;display:flex;gap:6px"><button class="btn" data-write data-confirm="${esc(r.id)}">Confirm</button><button class="chip" data-write data-deny="${esc(r.id)}">Deny</button></div>`:''}</div>`;
   }).join('');
 }
+const rvHeadMoved = url => { const rv = RV[url]; return !!(rv?.live_head && rv?.last_head_sha && !rv.live_head.startsWith(rv.last_head_sha) && !rv.last_head_sha.startsWith(rv.live_head)); };
+const rvStatus = url => {
+  const rv = RV[url];
+    const n = (rv?.findings || []).filter(f => !/\u2705|\u274C/.test(f.status || '')).length;
+    const S = (txt, cls, tip) => `<span class="pill ${cls}" ${rv?`data-rv="${esc(url)}" style="cursor:pointer"`:''} title="${esc(tip || 'Click for the full review card')}">${txt}</span>`;
+    if (RV_QUEUED.has(url)) return S('\u231B reviewing \u2014 wait', 'neutral', 'The agent is working; the verdict lands here.');
+    if (RR_DRAFT.has(url)) return S('\u270E draft \u2014 nothing to do', 'neutral', 'The author has not asked for a review yet.');
+    const gh = GH_MY_REVIEW[url];
+    if (RV_REPLIED[url]) return S(`\uD83D\uDCAC ${esc(RV_REPLIED[url].by)} replied \u2014 read it, then decide`, 'warn',
+      `Answered ${ageText(RV_REPLIED[url].at)} ago, after your last review. A reassess runs automatically; your post clears this.`);
+    if (gh === 'CHANGES_REQUESTED' && rvHeadMoved(url)) return S('\u27F2 author pushed \u2014 the reassess lands here', 'warn', 'The fix round arrived after your request-changes.');
+    if (gh === 'APPROVED') return S('\u2713 approved \u2014 done', 'good', 'Your approval stands on GitHub.');
+    if (gh === 'CHANGES_REQUESTED' || POSTED.has(rv?.status)) return S('\u23F3 waiting on the author', 'info', 'Your review is posted; nothing to do until they respond.');
+    if (rv?.pending_review) return S(`\uD83D\uDC41 staged \u2014 check on GitHub, then give the verdict (${n})`, 'warn',
+      `${n} open finding${n===1?'':'s'} sit on the PR as a pending review only you can see. Annotate with >> lines, or decide from the card.`);
+    if (rv) return S(`\u25CF your verdict needed (${n})`, 'warn', `${n} open finding${n===1?'':'s'}; the agent suggests ${esc(rv.verdict)}.`);
+    return LOCAL ? `<button class="pill model" data-write data-rvrun="${esc(url)}" title="Run the offline review agent \u2014 ~150k tokens">\u2726 run review</button>`
+                 : S('not reviewed', 'neutral', 'No offline review yet.');
+  };
+
 function rvCard(rv, title){
   const url = rv.url, v = rvVerdict(rv.verdict), fs = rv.findings || [];
   const hdr = `<div class="rvh"><span class="pill ${v[0]}">${esc(v[1])}</span>${rv.size?`<span class="pill neutral mono">${esc(rv.size)}</span>`:''}`
@@ -889,14 +910,14 @@ function rvCard(rv, title){
     const d = draftByN[String(f.n)];
     if (!d) return `<div class="draftrow nodraft"><span class="pill ${sevCls(f.sev)}">${esc(f.sev)}</span> <span class="mono">${esc(f.loc)}</span><span class="iss">${esc(f.issue)}</span><span class="age">${esc(f.status)}</span></div>`;
     return `<div class="draftrow"><label class="pst"><input type="checkbox" data-draft="${esc(d.id)}"${sevRank(f.sev)<=2?' checked':''}> post</label>
-      <details open><summary><span class="mono">${esc(d.id)} · ${esc(d.loc)}</span><span class="pill ${sevCls(f.sev)}">${esc(f.sev)}</span><span class="age">${esc(f.status)}</span></summary>
+      <details><summary><span class="mono">${esc(d.id)} · ${esc(d.loc)}</span><span class="pill ${sevCls(f.sev)}">${esc(f.sev)}</span><span class="age">${esc(f.status)}</span></summary>
       <div class="iss ${sevCls(f.sev)}">${esc(f.issue)}</div>${excerptHtml(d)}<textarea class="draft" data-dredit="${esc(d.id)}" spellcheck="false">${esc(d.text)}</textarea><div class="drbtns"><button class="cmd" data-copy-draft="${esc(d.id)}">${ICON.copy}Copy</button><button class="cmd dsave" data-write data-dsave="${esc(d.id)}" hidden>Save edit</button></div></details></div>`;
   };
   const covered = new Set(fs.map(f => String(f.n)));
   const orphans = drafts.filter(d => !covered.has(String(d.id).replace(/^F/,''))).map(d => {
     const sev = rvDraftSev(rv, d.id);
     return `<div class="draftrow"><label class="pst"><input type="checkbox" data-draft="${esc(d.id)}"${sevRank(sev)<=2?' checked':''}> post</label>
-      <details open><summary><span class="mono">${esc(d.id)} · ${esc(d.loc)}</span>${sev?`<span class="pill ${sevCls(sev)}">${esc(sev)}</span>`:''}</summary>
+      <details><summary><span class="mono">${esc(d.id)} · ${esc(d.loc)}</span>${sev?`<span class="pill ${sevCls(sev)}">${esc(sev)}</span>`:''}</summary>
       ${excerptHtml(d)}<textarea class="draft" data-dredit="${esc(d.id)}" spellcheck="false">${esc(d.text)}</textarea><div class="drbtns"><button class="cmd" data-copy-draft="${esc(d.id)}">${ICON.copy}Copy</button><button class="cmd dsave" data-write data-dsave="${esc(d.id)}" hidden>Save edit</button></div></details></div>`;
   });
   const dh = (fs.length || drafts.length)
@@ -915,7 +936,7 @@ function rvCard(rv, title){
     <input class="free" data-rvf="question" placeholder="ask the review agent one question…"><button class="dec" data-write data-rva="review_question" title="Claude answers in the Decision log — no GitHub write">Ask agent</button>
     <input class="free" data-rvf="why" placeholder="skip because…"><button class="dec" data-write data-rva="skip_review" title="Drop the review — Claude removes you as reviewer">Skip</button>
     ${nudgeDue() && nudgeOf(url) ? `<button class="dec" data-write data-rva="close_stale" title="The nudge comment got no answer — close the PR">Close (no answer)</button>` : ''}</div>`;
-  return `<div class="rvcard" data-rvcard="${esc(url)}" data-rvtitle="${esc(title||('#'+rv.pr+' '+rvTitle(rv)))}">${hdr}${sum}${tbl}${dh}${qs}${acts}${rvThread(url)}</div>`;
+  return `<div class="rvcard" data-rvcard="${esc(url)}" data-rvtitle="${esc(title||('#'+rv.pr+' '+rvTitle(rv)))}"><div class="rvtop">${rvStatus(url)}</div>${hdr}${sum}${tbl}${dh}${qs}${acts}${rvThread(url)}</div>`;
 }
 function rvLine(a, t, ids, q, why){
   const n = ids.length, c = `${n} inline comment${n===1?'':'s'} (${ids.join(', ')})`;
@@ -1885,7 +1906,7 @@ function renderReviews(){
   // A decision hides a row only with THAT decision's receipt — a refused click plus an
   // old comment of mine must not read as decided, and "post drafts only" is no verdict.
   const DEC_RECEIPT = { approve:['approved','APPROVED'], approve_with_comments:['approved','APPROVED'], request_changes:['changes-requested','CHANGES_REQUESTED'] };
-  const headMoved = r => { const rv = RV[r.url]; return !!(rv?.live_head && rv?.last_head_sha && !rv.live_head.startsWith(rv.last_head_sha) && !rv.last_head_sha.startsWith(rv.live_head)); };
+  const headMoved = r => rvHeadMoved(r.url);
   const isDec = r => {
     if (RV_REPLIED[r.url]) return false;  // the author answered after my review — the ball is back with me
     const gh = GH_MY_REVIEW[r.url];
@@ -1905,28 +1926,10 @@ function renderReviews(){
     .sort((a,b)=>(hasNew(b)-hasNew(a)) || ((a.isDraft?1:0)-(b.isDraft?1:0)) || new Date(a.createdAt||a.updatedAt)-new Date(b.createdAt||b.updatedAt));
   /* One status per row, colored by WHO ACTS: warn = you, info = the author, good = done,
      neutral = nothing or in progress. Everything else lives in the tooltip and the drawer. */
-  const rvStatus = r => {
-    const url = r.url, rv = RV[url];
-    const n = (rv?.findings || []).filter(f => !/\u2705|\u274C/.test(f.status || '')).length;
-    const S = (txt, cls, tip) => `<span class="pill ${cls}" ${rv?`data-rv="${esc(url)}" style="cursor:pointer"`:''} title="${esc(tip || 'Click for the full review card')}">${txt}</span>`;
-    if (RV_QUEUED.has(url)) return S('\u231B reviewing \u2014 wait', 'neutral', 'The agent is working; the verdict lands here.');
-    if (r.isDraft) return S('\u270E draft \u2014 nothing to do', 'neutral', 'The author has not asked for a review yet.');
-    const gh = GH_MY_REVIEW[url];
-    if (RV_REPLIED[url]) return S(`\uD83D\uDCAC ${esc(RV_REPLIED[url].by)} replied \u2014 read it, then decide`, 'warn',
-      `Answered ${ageText(RV_REPLIED[url].at)} ago, after your last review. A reassess runs automatically; your post clears this.`);
-    if (gh === 'CHANGES_REQUESTED' && headMoved(r)) return S('\u27F2 author pushed \u2014 the reassess lands here', 'warn', 'The fix round arrived after your request-changes.');
-    if (gh === 'APPROVED') return S('\u2713 approved \u2014 done', 'good', 'Your approval stands on GitHub.');
-    if (gh === 'CHANGES_REQUESTED' || POSTED.has(rv?.status)) return S('\u23F3 waiting on the author', 'info', 'Your review is posted; nothing to do until they respond.');
-    if (rv?.pending_review) return S(`\uD83D\uDC41 staged \u2014 check on GitHub, then give the verdict (${n})`, 'warn',
-      `${n} open finding${n===1?'':'s'} sit on the PR as a pending review only you can see. Annotate with >> lines, or decide from the card.`);
-    if (rv) return S(`\u25CF your verdict needed (${n})`, 'warn', `${n} open finding${n===1?'':'s'}; the agent suggests ${esc(rv.verdict)}.`);
-    return LOCAL ? `<button class="pill model" data-write data-rvrun="${esc(url)}" title="Run the offline review agent \u2014 ~150k tokens">\u2726 run review</button>`
-                 : S('not reviewed', 'neutral', 'No offline review yet.');
-  };
   const body = list.map(r=>{
     const rv = RV[r.url];
     const ck = (LOCAL && !rv && !r.isDraft && !RV_QUEUED.has(r.url)) ? `<input type="checkbox" class="rvck" data-rvsel="${esc(r.url)}" ${rvSel.has(r.url)?'checked':''} title="Select for review">` : '';
-    return `<div class="row ${r.isDraft ? 'rvdim' : isDec(r) && !rvNewReplies(r.url).length ? 'rvdim':''} ${rvOpenP===r.url?'checked':''}" style="grid-template-columns:auto 1fr auto"><div>${ck}</div><div><div class="t"><a href="${esc(r.url)}" target="_blank" rel="noopener">#${r.number} ${esc(r.title)}</a></div><div class="s">${esc(repoShort(r.repository.nameWithOwner))} · <button class="chip" style="padding:0 7px" data-author="${esc(r.author.login)}">${esc(r.author.login)}</button>${rv?` · <button class="dec" data-rv="${esc(r.url)}" title="Read the offline review in the drawer">Review</button>`:''}</div></div><div class="r">${rvStatus(r)}${pdPill(r.url)}<span class="${ageCls(r.createdAt||r.updatedAt,7,21)}" title="opened">${ageText(r.createdAt||r.updatedAt)}</span></div></div>`;
+    return `<div class="row ${r.isDraft ? 'rvdim' : isDec(r) && !rvNewReplies(r.url).length ? 'rvdim':''} ${rvOpenP===r.url?'checked':''}" style="grid-template-columns:auto 1fr auto"><div>${ck}</div><div><div class="t"><a href="${esc(r.url)}" target="_blank" rel="noopener">#${r.number} ${esc(r.title)}</a></div><div class="s">${esc(repoShort(r.repository.nameWithOwner))} · <button class="chip" style="padding:0 7px" data-author="${esc(r.author.login)}">${esc(r.author.login)}</button>${rv?` · <button class="dec" data-rv="${esc(r.url)}" title="Read the offline review in the drawer">Review</button>`:''}</div></div><div class="r">${rvStatus(r.url)}${pdPill(r.url)}<span class="${ageCls(r.createdAt||r.updatedAt,7,21)}" title="opened">${ageText(r.createdAt||r.updatedAt)}</span></div></div>`;
   }).join('');
   const nUnrev = base.filter(r => !RV[r.url] && !r.isDraft && !RV_QUEUED.has(r.url)).length;
   const tools = REFRESH_BTN('reviews')
