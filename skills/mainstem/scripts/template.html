@@ -1650,6 +1650,12 @@ function renderTips(){
     ${it.req ? `<button class="dec" data-write data-tipact="${i}" title="Send this action to the master/server">${esc(it.req.label || 'do it')}</button>` : ''}
   </div>`).join('');
   el.innerHTML = `<div class="sec-h"><h2>✨ Assistant tips</h2><span class="cnt">${t.items.length}</span><span class="hint">from the last analysis, ${esc(ageText(t.when))} ago — ✨ Tips in the sidebar re-runs it</span></div>${rows}`;
+  /* arrival signal: badge the sidebar button until the tips were seen on Home */
+  const seen = store.get('tipsSeen', '') === t.when;
+  const btn = $('#ms-tips');
+  if (btn) btn.innerHTML = seen ? '✨ Tips' : `✨ Tips <span class="c" style="color:var(--accent-ink);font-weight:700">(${t.items.length} new)</span>`;
+  if (!seen && tab === 'home') { store.set('tipsSeen', t.when); if (btn) btn.innerHTML = '✨ Tips'; }
+  else if (!seen && !renderTips._toasted) { renderTips._toasted = true; toast(`✨ ${t.items.length} assistant tips landed — they are on Home`); }
 }
 $('#s-tips')?.addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
