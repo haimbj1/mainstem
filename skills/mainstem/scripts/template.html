@@ -924,12 +924,16 @@ function rvCard(rv, title){
      never the PR description. The prose summary moves whole into the collapsed log. */
   const openF = (rv.findings || []).filter(f => !/✅|❌/.test(f.status || ''));
   const resolvedN = (rv.findings || []).length - openF.length;
+  const stagedSet = new Set(rv.staged || []);
+  const fState = f => stagedSet.has('F'+f.n) ? 'staged for you on GitHub — the author has not seen it'
+    : /💬/.test(f.status||'') ? 'posted — awaiting the author' : 'draft — only on this board';
   const openLine = openF.length
-    ? `Look at: ` + openF.slice(0, 3).map(f => `<b>F${f.n}</b> (${esc(f.sev)}) ${esc(f.issue)}`).join(' · ')
+    ? `Look at: ` + openF.slice(0, 3).map(f => `<b>F${f.n}</b> (${esc(f.sev)}, ${fState(f)}) ${esc(f.issue)}`).join(' · ')
       + (openF.length > 3 ? ` · and ${openF.length - 3} more` : '')
     : 'No open findings.';
-  const sum = `<div class="sum lead">${openLine}${resolvedN ? ` <span class="why">${resolvedN} resolved.</span>` : ''}</div>`;
   const sumParas = (rv.summary || '').split(/\n+/).map(t => t.trim()).filter(Boolean);
+  const stateLine = sumParas[0] && /^State:/i.test(sumParas[0]) ? `<div class="sum lead why">${esc(sumParas[0])}</div>` : '';
+  const sum = `<div class="sum lead">${openLine}${resolvedN ? ` <span class="why">${resolvedN} resolved.</span>` : ''}</div>` + stateLine;
   const sumLog = sumParas.length
     ? `<details class="rvlog"><summary>Review notes & log (${sumParas.length})</summary><div class="sum">${sumParas.map(esc).join('<br><br>')}</div></details>`
     : '';

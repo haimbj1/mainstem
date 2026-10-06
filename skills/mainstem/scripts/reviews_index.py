@@ -75,6 +75,7 @@ def parse(path):
         "size": fm.get("size"), "last_reviewed": fm.get("last_reviewed"), "last_head_sha": fm.get("last_head_sha"),
         "request": fm.get("request"), "depends_on": fm.get("depends_on"), "opened": fm.get("opened"),
         "pending_review": fm.get("pending_review"),
+        "staged": (fm.get("staged") or "").split(),
         "depth": fm.get("depth"), "depth_why": fm.get("depth_why"),
         "summary": section("Summary"), "findings": findings, "sev_counts": sev_counts, "drafts": drafts, "questions": questions,
         "path": path, "mtime": datetime.datetime.fromtimestamp(os.path.getmtime(path), datetime.timezone.utc).isoformat(),

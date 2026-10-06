@@ -263,7 +263,7 @@ Every PR that asks for the developer's review gets reviewed **before** they open
 carries a verdict, the findings and ready-to-post comments.
 
 - **Prompt** — `review-agent-prompt.md`. It is the whole contract:
-  read-only GitHub (`gh pr view`, `gh pr diff`, `gh api` GETs), one file per PR, fixed frontmatter and sections.
+  read-only GitHub (`gh pr view`, `gh pr diff`, `gh api` GETs), one file per PR, fixed frontmatter and sections. The Summary MUST open with a 2-3 line `State:` paragraph in STE — where the review stands, which findings are open and in what lifecycle (draft / staged / posted / replied), and what the developer does next — before any other prose.
 - **Agents** — the `ms-reviewer` agent (`subagent_type: "ms-reviewer"`, opus). One call per repo
   group, drawn from your configured `github.orgs`, **≤ 6 PRs per call**, run
   in parallel. The prompt is the PR list only: `repo#number` and the URL for each. The agent holds
