@@ -14,7 +14,7 @@ from config import load_config  # noqa: E402
 
 cfg = load_config()
 REQUESTS = os.path.join(cfg["dataDir"], "requests.json")
-MODEL_KINDS = {"chat", "decision", "review_question", "quickwins", "review_pr"}
+MODEL_KINDS = {"chat", "decision", "review_question", "quickwins", "review_pr", "board_tips", "board_tips_exec"}
 
 if not os.path.exists(REQUESTS):
     sys.exit("no requests.json at " + REQUESTS)

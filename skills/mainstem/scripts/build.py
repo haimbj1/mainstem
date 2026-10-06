@@ -74,6 +74,7 @@ def build(cfg, readonly=False):
         "gmail": load(data_dir, "gmail.json", []),
         "requests": load(data_dir, "requests.json", []),
         "quickwins": load(data_dir, "quickwins.json", {}),
+        "tips": load(data_dir, "tips.json", {}),
         "artifacts": load(data_dir, "artifacts.json", []),
         "pending": load(data_dir, "pending.json", []),
         "ledger": load(data_dir, "session_ledger.json", {}),
