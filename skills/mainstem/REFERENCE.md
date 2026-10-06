@@ -271,6 +271,13 @@ carries a verdict, the findings and ready-to-post comments.
 - **Files** — the configured `reviewsDir`'s `active/<repo>-<pr>.md`. Never edit them by hand while agents run; they own the files.
 - **What to re-run** — a PR whose `headRefOid` differs from `last_head_sha`, and a PR with no file at all. A PR whose
   head did not move needs no new run: the agent only refreshes `last_reviewed`.
+- **Auto-reassess** — the server queues a `review_pr` on its own when an author replies after a
+  POSTED review (at most 3 per 5-minute cycle; each reply stamp triggers once, `reassess_state.json`).
+  The agent marks resolved findings ✅ and moves the verdict when the blockers cleared.
+- **Pre-review by default** — after EVERY completed review or re-review run with drafts, the master
+  POSTs one `pre_review` decision to the local server with ALL current draft ids, so the comments
+  already sit on GitHub as a pending review when the developer opens the PR. Skip only when a real
+  review was posted in the same breath (the resume flow), or the file has no drafts.
 - **Resumed decisions** — a `review_pr` request whose `extra.resume` is set carries a posting click the server
   refused for a stale head (`{decision, drafts, review_path}`). After the agent updates the .md, the master
   POSTs one decision request back to the local server with that decision, those drafts, `review_path`, and

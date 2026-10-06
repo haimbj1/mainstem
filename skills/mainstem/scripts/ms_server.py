@@ -177,7 +177,54 @@ def collect(panel=None):
         if rc != 0:
             raise RuntimeError("%s failed (rc=%d): %s" % (name, rc, err or out))
         log("collect: %s: %s" % (name, out.splitlines()[-1] if out else "ok"))
+    if panel in (None, "reviews"):
+        try:
+            auto_reassess_on_replies()
+        except Exception as e:
+            log("auto-reassess failed: %s" % e)
     build(force=True)
+
+
+AUTO_REASSESS_MAX_PER_CYCLE = 3
+
+
+def auto_reassess_on_replies():
+    """An author reply on a POSTED review re-opens the conversation — queue the reassess
+    re-review without waiting for a click. Each reply timestamp triggers at most once
+    (reassess_state.json remembers the handled stamp), and at most a few per cycle so a
+    reply flood cannot burn an agent-run storm."""
+    try:
+        replies = json.load(open(os.path.join(DATA_DIR, "my_review_replies.json")))
+        reviews = json.load(open(os.path.join(DATA_DIR, "reviews.json")))
+    except (OSError, ValueError):
+        return
+    state_path = os.path.join(DATA_DIR, "reassess_state.json")
+    try:
+        state = json.load(open(state_path))
+    except (OSError, ValueError):
+        state = {}
+    queued = 0
+    for url, rep in replies.items():
+        if queued >= AUTO_REASSESS_MAX_PER_CYCLE:
+            log("auto-reassess: per-cycle cap reached, rest wait for the next cycle")
+            break
+        rv = reviews.get(url)
+        if not rv or state.get(url) == rep.get("at"):
+            continue
+        # only a review whose findings actually reached GitHub has anything to resolve
+        posted = rv.get("status") in ("posted", "approved", "changes-requested") \
+            or any("\U0001F4AC" in (f.get("status") or "") for f in rv.get("findings") or [])
+        if not posted:
+            continue
+        if queue_rereview(url, text="Reassess %s (the author replied %s) — check which posted "
+                                     "findings were resolved and what is new" % (url, rep.get("at", ""))):
+            log("auto-reassess queued for %s (reply at %s)" % (url, rep.get("at")))
+            queued += 1
+        state[url] = rep.get("at")
+    tmp = state_path + ".tmp"
+    with open(tmp, "w") as f:
+        json.dump(state, f, indent=1)
+    os.replace(tmp, state_path)
 
 
 # ---------------------------------------------------------------- requests
@@ -482,7 +529,7 @@ def stale_review_check(rec):
     return ("error", "head moved (%s -> %s) — the review is stale." % (m.group(1)[:8], live[:8]))
 
 
-def queue_rereview(url, resume=None):
+def queue_rereview(url, resume=None, text=None):
     """A stale posting click should cost the user nothing: queue the re-review for the
     master automatically instead of sending them hunting for a button. `resume` carries
     the refused decision ({decision, drafts, review_path}) so the master re-applies it
@@ -504,7 +551,7 @@ def queue_rereview(url, resume=None):
     now = datetime.datetime.now(datetime.timezone.utc).isoformat()
     append_request({
         "id": new_id(), "kind": "review_pr",
-        "text": "Re-review %s (head moved under a posting click)" % url,
+        "text": text or "Re-review %s (head moved under a posting click)" % url,
         "targets": [url], "extra": ({"resume": resume} if resume else {}), "status": "pending",
         "created": now, "when": now, "reply": "",
     })
