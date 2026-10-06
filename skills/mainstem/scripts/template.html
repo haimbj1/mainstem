@@ -425,7 +425,7 @@ td.mono{color:var(--ink-2)}
 .standup.show{display:block}
 footer{margin-top:40px;font-size:12px;color:var(--muted);display:flex;gap:16px;flex-wrap:wrap}
 .dcount{opacity:.7;font-size:.92em;margin-left:4px}
-.rvtop{margin-bottom:10px}.rvtop .pill{font-size:13.5px;padding:5px 12px}\n.sum.lead{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;font-size:14.5px}\n.rvlog{margin-top:14px}.rvlog summary{cursor:pointer;color:var(--muted);font-size:12.5px}.rvlog .sum{color:var(--ink-2);font-size:13px;margin-top:8px}
+.rvtop{margin-bottom:10px}.rvtop .pill{font-size:13.5px;padding:5px 12px}\n.sum.lead{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;font-size:14.5px}\n.rvlog{margin-top:14px}.rvlog summary{cursor:pointer;color:var(--muted);font-size:12.5px}.rvlog .sum{color:var(--ink-2);font-size:13px;margin-top:8px}
 </style>
 
 <div class="appshell">
@@ -920,10 +920,18 @@ function rvCard(rv, title){
     + `${rv.path?`<button class="cmd" data-cmd="${esc(rv.path)}" title="Copy the file path — file:// links do not open from a published page">${ICON.copy}path</button>`:''}</div>`;
   /* The card leads with 2-3 lines: where we're at, what to do. The rest of the
      summary is working notes — a log, collapsed next to the thread. */
+  /* The crucial lead: WHICH findings are open and need eyes, computed from the table —
+     never the PR description. The prose summary moves whole into the collapsed log. */
+  const openF = (rv.findings || []).filter(f => !/✅|❌/.test(f.status || ''));
+  const resolvedN = (rv.findings || []).length - openF.length;
+  const openLine = openF.length
+    ? `Look at: ` + openF.slice(0, 3).map(f => `<b>F${f.n}</b> (${esc(f.sev)}) ${esc(f.issue)}`).join(' · ')
+      + (openF.length > 3 ? ` · and ${openF.length - 3} more` : '')
+    : 'No open findings.';
+  const sum = `<div class="sum lead">${openLine}${resolvedN ? ` <span class="why">${resolvedN} resolved.</span>` : ''}</div>`;
   const sumParas = (rv.summary || '').split(/\n+/).map(t => t.trim()).filter(Boolean);
-  const sum = sumParas.length ? `<div class="sum lead">${esc(sumParas[0])}</div>` : '';
-  const sumLog = sumParas.length > 1
-    ? `<details class="rvlog"><summary>Review notes & log (${sumParas.length - 1})</summary><div class="sum">${sumParas.slice(1).map(esc).join('<br><br>')}</div></details>`
+  const sumLog = sumParas.length
+    ? `<details class="rvlog"><summary>Review notes & log (${sumParas.length})</summary><div class="sum">${sumParas.map(esc).join('<br><br>')}</div></details>`
     : '';
   const tbl = fs.length ? '' : `<div class="lbl">Findings</div><div class="none">No findings.</div>`;
   const drafts = rv.drafts || [];
