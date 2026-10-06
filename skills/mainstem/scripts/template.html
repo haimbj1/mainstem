@@ -1010,24 +1010,43 @@ function rvThread(url){
   }).join('');
 }
 const rvHeadMoved = url => { const rv = RV[url]; return !!(rv?.live_head && rv?.last_head_sha && !rv.live_head.startsWith(rv.last_head_sha) && !rv.last_head_sha.startsWith(rv.live_head)); };
-const rvStatus = url => {
+/* Where a review stands for me, running agents and draft PRs aside: who acts next. The
+   status pill, the Needs-you inbox and the Board's lanes all read this one answer. */
+function rvStanding(url){
+  const rv = RV[url], gh = GH_MY_REVIEW[url];
+  if (RV_REPLIED[url]) return 'replied';
+  if (gh === 'CHANGES_REQUESTED' && rvHeadMoved(url)) return 'pushed';
+  if (gh === 'APPROVED') return 'approved';
+  if (gh === 'CHANGES_REQUESTED' || POSTED.has(rv?.status)) return 'waiting';
+  if (rv?.pending_review) return 'staged';
+  return rv ? 'verdict' : null;
+}
+/* One status per review row: { kind, txt (HTML-safe), cls, tip }; null = not reviewed yet.
+   cls is who acts — warn me, info the author, good done, neutral nothing. */
+function rvStatusOf(url, standing = rvStanding(url)){
   const rv = RV[url];
-    const n = (rv?.findings || []).filter(f => !/\u2705|\u274C/.test(f.status || '')).length;
-    const S = (txt, cls, tip) => `<span class="pill ${cls}" ${rv?`data-rv="${esc(url)}" style="cursor:pointer"`:''} title="${esc(tip || 'Click for the full review card')}">${txt}</span>`;
-    if (RV_QUEUED.has(url)) return S('\u231B reviewing \u2014 wait', 'neutral', 'The agent is working; the verdict lands here.');
-    if (RR_DRAFT.has(url)) return S('\u270E draft \u2014 nothing to do', 'neutral', 'The author has not asked for a review yet.');
-    const gh = GH_MY_REVIEW[url];
-    if (RV_REPLIED[url]) return S(`\uD83D\uDCAC ${esc(RV_REPLIED[url].by)} replied \u2014 read it, then decide`, 'warn',
+  const n = (rv?.findings || []).filter(f => !/✅|❌/.test(f.status || '')).length;
+  const st = (kind, txt, cls, tip) => ({ kind, txt, cls, tip });
+  if (RV_QUEUED.has(url)) return st('queued', '⌛ reviewing — wait', 'neutral', 'The agent is working; the verdict lands here.');
+  if (RR_DRAFT.has(url)) return st('draft', '✎ draft — nothing to do', 'neutral', 'The author has not asked for a review yet.');
+  switch (standing) {
+    case 'replied': return st('replied', `💬 ${esc(RV_REPLIED[url].by)} replied — read it, then decide`, 'warn',
       `Answered ${ageText(RV_REPLIED[url].at)} ago, after your last review. A reassess runs automatically; your post clears this.`);
-    if (gh === 'CHANGES_REQUESTED' && rvHeadMoved(url)) return S('\u27F2 author pushed \u2014 the reassess lands here', 'warn', 'The fix round arrived after your request-changes.');
-    if (gh === 'APPROVED') return S('\u2713 approved \u2014 done', 'good', 'Your approval stands on GitHub.');
-    if (gh === 'CHANGES_REQUESTED' || POSTED.has(rv?.status)) return S('\u23F3 waiting on the author', 'info', 'Your review is posted; nothing to do until they respond.');
-    if (rv?.pending_review) return S(`\uD83D\uDC41 staged \u2014 check on GitHub, then give the verdict (${n})`, 'warn',
+    case 'pushed': return st('pushed', '⟲ author pushed — the reassess lands here', 'warn', 'The fix round arrived after your request-changes.');
+    case 'approved': return st('approved', '✓ approved — done', 'good', 'Your approval stands on GitHub.');
+    case 'waiting': return st('waiting', '⏳ waiting on the author', 'info', 'Your review is posted; nothing to do until they respond.');
+    case 'staged': return st('staged', `👁 staged — check on GitHub, then give the verdict (${n})`, 'warn',
       `${n} open finding${n===1?'':'s'} sit on the PR as a pending review only you can see. Annotate with >> lines, or decide from the card.`);
-    if (rv) return S(`\u25CF your verdict needed (${n})`, 'warn', `${n} open finding${n===1?'':'s'}; the agent suggests ${esc(rv.verdict)}.`);
-    return LOCAL ? `<button class="pill model" data-write data-rvrun="${esc(url)}" title="Run the offline review agent \u2014 ~150k tokens">\u2726 run review</button>`
-                 : S('not reviewed', 'neutral', 'No offline review yet.');
-  };
+    case 'verdict': return st('verdict', `● your verdict needed (${n})`, 'warn', `${n} open finding${n===1?'':'s'}; the agent suggests ${esc(rv.verdict)}.`);
+  }
+  return null;
+}
+const rvStatus = url => {
+  const s = rvStatusOf(url), rv = RV[url];
+  if (s) return `<span class="pill ${s.cls}" ${rv?`data-rv="${esc(url)}" style="cursor:pointer"`:''} title="${esc(s.tip)}">${s.txt}</span>`;
+  return LOCAL ? `<button class="pill model" data-write data-rvrun="${esc(url)}" title="Run the offline review agent — ~150k tokens">✦ run review</button>`
+               : `<span class="pill neutral" title="No offline review yet.">not reviewed</span>`;
+};
 
 function rvCard(rv, title){
   const url = rv.url, v = rvVerdict(rv.verdict), fs = rv.findings || [];
@@ -1814,15 +1833,11 @@ $('#s-tips')?.addEventListener('click', e => {
     toast('Sent — the assistant executes the picked items and reports in the chat log');
   }
 });
+const RV_NEEDS_ME = new Set(['replied', 'pushed', 'staged', 'verdict']);
 function rvNeedsMe(url){
   if (RV_QUEUED.has(url) || RR_DRAFT.has(url)) return null;
-  const rv = RV[url], gh = GH_MY_REVIEW[url];
-  if (RV_REPLIED[url]) return 'replied';
-  if (gh === 'CHANGES_REQUESTED' && rvHeadMoved(url)) return 'pushed';
-  if (gh === 'APPROVED' || gh === 'CHANGES_REQUESTED' || POSTED.has(rv?.status)) return null;
-  if (rv?.pending_review) return 'staged';
-  if (rv) return 'verdict';
-  return null;
+  const s = rvStanding(url);
+  return RV_NEEDS_ME.has(s) ? s : null;
 }
 function renderNeeds(){
   const el = $('#needs'); if (!el) return;
@@ -2172,21 +2187,25 @@ const BD_STEPS = [['context','Collect context','Collecting context'], ['diff','R
   ['files','Read the touched files','Reading the touched files'], ['findings','Draft findings','Drafting findings'],
   ['verdict','Suggest a verdict','Suggesting a verdict']];
 const BD_REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)');
-const BD_PROV = { direct:['Requested from you','violet'], team:['Via your team','grey'], watch:['Watched repo','grey'], none:['Not requested','grey'] };
 const BD_DEPTH = { 'decide-here':['Decide from here',1], 'skim-diff':['Skim the diff',2], 'read-code':['Read the code',3] };
-const BD_VERDICT = { 'approve':['Approve','green','approve'], 'approve-with-comments':['Approve with comments','blue','comments'], 'request-changes':['Request changes','red','changes'], 'needs-discussion':['Needs discussion','yellow','discuss'], 'skip-bot':['Bot · skip','grey',''] };
+// The agent's suggested verdict: [what the card says, the Ready lane's filter key]. It stays
+// gray — the colors belong to the status, and green there means done.
+const BD_VERDICT = { 'approve':['Approve','approve'], 'approve-with-comments':['Approve with comments','comments'], 'request-changes':['Request changes','changes'], 'needs-discussion':['Needs discussion','discuss'], 'skip-bot':['Bot · skip',''] };
 // The suggested verdict's one-click action, named as the drawer's decisions; a discussion
 // has no verdict to give, so its findings go out as comments ("Post drafts only").
 const BD_PRIMARY = { 'approve':'approve', 'approve-with-comments':'approve_with_comments', 'request-changes':'request_changes', 'needs-discussion':'post_findings' };
 const BD_ACTION_LABEL = { approve:'Approve', approve_with_comments:'Approve with comments', request_changes:'Request changes', post_findings:'Post findings' };
-const BD_OUTCOME = { approved:['Approved','green'], changes:['Changes requested','red'], comment:['Commented','blue'], discuss:['Needs discussion','yellow'], skipped:['Skipped','grey'] };
+// What I did, under the status pill; an approval needs no second word.
+const BD_OUTCOME = { approved:'', changes:'Changes requested', comment:'Commented', discuss:'Needs discussion', skipped:'Skipped' };
 // Live GitHub state beats my decision, which beats the review file the server rewrote on post.
 const BD_OUTCOME_GH = { APPROVED:'approved', CHANGES_REQUESTED:'changes' };
 const BD_OUTCOME_DEC = { approve:'approved', approve_with_comments:'approved', request_changes:'changes', post_findings:'comment', skip_review:'skipped', close_stale:'skipped' };
 const BD_OUTCOME_FILE = { approved:'approved', 'changes-requested':'changes' };
-// A push after changes or comments hands the PR back (the page's "author pushed — re-review");
-// an approval or a skip stays decided, as rvIsDecided rules.
-const BD_REOPENED_BY_PUSH = new Set(['changes','comment','discuss']);
+// Standings whose status is blue or green: my review landed and the next move is not mine.
+const BD_DONE_STANDINGS = new Set(['approved', 'waiting']);
+const BD_SKIPS = new Set(['skip_review', 'close_stale']);
+// The status pill's class (who acts) as a board hue; the hues alias the same tokens.
+const BD_STATUS_HUE = { warn:'orange', info:'blue', good:'green', neutral:'grey' };
 const BD_SEVS = [['High','red',r => r <= 1],['Med','orange',r => r === 2],['Low','grey',r => r === 3 || r === 4]];
 const BD_COLS = [
   { id:'needs', label:'Needs review', hue:'orange', hint:'Waiting on you' },
@@ -2272,19 +2291,22 @@ function bdIndexRequests(){
   });
   return { runs, lastDec };
 }
+/* A review leaves Ready to decide only with a landed receipt — the Reviews view's rule: the
+   status reads waiting-on-the-author or approved, or the server answered my decision request
+   as posted for this round of the review file. A skip needs no receipt (nothing is posted).
+   A click the master session still owns, or a refused one, stays in Ready to decide. */
 function bdOutcome(url, lastDec){
-  if (RV_REPLIED[url]) return null;  // the author answered after my review — the ball is back with me
-  const rv = RV[url];
+  const rv = RV[url], standing = rvStanding(url);
   const dec = lastDec ? ((lastDec.extra || {}).decision || lastDec.decision) : rvDec[url];
-  const receipt = rvIsDecided(url) || POSTED.has(rv?.status);
-  // The server answers a decision request only after the post: done = it landed (reviews.json
-  // catches up on the next collect), pending = the master owns the post. A click with no
-  // answer yet, or a refused one, stays in Ready to decide.
-  const answered = !!lastDec && lastDec.status !== 'error';
-  if (!receipt && !answered) return null;
+  const skipped = BD_SKIPS.has(dec) && (!lastDec || lastDec.status !== 'error');
+  // a re-review written after the answer starts a new round the answer does not cover
+  const answeredThisRound = lastDec?.status === 'done' && !(Date.parse(rv?.mtime) > Date.parse(lastDec.when));
+  const landed = BD_DONE_STANDINGS.has(standing) || (answeredThisRound && (standing === 'verdict' || standing === 'staged'));
+  if (!landed && !skipped) return null;
   let outcome = BD_OUTCOME_GH[GH_MY_REVIEW[url]] || BD_OUTCOME_DEC[dec] || BD_OUTCOME_FILE[rv?.status] || 'comment';
   if (outcome === 'comment' && rv?.verdict === 'needs-discussion') outcome = 'discuss';
-  return { outcome, posted: receipt || lastDec?.status === 'done', at: lastDec?.when || rv?.mtime || '' };
+  // a post the next collect has not caught up with still reads verdict: the card derives its status from the outcome
+  return { outcome, standing: BD_DONE_STANDINGS.has(standing) ? standing : null, at: lastDec?.when || rv?.mtime || '' };
 }
 function bdPlace(r, run, lastDec, prog){
   const rv = RV[r.url], moved = rvHeadMoved(r.url);
@@ -2296,10 +2318,11 @@ function bdPlace(r, run, lastDec, prog){
   // a click after the failure is a retry: it shows as queued, not as the old failure
   const failed = live && !(open && Date.parse(run.when) > Date.parse(prog.updated_at)) ? prog.error : null;
   if (failed) return { col:'needs', moved, failed };
-  if (!rv) return { col:'needs', queued: open };
+  // GitHub's own review counts before the review file: an approval made there files as done
   const o = bdOutcome(r.url, lastDec);
-  if (o && !(moved && BD_REOPENED_BY_PUSH.has(o.outcome))) return days(o.at) > BOARD_RECENT_DAYS ? null : { col:'done', ...o };
-  return moved || open ? { col:'needs', moved, queued: open } : { col:'ready' };
+  if (o) return days(o.at || r.updatedAt) > BOARD_RECENT_DAYS ? null : { col:'done', ...o };
+  if (!rv || moved || open) return { col:'needs', moved: !!rv && moved, queued: open };
+  return { col:'ready', sending: lastDec?.status === 'pending' };
 }
 function bdReviewCards(){
   const { runs, lastDec } = bdIndexRequests();
@@ -2312,7 +2335,7 @@ function bdReviewCards(){
       hay: `${r.title} ${r.repository.nameWithOwner} #${r.number}`.toLowerCase(),
       openedTs: Date.parse(opened) || 0, updatedTs: Date.parse(r.updatedAt || rv?.mtime) || 0,
       score: BD_SCORE[r.url] ?? null, size: r.additions != null ? { a: r.additions, d: r.deletions || 0 } : bdSizeOf(rv),
-      verdictKey: (BD_VERDICT[rv?.verdict] || [])[2] || '' });
+      verdictKey: (BD_VERDICT[rv?.verdict] || [])[1] || '' });
   });
   return cards;
 }
@@ -2323,21 +2346,32 @@ function bdDepth(rv){
   const d = BD_DEPTH[rv?.depth]; if (!d) return '';
   return `<span class="bd-depth" title="${esc(rv.depth_why || 'reviewer’s depth call')}"><span class="bd-bars" aria-hidden="true">${[1,2,3].map(n => `<i class="${n <= d[1] ? 'on' : ''}"></i>`).join('')}</span>${d[0]}</span>`;
 }
+const bdStatusPill = (url, standing) => { const st = rvStatusOf(url, standing); return st ? bdPill(st.txt, BD_STATUS_HUE[st.cls], st.tip) : ''; };
+// Only a direct request earns a label; team and watched-repo provenance is the Reviews filter's job.
+const bdDirect = r => !r.rvOnly && rrProv(r) === 'direct';
+const bdDirectPill = r => bdDirect(r) ? bdPill('Requested from you', 'violet') : '';
 function bdChips(c){
   const { r, rv } = c;
-  if (c.col === 'needs' || c.col === 'running') {
-    const pv = BD_PROV[r.rvOnly ? 'none' : rrProv(r)] || BD_PROV.team;
-    return (c.failed ? bdPill(`Review failed: ${esc(c.failed)}`, 'red fail', c.failed) : '')
-      + bdPill(pv[0], pv[1]) + (r.isDraft ? bdPill('Draft', 'grey') : '');
+  if (c.col === 'running') return bdDirectPill(r);
+  if (c.col === 'needs') {
+    // the status says "author pushed" itself; a head that moved under an undecided review is the Board's own fact
+    const pushed = rvStanding(r.url) === 'pushed';
+    const status = c.failed ? bdPill(`Review failed: ${esc(c.failed)}`, 'red fail', c.failed)
+      : c.moved && !pushed ? bdPill(`${BD_UP}Head moved since your review`, 'yellow', 'The review is stale; a re-review brings it up to date')
+      : c.queued ? '' : bdStatusPill(r.url);
+    return status + bdDirectPill(r);
   }
   if (c.col === 'ready') {
     const ranks = (rv.findings || []).map(f => sevRank(f.sev));
     const v = BD_VERDICT[rv.verdict];
-    return BD_SEVS.map(([lbl, hue, hit]) => { const n = ranks.filter(hit).length; return n ? bdPill(`${n} ${lbl}`, hue) : ''; }).join('')
-      + (v ? bdPill(v[0], v[1]) : '') + (RV_REPLIED[r.url] ? bdPill('Author replied', 'blue') : '');
+    return bdStatusPill(r.url)
+      + BD_SEVS.map(([lbl, hue, hit]) => { const n = ranks.filter(hit).length; return n ? bdPill(`${n} ${lbl}`, hue) : ''; }).join('')
+      + (v ? bdPill(`Suggests ${v[0].toLowerCase()}`, 'grey', 'The review agent’s suggested verdict') : '');
   }
-  const o = BD_OUTCOME[c.outcome];
-  return bdPill(o[0], o[1]) + (c.outcome === 'skipped' ? '' : c.posted ? bdPill('Posted', 'grey') : bdPill('Not posted', 'yellow', 'Decided here; the master session has not posted it to GitHub yet'));
+  // done: the status the Reviews row shows; an answered post the next collect has not caught up with reads the same
+  const standing = c.standing || (c.outcome === 'skipped' ? null : c.outcome === 'approved' ? 'approved' : 'waiting');
+  const did = BD_OUTCOME[c.outcome];
+  return (standing ? bdStatusPill(r.url, standing) : '') + (did ? bdPill(did, 'grey') : '');
 }
 function bdNeedsActions(c){
   const u = esc(c.r.url);
@@ -2351,6 +2385,7 @@ function bdNeedsActions(c){
 function bdReadyActions(c){
   const url = c.r.url, u = esc(url);
   if (bdInFlight.has(url)) return `<div class="bd-acts"><span class="bd-run">${BD_SPIN}Posting…</span></div>`;
+  if (c.sending) return `<div class="bd-acts"><span class="bd-run" title="The master session posts it; the card moves to Reviewed once it lands">${BD_SPIN}Sent · the master session posts it</span></div>`;
   if (bdSkip === url) return `<div class="bd-acts"><input class="bd-why" data-bdwhy="${u}" placeholder="skip because…" aria-label="Why skip this review">`
     + `<button type="button" class="bd-btn primary" data-write data-bdskipgo="${u}" title="Drop the review — Claude removes you as reviewer">Skip</button><button type="button" class="bd-btn ghost" data-bdskipx>Cancel</button></div>`;
   const action = BD_PRIMARY[c.rv.verdict];
@@ -2376,7 +2411,6 @@ function bdCardHtml(c){
   const size = c.size ? `<span class="bd-size"><span class="a">+${c.size.a}</span><span class="d">−${c.size.d}</span></span>` : '';
   return `<article class="bd-card" data-bdcard="${u}">`
     + `<div class="bd-row"><button type="button" class="bd-ref" data-bdopen="${u}" title="Open the review drawer">${esc(c.repo)} #${r.number}</button>${age}</div>`
-    + (c.moved ? bdPill(`${BD_UP}Head moved since your review`, 'yellow') : '')
     + (c.col === 'ready' ? bdDepth(rv) : '')
     + `<a class="bd-title" href="${u}" target="_blank" rel="noopener">${esc(r.title)}</a>${run}`
     + (chips ? `<div class="bd-chips">${chips}</div>` : '') + acts
@@ -2631,24 +2665,32 @@ function bdPopSet(k, values){
 document.addEventListener('click', e => { if (bdDD && !e.target.closest?.('#bd-pop, [data-bddd]')) bdClosePop(false); });
 function scheduleBoard(){ clearTimeout(bdTimer); bdTimer = setTimeout(renderBoard, BOARD_REPAINT_MS); }
 /* Pull the review state the server keeps writing, without a page reload (that would drop the
-   lane animation and any armed button). */
-async function bdReload(){
+   lane animation and any armed button). `work` also pulls My work's files when that view is
+   not the one on screen (a fresh collect landed and both views' counts should follow). */
+async function bdReload({ work = bdView === 'work' } = {}){
   // a module that is off has no file at all: keep what the page was built with
   const fetchData = async (name, optional) => { const res = await fetch(`/data/${name}.json`, { cache:'no-store' });
     if (optional && res.status === 404) return null;
     if (!res.ok) throw new Error(`${name}.json: HTTP ${res.status}`); return res.json(); };
-  const [requests, reviews, reviewRequests, progress, myPrs, jira] = await Promise.all([
-    ...['requests', 'reviews', 'review_requests'].map(n => fetchData(n)), fetchData('review_progress', true),
-    ...(bdView === 'work' ? ['my_prs', 'jira'].map(n => fetchData(n, true)) : [])]);
+  const [requests, reviews, reviewRequests, progress, myReviews, replies, myPrs, jira] = await Promise.all([
+    ...['requests', 'reviews', 'review_requests'].map(n => fetchData(n)),
+    ...['review_progress', 'my_reviews', 'my_review_replies'].map(n => fetchData(n, true)),
+    ...(work ? ['my_prs', 'jira'].map(n => fetchData(n, true)) : [])]);
   DATA.requests = requests; DATA.review_requests = reviewRequests;
   if (progress) DATA.review_progress = progress;
+  if (myReviews) DATA.my_reviews = myReviews;
   if (myPrs) DATA.my_prs = myPrs.data?.viewer?.pullRequests?.nodes || [];
   if (jira) { DATA.jira = jira; reindexJira(); }
+  // the page-wide review state is shared by reference: refill it in place, the status pill reads it
   for (const k in RV) delete RV[k];
   Object.assign(RV, reviews);
+  if (replies) { for (const k in RV_REPLIED) delete RV_REPLIED[k]; Object.assign(RV_REPLIED, replies); }
+  for (const k in GH_MY_REVIEW) delete GH_MY_REVIEW[k];
+  Object.assign(GH_MY_REVIEW, DATA.my_reviews || {});
   reviewRequests.forEach(r => { if (r.my_review) GH_MY_REVIEW[r.url] = r.my_review; });
+  RR_DRAFT.clear(); reviewRequests.forEach(r => { if (r.isDraft) RR_DRAFT.add(r.url); });
   rvQueuedSync();
-  renderBoard(); renderTabs();
+  renderBoard(); renderTabs(); renderRequests(); renderLog();
 }
 /* Poll only while something on the board is about to change, the tab is on screen, and a
    local server is there to answer; idle boards cost nothing. */
