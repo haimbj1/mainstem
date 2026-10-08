@@ -10,6 +10,16 @@
   --accent:#B87A17; --accent-ink:#8A5A0E; --accent-soft:#F6E9CF;
   --good:#2F8A57; --good-soft:#DDF0E4; --warn:#B8731F; --warn-soft:#F7E8D2; --crit:#C2433A; --crit-soft:#F8DEDB; --info:#3572B8; --info-soft:#DDE8F6;
   --sel:#FFF4DC; --shadow:0 1px 2px rgba(20,26,30,.06),0 6px 20px rgba(20,26,30,.05);
+  /* board hues: solid (dot, lane bar) · soft (pill fill) · ink (pill text). The ones that mean
+     what a status pill means alias its tokens, so both themes follow the shell: amber you act,
+     blue someone else, green done, red blocked, gray nothing. Violet and yellow have no status. */
+  --orange:var(--warn); --orange-soft:var(--warn-soft); --orange-ink:var(--warn);
+  --blue:var(--info); --blue-soft:var(--info-soft); --blue-ink:var(--info);
+  --green:var(--good); --green-soft:var(--good-soft); --green-ink:var(--good);
+  --red:var(--crit); --red-soft:var(--crit-soft); --red-ink:var(--crit);
+  --grey:var(--faint); --grey-soft:var(--surface-2); --grey-ink:var(--muted);
+  --violet:#6F5FD0; --violet-soft:#E9E6F8; --violet-ink:#5546B5; --yellow:#A8890F; --yellow-soft:#F3ECCB; --yellow-ink:#7D6608;
+  --lift:0 1px 2px rgba(20,26,30,.06),0 8px 22px rgba(20,26,30,.09);
   --f-display:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",system-ui,sans-serif; --f-body:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",system-ui,sans-serif; --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
 }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
@@ -18,6 +28,8 @@
   --accent:#E0A03A; --accent-ink:#F0BC66; --accent-soft:#3A2D14;
   --good:#4FB477; --good-soft:#173324; --warn:#E39A3B; --warn-soft:#3A2A12; --crit:#E2645A; --crit-soft:#3E1B18; --info:#6AA5E8; --info-soft:#17293D;
   --sel:#241F12; --shadow:0 0 0 1px rgba(255,255,255,.04),0 2px 10px rgba(0,0,0,.35);
+  --violet:#9A8CEB; --violet-soft:#221F38; --violet-ink:#B6ABF3; --yellow:#D3B23C; --yellow-soft:#2E2710; --yellow-ink:#E0C25A;
+  --lift:0 0 0 1px rgba(255,255,255,.06),0 8px 22px rgba(0,0,0,.5);
 }}
 :root[data-theme="dark"]{
   --bg:#0F1418; --surface:#161C21; --surface-2:#1D242A; --line:#28323A; --line-strong:#3A464F;
@@ -25,6 +37,8 @@
   --accent:#E0A03A; --accent-ink:#F0BC66; --accent-soft:#3A2D14;
   --good:#4FB477; --good-soft:#173324; --warn:#E39A3B; --warn-soft:#3A2A12; --crit:#E2645A; --crit-soft:#3E1B18; --info:#6AA5E8; --info-soft:#17293D;
   --sel:#2A2417; --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
+  --violet:#9A8CEB; --violet-soft:#221F38; --violet-ink:#B6ABF3; --yellow:#D3B23C; --yellow-soft:#2E2710; --yellow-ink:#E0C25A;
+  --lift:0 0 0 1px rgba(255,255,255,.06),0 8px 22px rgba(0,0,0,.5);
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 var(--f-body);-webkit-font-smoothing:antialiased}
@@ -426,6 +440,97 @@ td.mono{color:var(--ink-2)}
 footer{margin-top:40px;font-size:12px;color:var(--muted);display:flex;gap:16px;flex-wrap:wrap}
 .dcount{opacity:.7;font-size:.92em;margin-left:4px}
 .rvtop{margin-bottom:10px}.rvtop .pill{font-size:13.5px;padding:5px 12px}\n.sum.lead{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;font-size:14.5px}\n.rvlog{margin-top:14px}.rvlog summary{cursor:pointer;color:var(--muted);font-size:12.5px}.rvlog .sum{color:var(--ink-2);font-size:13px;margin-top:8px}
+
+/* ---- board: kanban lanes over the same review state the Reviews tab reads ---- */
+body[data-tab="board"] #s-board{display:block;margin-top:0;position:relative}
+.bd-seg{display:inline-flex;gap:2px;padding:2px;border-radius:8px;background:var(--surface-2);border:1px solid var(--line)}
+.bd-seg button{padding:3px 10px;border-radius:6px;font-family:var(--f-display);font-weight:600;font-size:12.5px;color:var(--muted);display:inline-flex;gap:7px;align-items:center}
+.bd-seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.bd-count{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:17px;padding:0 5px;border-radius:5px;background:var(--grey-soft);color:var(--grey-ink);font:500 11px/1 var(--f-mono)}
+.bd-seg button[aria-pressed="true"] .bd-count{background:var(--accent-soft);color:var(--accent-ink)}
+.bd-dd{display:inline-flex;align-items:center;gap:5px}
+.bd-dd b{font-weight:600;color:var(--ink);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bd-dd .caret{font-size:10px;color:var(--muted)}
+.bd-dd[aria-expanded="true"]{border-color:var(--accent)}
+.bd-pop{position:absolute;z-index:30;width:260px;background:color-mix(in srgb,var(--surface) 88%,transparent);backdrop-filter:blur(22px) saturate(1.15);border:1px solid var(--line);border-radius:10px;box-shadow:var(--lift);padding:8px;display:flex;flex-direction:column;gap:6px}
+.bd-pop-q{height:28px;border:1px solid var(--line);border-radius:7px;background:var(--surface);color:var(--ink);font:13px var(--f-body);padding:0 8px}
+.bd-pop-acts{display:flex;justify-content:space-between;padding:0 2px}
+.bd-pop-acts button{font-size:12px;font-weight:600;color:var(--accent-ink)}
+.bd-pop-acts button:hover{text-decoration:underline}
+.bd-opts{max-height:280px;overflow:auto;display:flex;flex-direction:column}
+.bd-opt{display:flex;align-items:center;gap:8px;padding:5px 6px;border-radius:6px;font-size:13px;cursor:pointer}
+.bd-opt:hover{background:var(--surface-2)}
+.bd-opt[hidden]{display:none}
+.bd-opt .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bd-opt .n{font:11.5px var(--f-mono);color:var(--muted)}
+.bd-cols{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(264px,1fr);gap:12px;align-items:start;overflow-x:auto;padding-bottom:8px}
+.bd-lane{display:flex;flex-direction:column;gap:8px;padding:10px;border-radius:12px;background:color-mix(in srgb,var(--surface-2) 60%,transparent);border:1px solid var(--line);min-width:0}
+.bd-lh{display:flex;align-items:center;gap:8px}
+.bd-lh h3{margin:0;font-family:var(--f-display);font-weight:600;font-size:13.5px}
+.bd-lh .hint{margin-left:auto;font-size:12px;color:var(--muted)}
+.bd-dot{width:8px;height:8px;border-radius:50%;flex:none}
+.bd-bar{height:2px;border-radius:2px;opacity:.7}
+.bd-mini{display:flex;flex-wrap:wrap;gap:2px;padding:2px;border-radius:7px;background:var(--bg);border:1px solid var(--line)}
+.bd-mini button{padding:1px 8px;border-radius:5px;font-size:11.5px;font-weight:500;color:var(--muted)}
+.bd-mini button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.bd-empty{padding:16px 10px;border:1px dashed var(--line-strong);border-radius:10px;text-align:center;font-size:12.5px;color:var(--faint)}
+.bd-card{cursor:pointer;display:flex;flex-direction:column;gap:8px;padding:11px 12px 9px;background:var(--surface);border:1px solid var(--line);border-radius:10px;transition:border-color .16s ease,box-shadow .16s ease}
+.bd-card:hover{border-color:var(--line-strong);box-shadow:var(--lift)}
+.bd-row{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;min-width:0}
+.bd-ref{font-family:var(--f-mono);font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0;border-radius:4px}
+.bd-ref:hover{color:var(--accent-ink);text-decoration:underline}
+.bd-title{font-weight:600;font-size:14px;line-height:1.35;text-wrap:pretty;color:var(--ink);text-underline-offset:3px}
+.bd-title:hover{color:var(--accent-ink);text-decoration:underline}
+.bd-acts{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.bd-btn{height:26px;padding:0 10px;border-radius:7px;border:1px solid var(--line);background:var(--surface);font-size:12.5px;font-weight:500;color:var(--ink-2);display:inline-flex;align-items:center;gap:6px}
+.bd-btn:hover{border-color:var(--line-strong);background:var(--surface-2)}
+a.bd-btn{text-decoration:none}
+.bd-btn.primary{background:var(--accent);border-color:var(--accent);color:#1A1206;font-weight:600}
+.bd-btn.primary:hover{filter:brightness(1.06)}
+.bd-btn.armed{background:var(--ink);border-color:var(--ink);color:var(--bg);font-weight:600;box-shadow:0 0 0 3px var(--accent-soft)}
+.bd-btn.ghost{border-color:transparent;background:none;color:var(--muted)}
+.bd-btn:disabled{cursor:default;opacity:.75}
+.bd-btn.stale{opacity:1;border-style:dashed;border-color:var(--warn);background:var(--warn-soft);color:var(--warn);height:auto;min-height:26px;white-space:normal;text-align:left}
+.bd-why{flex:1;min-width:120px;height:26px;border:1px solid var(--line);border-radius:7px;background:var(--surface);color:var(--ink);font:13px var(--f-body);padding:0 8px}
+.bd-spin{width:11px;height:11px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;flex:none;animation:bd-rot .8s linear infinite}
+@keyframes bd-rot{to{transform:rotate(360deg)}}
+[data-bdrefresh]{display:inline-flex;align-items:center;gap:6px}
+body:not([data-local]) [data-bdrefresh]{display:none}
+.bd-chips{display:flex;flex-wrap:wrap;gap:6px}
+/* the shell's .pill metrics, so a status reads the same on a card and on a Reviews row */
+.bd-pill{display:inline-flex;align-items:center;gap:5px;height:20px;padding:0 7px;border-radius:5px;font-family:var(--f-display);font-size:11.5px;font-weight:500;letter-spacing:.02em;line-height:1;white-space:nowrap;align-self:flex-start;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.bd-pill.orange{background:var(--orange-soft);color:var(--orange-ink)} .bd-pill.blue{background:var(--blue-soft);color:var(--blue-ink)}
+.bd-pill.violet{background:var(--violet-soft);color:var(--violet-ink)} .bd-pill.green{background:var(--green-soft);color:var(--green-ink)}
+.bd-pill.red{background:var(--red-soft);color:var(--red-ink)} .bd-pill.yellow{background:var(--yellow-soft);color:var(--yellow-ink)}
+.bd-pill.grey{background:var(--grey-soft);color:var(--grey-ink)}
+.bd-pill svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.bd-depth{display:inline-flex;align-items:center;gap:7px;height:20px;padding:0 7px;border-radius:5px;border:1px solid var(--line);font-size:11.5px;font-weight:500;color:var(--ink-2);white-space:nowrap;align-self:flex-start}
+.bd-bars{display:inline-flex;align-items:flex-end;gap:2px;height:10px}
+.bd-bars i{display:block;width:3px;border-radius:1px;background:var(--line-strong)}
+.bd-bars i:nth-child(1){height:4px}.bd-bars i:nth-child(2){height:7px}.bd-bars i:nth-child(3){height:10px}
+.bd-bars i.on{background:var(--accent)}
+.bd-run{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:500;color:var(--blue-ink)}
+.bd-live{position:relative;width:8px;height:8px;border-radius:50%;background:var(--blue);flex:none}
+.bd-live::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:2px solid var(--blue);opacity:0;animation:bd-ping 1.6s ease-out infinite}
+@keyframes bd-ping{0%{transform:scale(.6);opacity:.8}100%{transform:scale(1.5);opacity:0}}
+.bd-track{height:3px;border-radius:3px;background:var(--blue-soft);overflow:hidden}
+.bd-track>span{display:block;height:100%;background:var(--blue);transition:width .4s ease}
+.bd-run.stalled{font-weight:500;color:var(--yellow-ink)}
+.bd-track.stalled>span{background:var(--grey-ink)}
+.bd-pill.fail{display:inline-block;line-height:20px}
+.bd-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding-top:7px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
+.bd-foot .who{color:var(--ink-2);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bd-size{font-family:var(--f-mono);display:flex;gap:6px;white-space:nowrap}
+.bd-size .a{color:var(--good)} .bd-size .d{color:var(--crit)}
+.bd-foot .bd-size{margin-left:auto}
+.bd-claude{display:flex;align-items:center;gap:7px;min-width:0}
+.bd-claude b{font-weight:500;color:var(--green-ink);white-space:nowrap}
+.bd-claude .doing{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bd-pulse{width:8px;height:8px;border-radius:50%;background:var(--green);flex:none;animation:pulse 1.8s infinite}
+.bd-claude.idle b{color:var(--muted)} .bd-claude.idle .bd-pulse{background:var(--grey);animation:none}
+.bd-wt{font-family:var(--f-mono);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (max-width:900px){.bd-cols{grid-auto-columns:minmax(240px,86vw)}}
+@media (prefers-reduced-motion:reduce){.bd-card{transition:none}.bd-live::after,.bd-spin,.bd-pulse{animation:none}}
 </style>
 
 <div class="appshell">
@@ -501,6 +606,16 @@ footer{margin-top:40px;font-size:12px;color:var(--muted);display:flex;gap:16px;f
       <span class="hint">Pull requests waiting on me. Click <b>Review</b> to read the offline review in the drawer and act on it.</span>
     </div>
     <div class="panel wide" id="p-reviews"></div>
+  </section>
+
+  <!-- tab: board -->
+  <section id="s-board">
+    <div class="sec-h">
+      <h2>Board</h2>
+      <span class="cnt" id="bd-cnt"></span>
+      <div class="tools" id="bd-tools"></div>
+    </div>
+    <div id="bd-body"></div>
   </section>
 
   <!-- tab: tickets -->
@@ -597,7 +712,7 @@ footer{margin-top:40px;font-size:12px;color:var(--muted);display:flex;gap:16px;f
 <datalist id="dg-who"></datalist>
 <div class="toast" id="toast"></div>
 <div class="help" id="help"><div class="card"><h3>Keyboard</h3><table>
-<tr><td><span class="k">&#8679;1</span>&#8230;<span class="k">&#8679;6</span></td><td>Switch tab: Home &#183; Reviews &#183; Tickets &#183; Sessions &amp; work &#183; Log &#183; More. The tab is remembered and written to the URL (<code>#home #reviews #tickets #work #log #more</code>)</td></tr>
+<tr><td><span class="k">&#8679;1</span>&#8230;<span class="k">&#8679;7</span></td><td>Switch tab: Home &#183; Reviews &#183; Tickets &#183; Sessions &amp; work &#183; Log &#183; More &#183; Board. The tab is remembered and written to the URL (<code>#home #reviews #tickets #work #log #more #board</code>)</td></tr>
 <tr><td><span class="k">r</span></td><td>Toggle Reviews &#8646; Home</td></tr>
 <tr><td><span class="k">j</span> / <span class="k">k</span></td><td>Next / previous item in Decide now</td></tr>
 <tr><td><span class="k">o</span> or <span class="k">Enter</span></td><td>Open the item's link</td></tr>
@@ -618,6 +733,7 @@ const DATA = /*__DATA__*/null;
 DATA.requests ||= [];
 DATA.artifacts ||= [];
 DATA.pending ||= [];
+DATA.review_progress ||= [];
 /* The plugin can hand a different owner to the same page. */
 const CONFIG = (typeof window !== 'undefined' && window.CONFIG) || {};
 const LIVE = { email: CONFIG.email ?? '' };
@@ -639,16 +755,16 @@ if (DATA.config && DATA.config.brand) {
 }
 { const wr = $('#workroot-txt'); if (wr) wr.textContent = (DATA.config && DATA.config.workRoot) || '~/work'; }
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const hrs = iso => (NOW - new Date(iso)) / 36e5;
+const hrs = (iso, now = NOW) => (now - new Date(iso)) / 36e5;
 const days = iso => hrs(iso) / 24;
-function ageText(iso){ if(!iso) return ''; const h=hrs(iso); if(h<1) return `${Math.max(1,Math.round(h*60))}m`; if(h<48) return `${Math.round(h)}h`; const d=Math.round(h/24); if(d<60) return `${d}d`; return `${Math.round(d/30)}mo`; }
+function ageText(iso, now = NOW){ if(!iso) return ''; const h=hrs(iso, now); if(h<1) return `${Math.max(1,Math.round(h*60))}m`; if(h<48) return `${Math.round(h)}h`; const d=Math.round(h/24); if(d<60) return `${d}d`; return `${Math.round(d/30)}mo`; }
 function ageCls(iso, warnD=3, critD=10){ const d=days(iso); return d>critD?'age veryold':d>warnD?'age old':'age'; }
 const repoShort = r => (r||'').replace(/^[^/]+\//, '');
 const store = { get(k,d){ try{ const v=localStorage.getItem('cc:'+k); return v?JSON.parse(v):d; }catch{ return d; } }, set(k,v){ try{ localStorage.setItem('cc:'+k, JSON.stringify(v)); }catch{} } };
 /* One screen answers "what do I do now"; every other view is one tab away.
    The active tab lives in localStorage and in the URL hash, so a bookmark and a
    reload both land where you left off. #reviews keeps the old bookmark alive. */
-const TABS = [['1','Home','home'],['2','Reviews','reviews'],['3','Tickets','tickets'],['4','Sessions & work','work'],['5','Log','log'],['6','More','more']];
+const TABS = [['1','Home','home'],['2','Reviews','reviews'],['3','Tickets','tickets'],['4','Sessions & work','work'],['5','Log','log'],['6','More','more'],['7','Board','board']];
 const TAB_IDS = TABS.map(t => t[2]);
 const hashTab = h => { const k = String(h || '').replace(/^#/, ''); return k === 'all' ? 'home' : (TAB_IDS.includes(k) ? k : ''); };
 let tab = hashTab(location.hash) || (TAB_IDS.includes(store.get('tab','')) ? store.get('tab','') : 'home');
@@ -712,6 +828,7 @@ $('#dr-body').addEventListener('click', e => {
   }
   if (b.dataset.rva) { const c = b.closest('.rvcard'); rvSend(c.dataset.rvcard, b.dataset.rva, c); return; }
   if (b.dataset.rv) { openReviewDrawer(b.dataset.rv); return; }
+  if (b.dataset.rvrun) { rvRun(b.dataset.rvrun); closeDrawer(); return; }
   if (b.dataset.pdcopy) { const c = b.closest('.pdcard'); const p = PEND.find(x => x.id === c.dataset.pdcard);
     const sec = p && pdSplit(p.body).secs.find(x => x.n === b.dataset.pdcopy); if (sec) copy(sec.raw.join('\n')); return; }
   if (b.dataset.pda) { const c = b.closest('.pdcard'); pdSend(c.dataset.pdcard, b.dataset.pda, c); return; }
@@ -750,7 +867,7 @@ const RV = DATA.reviews || {};
    orphan review so the panel is the union, never a subset. */
 const RR_REQUESTED = new Set(DATA.review_requests.map(r => r.url));
 const orgOfUrl = u => (String(u || '').match(/github\.com\/([^/]+)\//) || [])[1] || '';
-const RV_ONLY = Object.values(RV).filter(v => v.url && !RR_REQUESTED.has(v.url)).map(v => ({
+const rvOnlyRow = v => ({
   url: v.url,
   number: v.pr,
   title: String(v.title || '').replace(/^"|"$/g, ''),
@@ -761,7 +878,8 @@ const RV_ONLY = Object.values(RV).filter(v => v.url && !RR_REQUESTED.has(v.url))
   createdAt: v.opened || v.last_reviewed || v.mtime,
   updatedAt: v.mtime,
   rvOnly: true,
-}));
+});
+const RV_ONLY = Object.values(RV).filter(v => v.url && !RR_REQUESTED.has(v.url)).map(rvOnlyRow);
 const RR_ALL = [...DATA.review_requests, ...RV_ONLY];
 const rrProv = r => r.provenance || (r.direct ? 'direct' : 'team');
 let rvDec = store.get('rv', {}), rvOpenQ = null, rvOpenP = null;
@@ -811,6 +929,9 @@ const rvTitle = rv => String(rv.title||'').replace(/^["']+|["']+$/g,'');
 const rvBlank = v => !v || /^(none|null|n\/a|-|\[\s*\])$/i.test(String(v).trim());
 const rvTopSev = rv => (rv.findings||[]).map(f=>f.sev).sort((a,b)=>sevRank(a)-sevRank(b))[0] || '';
 const rvDraftSev = (rv,id) => ((rv.findings||[]).find(f=>String(f.n)===String(id).replace(/\D/g,'')) || {}).sev || '';
+/* High/Med drafts start ticked; the board's one-click actions post exactly this default set. */
+const rvPreticked = sev => sevRank(sev) <= 2;
+const rvDefaultDrafts = rv => (rv.drafts || []).filter(d => rvPreticked(rvDraftSev(rv, d.id))).map(d => d.id);
 /* A PR whose base branch is another open PR's head is stacked: the child's diff is measured
    against the parent, so the parent must be reviewed (and merged) first. */
 const STACK = (() => {
@@ -893,24 +1014,43 @@ function rvThread(url){
   }).join('');
 }
 const rvHeadMoved = url => { const rv = RV[url]; return !!(rv?.live_head && rv?.last_head_sha && !rv.live_head.startsWith(rv.last_head_sha) && !rv.last_head_sha.startsWith(rv.live_head)); };
-const rvStatus = url => {
+/* Where a review stands for me, running agents and draft PRs aside: who acts next. The
+   status pill, the Needs-you inbox and the Board's lanes all read this one answer. */
+function rvStanding(url){
+  const rv = RV[url], gh = GH_MY_REVIEW[url];
+  if (RV_REPLIED[url]) return 'replied';
+  if (gh === 'CHANGES_REQUESTED' && rvHeadMoved(url)) return 'pushed';
+  if (gh === 'APPROVED') return 'approved';
+  if (gh === 'CHANGES_REQUESTED' || POSTED.has(rv?.status)) return 'waiting';
+  if (rv?.pending_review) return 'staged';
+  return rv ? 'verdict' : null;
+}
+/* One status per review row: { kind, txt (HTML-safe), cls, tip }; null = not reviewed yet.
+   cls is who acts — warn me, info the author, good done, neutral nothing. */
+function rvStatusOf(url, standing = rvStanding(url)){
   const rv = RV[url];
-    const n = (rv?.findings || []).filter(f => !/\u2705|\u274C/.test(f.status || '')).length;
-    const S = (txt, cls, tip) => `<span class="pill ${cls}" ${rv?`data-rv="${esc(url)}" style="cursor:pointer"`:''} title="${esc(tip || 'Click for the full review card')}">${txt}</span>`;
-    if (RV_QUEUED.has(url)) return S('\u231B reviewing \u2014 wait', 'neutral', 'The agent is working; the verdict lands here.');
-    if (RR_DRAFT.has(url)) return S('\u270E draft \u2014 nothing to do', 'neutral', 'The author has not asked for a review yet.');
-    const gh = GH_MY_REVIEW[url];
-    if (RV_REPLIED[url]) return S(`\uD83D\uDCAC ${esc(RV_REPLIED[url].by)} replied \u2014 read it, then decide`, 'warn',
+  const n = (rv?.findings || []).filter(f => !/✅|❌/.test(f.status || '')).length;
+  const st = (kind, txt, cls, tip) => ({ kind, txt, cls, tip });
+  if (RV_QUEUED.has(url)) return st('queued', '⌛ reviewing — wait', 'neutral', 'The agent is working; the verdict lands here.');
+  if (RR_DRAFT.has(url)) return st('draft', '✎ draft — nothing to do', 'neutral', 'The author has not asked for a review yet.');
+  switch (standing) {
+    case 'replied': return st('replied', `💬 ${esc(RV_REPLIED[url].by)} replied — read it, then decide`, 'warn',
       `Answered ${ageText(RV_REPLIED[url].at)} ago, after your last review. A reassess runs automatically; your post clears this.`);
-    if (gh === 'CHANGES_REQUESTED' && rvHeadMoved(url)) return S('\u27F2 author pushed \u2014 the reassess lands here', 'warn', 'The fix round arrived after your request-changes.');
-    if (gh === 'APPROVED') return S('\u2713 approved \u2014 done', 'good', 'Your approval stands on GitHub.');
-    if (gh === 'CHANGES_REQUESTED' || POSTED.has(rv?.status)) return S('\u23F3 waiting on the author', 'info', 'Your review is posted; nothing to do until they respond.');
-    if (rv?.pending_review) return S(`\uD83D\uDC41 staged \u2014 check on GitHub, then give the verdict (${n})`, 'warn',
+    case 'pushed': return st('pushed', '⟲ author pushed — the reassess lands here', 'warn', 'The fix round arrived after your request-changes.');
+    case 'approved': return st('approved', '✓ approved — done', 'good', 'Your approval stands on GitHub.');
+    case 'waiting': return st('waiting', '⏳ waiting on the author', 'info', 'Your review is posted; nothing to do until they respond.');
+    case 'staged': return st('staged', `👁 staged — check on GitHub, then give the verdict (${n})`, 'warn',
       `${n} open finding${n===1?'':'s'} sit on the PR as a pending review only you can see. Annotate with >> lines, or decide from the card.`);
-    if (rv) return S(`\u25CF your verdict needed (${n})`, 'warn', `${n} open finding${n===1?'':'s'}; the agent suggests ${esc(rv.verdict)}.`);
-    return LOCAL ? `<button class="pill model" data-write data-rvrun="${esc(url)}" title="Run the offline review agent \u2014 ~150k tokens">\u2726 run review</button>`
-                 : S('not reviewed', 'neutral', 'No offline review yet.');
-  };
+    case 'verdict': return st('verdict', `● your verdict needed (${n})`, 'warn', `${n} open finding${n===1?'':'s'}; the agent suggests ${esc(rv.verdict)}.`);
+  }
+  return null;
+}
+const rvStatus = url => {
+  const s = rvStatusOf(url), rv = RV[url];
+  if (s) return `<span class="pill ${s.cls}" ${rv?`data-rv="${esc(url)}" style="cursor:pointer"`:''} title="${esc(s.tip)}">${s.txt}</span>`;
+  return LOCAL ? `<button class="pill model" data-write data-rvrun="${esc(url)}" title="Run the offline review agent — ~150k tokens">✦ run review</button>`
+               : `<span class="pill neutral" title="No offline review yet.">not reviewed</span>`;
+};
 
 function rvCard(rv, title){
   const url = rv.url, v = rvVerdict(rv.verdict), fs = rv.findings || [];
@@ -965,14 +1105,14 @@ function rvCard(rv, title){
   const fCard = f => {
     const d = draftByN[String(f.n)];
     if (!d) return `<div class="draftrow nodraft"><span class="pill ${sevCls(f.sev)}">${esc(f.sev)}</span> <span class="mono">${esc(f.loc)}</span><span class="iss">${esc(f.issue)}</span><span class="age">${esc(f.status)}</span></div>`;
-    return `<div class="draftrow"><label class="pst"><input type="checkbox" data-draft="${esc(d.id)}"${sevRank(f.sev)<=2?' checked':''}> post</label>
+    return `<div class="draftrow"><label class="pst"><input type="checkbox" data-draft="${esc(d.id)}"${rvPreticked(f.sev)?' checked':''}> post</label>
       <details><summary><span class="mono">${esc(d.id)} · ${esc(d.loc)}</span><span class="pill ${sevCls(f.sev)}">${esc(f.sev)}</span><span class="age">${esc(f.status)}</span></summary>
       <div class="iss ${sevCls(f.sev)}">${esc(f.issue)}</div>${excerptHtml(d)}<textarea class="draft" data-dredit="${esc(d.id)}" spellcheck="false">${esc(d.text)}</textarea><div class="drbtns"><button class="cmd" data-copy-draft="${esc(d.id)}">${ICON.copy}Copy</button><button class="cmd dsave" data-write data-dsave="${esc(d.id)}" hidden>Save edit</button></div></details></div>`;
   };
   const covered = new Set(fs.map(f => String(f.n)));
   const orphans = drafts.filter(d => !covered.has(String(d.id).replace(/^F/,''))).map(d => {
     const sev = rvDraftSev(rv, d.id);
-    return `<div class="draftrow"><label class="pst"><input type="checkbox" data-draft="${esc(d.id)}"${sevRank(sev)<=2?' checked':''}> post</label>
+    return `<div class="draftrow"><label class="pst"><input type="checkbox" data-draft="${esc(d.id)}"${rvPreticked(sev)?' checked':''}> post</label>
       <details><summary><span class="mono">${esc(d.id)} · ${esc(d.loc)}</span>${sev?`<span class="pill ${sevCls(sev)}">${esc(sev)}</span>`:''}</summary>
       ${excerptHtml(d)}<textarea class="draft" data-dredit="${esc(d.id)}" spellcheck="false">${esc(d.text)}</textarea><div class="drbtns"><button class="cmd" data-copy-draft="${esc(d.id)}">${ICON.copy}Copy</button><button class="cmd dsave" data-write data-dsave="${esc(d.id)}" hidden>Save edit</button></div></details></div>`;
   });
@@ -1023,17 +1163,22 @@ function rvSaveDraft(url, id, card){
   const b = card.querySelector(`[data-dsave="${CSS.escape(id)}"]`); if (b) b.hidden = true;
 }
 function rvSend(url, action, card){
-  const rv = RV[url]; if (!rv || !card) return;
+  if (!RV[url] || !card) return;
   // unsaved inline edits must reach the .md before the server reads it to post
   [...card.querySelectorAll('textarea[data-dredit]')].forEach(ta => rvSaveDraft(url, ta.dataset.dredit, card));
   const ids = [...card.querySelectorAll('input[data-draft]:checked')].map(i=>i.dataset.draft);
   const val = k => card.querySelector(`[data-rvf="${k}"]`)?.value.trim() || '';
-  const q = val('question');
   const why = action==='close_stale' ? (val('why') || 'No answer to the still-relevant comment in 7 days.') : val('why');
-  if ((action==='request_changes' || action==='post_findings' || action==='pre_review') && !ids.length) { toast('Select at least one draft first'); return; }
-  if (action==='review_question' && !q) { toast('Type the question first'); return; }
-  if (action==='skip_review' && !why) { toast('Say why you skip it'); return; }
-  const t = card.dataset.rvtitle || `#${rv.pr} ${rvTitle(rv)}`;
+  rvDecide(url, action, { ids, q: val('question'), why, title: card.dataset.rvtitle });
+}
+const RV_NEEDS_DRAFTS = new Set(['request_changes', 'post_findings', 'pre_review']);
+/* Returns false when the decision is incomplete (the toast says what is missing). */
+function rvDecide(url, action, { ids, q = '', why = '', title = '' }){
+  const rv = RV[url]; if (!rv) return false;
+  if (RV_NEEDS_DRAFTS.has(action) && !ids.length) { toast('Select at least one draft first'); return false; }
+  if (action==='review_question' && !q) { toast('Type the question first'); return false; }
+  if (action==='skip_review' && !why) { toast('Say why you skip it'); return false; }
+  const t = title || `#${rv.pr} ${rvTitle(rv)}`;
   const extra = { decision:action, item:{ id:'review:'+url, src:'review', title:t, url }, drafts:ids, review_path:rv.path || '' };
   if (action==='review_question') extra.question = q;
   if (action==='skip_review' || action==='close_stale') extra.why = why;
@@ -1043,6 +1188,7 @@ function rvSend(url, action, card){
   queueDecision(newReq('decision', rvLine(action, t, ids, q, why), [url], extra));
   closeDrawer();
   renderQueue(); renderReviews(); renderLog(); renderTabs();
+  return true;
 }
 /* the review card renders into the drawer — the list behind it never moves */
 /* The card pre-ticks High/Med only, so the post buttons say how many drafts go out
@@ -1192,11 +1338,16 @@ function sessBtn(s, dir, prompt, refs, wtPath){
 }
 const prNumOf = url => (String(url).match(/\/pull\/(\d+)/) || [])[1] || '';
 const prRemoteOf = url => (String(url).match(/github\.com\/([^/]+\/[^/]+)\/pull\//) || [])[1] || '';
-function sessBtnPR(url, title, branch){
+/* The PR's worktree (by repo#branch) and the live session that owns the PR, if any. */
+function prSession(url, branch){
   const n = prNumOf(url), remote = prRemoteOf(url);
   const wt = branch && remote ? wtByBranch[remote + '#' + branch] : null;
   /* a repo-qualified ref wins — "#6" alone can name a PR in any repo */
   const s = (n ? sessFind([repoShort(remote) + '#' + n], wt?.path) : null) || sessFind(n ? ['#' + n] : [], wt?.path);
+  return { n, remote, wt, s };
+}
+function sessBtnPR(url, title, branch){
+  const { n, remote, wt, s } = prSession(url, branch);
   const prompt = `Continue PR #${n} "${oneLine(title).replace(/^#\d+\s*/, '')}" ${url}. Repo ${remote}. `
     + `Offline review: ${RV[url]?.path || 'none'}. Session notes: ~/.claude/sessions/. `
     + `Start by summarizing the PR state and the open review threads.`;
@@ -1351,9 +1502,12 @@ $('#p-pending').addEventListener('click', e => {
 const items = [];
 function add(it){ it.id = it.id || (it.src + ':' + it.title); items.push(it); }
 
-DATA.my_prs.forEach(p => {
-  const ci = p.commits.nodes[0]?.commit.statusCheckRollup?.state;
-  const humans = p.reviews.nodes.filter(r => !['claude','claude[bot]','github-actions'].includes(r.author?.login));
+const BOT_REVIEWERS = ['claude','claude[bot]','github-actions'];
+const prCi = p => p.commits?.nodes?.[0]?.commit?.statusCheckRollup?.state || null;
+const prHumanReviews = p => p.reviews.nodes.filter(r => !BOT_REVIEWERS.includes(r.author?.login));
+/* The Home queue's rank of one of my PRs; the Board's Priority sort reads the same score. */
+function prRank(p){
+  const ci = prCi(p), humans = prHumanReviews(p);
   const approved = humans.some(r => r.state === 'APPROVED');
   const changes = humans.some(r => r.state === 'CHANGES_REQUESTED');
   let score = 40, act = '', sev = 'info', state = [];
@@ -1364,6 +1518,10 @@ DATA.my_prs.forEach(p => {
   else if (p.isDraft) { score = 30; sev='low'; act = 'Draft — finish or mark ready'; state.push(['neutral','draft']); }
   else if (humans.length === 0) { const d = days(p.updatedAt); score = 45 + Math.min(25, d * 6); sev = d > 2 ? 'warn' : 'info'; act = d > 1 ? `No human review for ${ageText(p.updatedAt)} — ping a reviewer` : 'Waiting for review'; state.push(['info','awaiting review']); }
   if (ci === 'SUCCESS') state.push(['good','CI ✓']);
+  return { score, act, sev, state };
+}
+DATA.my_prs.forEach(p => {
+  const { score, act, sev, state } = prRank(p);
   const wt = wtByBranch[p.repository.nameWithOwner + '#' + p.headRefName];
   add({ src:'pr', cat:'pr', sev, score, title:`#${p.number} ${p.title}`, url:p.url, sub:`${repoShort(p.repository.nameWithOwner)} · ${p.headRefName} · +${p.additions}/−${p.deletions}`, act, state, when:p.updatedAt,
         branch:p.headRefName, wtPath:wt?.path || '',
@@ -1382,8 +1540,7 @@ DATA.review_requests.filter(r => r.direct).forEach(r => {
         cmd:`gh pr checkout ${r.number} -R ${r.repository.nameWithOwner}` });
 });
 
-function buildJiraItems(){
-DATA.jira.forEach(j => {
+function jiraRank(j){
   const pri = { Highest:35, High:25, Medium:10, Low:0 }[j.priority] || 0;
   let score = 35 + pri, act = '', sev = 'info', state = [];
   const st = j.status.replace(/^[^\w]+/, '').trim();
@@ -1391,6 +1548,11 @@ DATA.jira.forEach(j => {
   else if (/Review/.test(j.status)) { score += 15; sev='warn'; act = 'Push the review to close it'; state.push(['warn', st]); }
   else if (/Progress/.test(j.status)) { state.push(['info', st]); act = days(j.updated) > 14 ? `No update for ${ageText(j.updated)} — still real?` : 'In progress'; if (days(j.updated) > 14) { score += 10; sev='warn'; } }
   else { state.push(['neutral', st]); act = days(j.updated) > 60 ? `Untouched ${ageText(j.updated)} — close or schedule` : 'Not started'; sev='low'; }
+  return { score, act, sev, state };
+}
+function buildJiraItems(){
+DATA.jira.forEach(j => {
+  const { score, act, sev, state } = jiraRank(j);
   add({ src:'jira', cat:'jira', sev, score, title:`${j.key} ${j.summary}`, url:jiraLink(j.key), sub:`${j.project} · ${j.type} · ${j.priority||'no priority'} · updated ${ageText(j.updated)}`, act, state, when:j.updated, key:j.key });
 });
 }
@@ -1687,15 +1849,11 @@ $('#s-tips')?.addEventListener('click', e => {
     toast('Sent — the assistant executes the picked items and reports in the chat log');
   }
 });
+const RV_NEEDS_ME = new Set(['replied', 'pushed', 'staged', 'verdict']);
 function rvNeedsMe(url){
   if (RV_QUEUED.has(url) || RR_DRAFT.has(url)) return null;
-  const rv = RV[url], gh = GH_MY_REVIEW[url];
-  if (RV_REPLIED[url]) return 'replied';
-  if (gh === 'CHANGES_REQUESTED' && rvHeadMoved(url)) return 'pushed';
-  if (gh === 'APPROVED' || gh === 'CHANGES_REQUESTED' || POSTED.has(rv?.status)) return null;
-  if (rv?.pending_review) return 'staged';
-  if (rv) return 'verdict';
-  return null;
+  const s = rvStanding(url);
+  return RV_NEEDS_ME.has(s) ? s : null;
 }
 function renderNeeds(){
   const el = $('#needs'); if (!el) return;
@@ -2003,6 +2161,663 @@ $('#zoom-out').addEventListener('click', () => { ccZoom = Math.max(80, ccZoom - 
     + 'Agent spend (last 8):\n'
     + rows.slice(-8).map(r=>`${Math.round(r.tokens/1000)}k · ${r.what}`).join('\n');
 })();
+
+/* ---------- review state shared by the Reviews tab and the Board ---------- */
+// Decided = clicked on the board (rvDec, per browser) OR already approved on GitHub itself.
+// A click stores rvDec locally at once, but the server can refuse the post (stale
+// head) — so a local decision counts as decided only once it actually landed: the
+// review file's status flipped to a posted state, or GitHub shows my review.
+// A decision hides a row only with THAT decision's receipt — a refused click plus an
+// old comment of mine must not read as decided, and "post drafts only" is no verdict.
+const DEC_RECEIPT = { approve:['approved','APPROVED'], approve_with_comments:['approved','APPROVED'], request_changes:['changes-requested','CHANGES_REQUESTED'] };
+function rvIsDecided(url){
+  if (RV_REPLIED[url]) return false;  // the author answered after my review — the ball is back with me
+  const gh = GH_MY_REVIEW[url];
+  if (gh === 'CHANGES_REQUESTED' && rvHeadMoved(url)) return false;  // the author pushed the fix round
+  if (gh === 'APPROVED' || gh === 'CHANGES_REQUESTED') return true;
+  const d = rvDec[url]; if (!d) return false;
+  if (d === 'skip_review' || d === 'close_stale') return true;
+  const m = DEC_RECEIPT[d]; if (!m) return false;
+  return RV[url]?.status === m[0];
+}
+function rvRun(url){
+  if (RV_QUEUED.has(url)) { toast('A review is already queued or running on this PR'); return; }
+  sendRequest('review_pr', `Review ${url}`, [url]); toast('Review queued — the verdict lands on this row when the agent finishes');
+}
+
+/* ---------- board: kanban lanes over the review state ---------- */
+// Merged/closed PRs already leave reviews.json (prune_reviews archives them); the window
+// keeps long-open PRs I decided weeks ago from piling up in the last lane.
+const BOARD_RECENT_DAYS = 14;
+const BOARD_AGE_WARN_D = 2, BOARD_AGE_CRIT_D = 5;
+const BOARD_REPAINT_MS = 120;
+const BOARD_POLL_MS = 5000;
+const BOARD_CONFIRM_MS = 4000;
+const BOARD_MOVE_MS = 300;
+// past this a queued run is not "about to start" any more: nobody is picking the queue up
+const BOARD_QUEUE_STALE_MIN = 10;
+// a reviewer silent this long has most likely died mid-run (steps come every few minutes)
+const BOARD_PROGRESS_STALE_MIN = 10;
+// review_progress.py STEPS in run order: [step, the agent's name for it, what the card says]
+const BD_STEPS = [['context','Collect context','Collecting context'], ['diff','Read the diff','Reading the diff'],
+  ['files','Read the touched files','Reading the touched files'], ['findings','Draft findings','Drafting findings'],
+  ['verdict','Suggest a verdict','Suggesting a verdict']];
+const BD_REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)');
+const BD_DEPTH = { 'decide-here':['Decide from here',1], 'skim-diff':['Skim the diff',2], 'read-code':['Read the code',3] };
+// The agent's suggested verdict: [what the card says, the Ready lane's filter key]. It stays
+// gray — the colors belong to the status, and green there means done.
+const BD_VERDICT = { 'approve':['Approve','approve'], 'approve-with-comments':['Approve with comments','comments'], 'request-changes':['Request changes','changes'], 'needs-discussion':['Needs discussion','discuss'], 'skip-bot':['Bot · skip',''] };
+// The suggested verdict's one-click action, named as the drawer's decisions; a discussion
+// has no verdict to give, so its findings go out as comments ("Post drafts only").
+const BD_PRIMARY = { 'approve':'approve', 'approve-with-comments':'approve_with_comments', 'request-changes':'request_changes', 'needs-discussion':'post_findings' };
+const BD_ACTION_LABEL = { approve:'Approve', approve_with_comments:'Approve with comments', request_changes:'Request changes', post_findings:'Post findings' };
+// What I did, under the status pill; an approval needs no second word.
+const BD_OUTCOME = { approved:'', changes:'Changes requested', comment:'Commented', discuss:'Needs discussion', skipped:'Skipped' };
+// Live GitHub state beats my decision, which beats the review file the server rewrote on post.
+const BD_OUTCOME_GH = { APPROVED:'approved', CHANGES_REQUESTED:'changes' };
+const BD_OUTCOME_DEC = { approve:'approved', approve_with_comments:'approved', request_changes:'changes', post_findings:'comment', skip_review:'skipped', close_stale:'skipped' };
+const BD_OUTCOME_FILE = { approved:'approved', 'changes-requested':'changes' };
+// Standings whose status is blue or green: my review landed and the next move is not mine.
+const BD_DONE_STANDINGS = new Set(['approved', 'waiting']);
+const BD_SKIPS = new Set(['skip_review', 'close_stale']);
+// The status pill's class (who acts) as a board hue; the hues alias the same tokens.
+const BD_STATUS_HUE = { warn:'orange', info:'blue', good:'green', neutral:'grey' };
+const BD_SEVS = [['High','red',r => r <= 1],['Med','orange',r => r === 2],['Low','grey',r => r === 3 || r === 4]];
+const BD_COLS = [
+  { id:'needs', label:'Needs review', hue:'orange', hint:'Waiting on you' },
+  { id:'running', label:'Reviewing', hue:'blue', hint:'Agent at work' },
+  { id:'ready', label:'Ready to decide', hue:'violet', hint:'Drafted, not posted',
+    filters:[['all','All'],['approve','Approve'],['comments','Comments'],['changes','Changes'],['discuss','Discuss']], keyOf: c => c.verdictKey },
+  { id:'done', label:'Reviewed', hue:'green', hint:`Last ${BOARD_RECENT_DAYS} days`,
+    filters:[['all','All'],['approved','Approved'],['changes','Changes'],['comment','Comment'],['discuss','Discuss']], keyOf: c => c.outcome },
+];
+const byNullLast = (a, b, f) => (a == null) - (b == null) || (a == null ? 0 : f(a, b));
+const BD_SORTS = {
+  waiting:  ['Waiting longest', (a, b) => a.openedTs - b.openedTs],
+  newest:   ['Newest', (a, b) => b.openedTs - a.openedTs],
+  updated:  ['Recently updated', (a, b) => b.updatedTs - a.updatedTs],
+  priority: ['Priority', (a, b) => byNullLast(a.score, b.score, (x, y) => y - x)],
+  size:     ['Smallest first', (a, b) => byNullLast(a.size, b.size, (x, y) => (x.a + x.d) - (y.a + y.d))],
+};
+// The Home queue's ranking score; it covers the directly requested PRs only, the rest sort last.
+const BD_SCORE = {}; items.forEach(it => { if (it.src === 'review') BD_SCORE[it.url] = it.score; });
+const bdSaved = store.get('board', {});
+let bdView = bdSaved.view === 'work' ? 'work' : 'reviews',
+    bdSort = BD_SORTS[bdSaved.sort] ? bdSaved.sort : 'waiting',
+    bdColF = bdSaved.colf || {},
+    bdTimer = null, bdPollTimer = null, bdArmTimer = null,
+    bdArmed = null, bdSkip = null, bdRefreshing = false, bdLastCol = null, bdPollFailing = false;
+/* Decisions sent from a card, url → ISO send time, until requests.json shows the answer. */
+const bdInFlight = new Map();
+/* Multi-select filters: an empty selection means everything; OR within one, AND across them. */
+const BD_FILTERS = {
+  repos:  { label:'Repos', all:'All', of: c => c.repo },
+  people: { label:'People', all:'Everyone', of: c => c.r.author.login },
+  types:  { label:'Type', all:'All', of: c => c.type },
+};
+const BD_POP_SEARCH_MIN = 8;
+// earlier builds stored one repo ('all' = none) and one person ('' = none)
+const bdLegacy = (v, none) => v && v !== none ? [v] : [];
+const bdSel = { repos: Array.isArray(bdSaved.repos) ? bdSaved.repos : bdLegacy(bdSaved.repo, 'all'),
+                people: Array.isArray(bdSaved.people) ? bdSaved.people : bdLegacy(bdSaved.person, ''),
+                types: Array.isArray(bdSaved.types) ? bdSaved.types : [] };
+/* [value, count] per filter from the last render; a selected value with no cards keeps a 0 row so it can be unticked. */
+const bdOptions = { repos: [], people: [], types: [] };
+let bdDD = null;
+const saveBoard = () => store.set('board', { view: bdView, sort: bdSort, repos: bdSel.repos, people: bdSel.people, types: bdSel.types, colf: bdColF });
+const bdAgeHue = iso => { const d = days(iso); return d >= BOARD_AGE_CRIT_D ? 'red' : d >= BOARD_AGE_WARN_D ? 'orange' : 'grey'; };
+const bdSizeOf = rv => { const m = String(rv?.size || '').match(/\+(\d+)\s*\/\s*[−-](\d+)/); return m ? { a: +m[1], d: +m[2] } : null; };
+/* What the reviewer last reported for a PR (review_progress.py writes it, the poll reads it). */
+const bdProgEntry = url => DATA.review_progress.find(p => p.url === url);
+// against the live clock: NOW is the page's load time, and a board stays open for hours
+const bdProgFresh = p => Date.now() - Date.parse(p.updated_at) < BOARD_PROGRESS_STALE_MIN * 6e4;
+/* The card's view of that report; null = no report. A step this page does not know (a newer
+   helper) still shows the run, just without a bar. */
+function bdProgress(url){
+  const p = bdProgEntry(url); if (!p) return null;
+  const i = BD_STEPS.findIndex(s => s[0] === p.step);
+  const base = { startedAt: p.started_at, updatedAt: p.updated_at, fresh: bdProgFresh(p) };
+  if (i < 0) return { ...base, pct: null, label: 'Reviewing…', step: p.step };
+  const counted = p.total > 0;
+  return { ...base, step: BD_STEPS[i][1],
+    pct: Math.round((i + (counted ? p.done / p.total : 0)) / BD_STEPS.length * 100),
+    label: counted ? `Reading ${p.done} of ${p.total} files` : BD_STEPS[i][2] };
+}
+/* A run counts until a review file newer than its start lands for an unchanged head: the
+   agent is done even if the master has not marked the request done or a report lingers. */
+// mtime is the file's real write time; last_reviewed is a bare date (midnight) and only a fallback.
+const bdRunFinished = (url, since) => { const rv = RV[url]; return !!rv && !rvHeadMoved(url) && (Date.parse(rv.mtime) || Date.parse(rv.last_reviewed)) > Date.parse(since); };
+/* Rows rebuilt from the live data, so a re-fetch shows new reviews without a reload. */
+function bdRows(){
+  const requested = new Set(DATA.review_requests.map(r => r.url));
+  return [...DATA.review_requests, ...Object.values(RV).filter(v => v.url && !requested.has(v.url)).map(rvOnlyRow)];
+}
+function bdIndexRequests(){
+  const runs = {}, lastDec = {};
+  const isWorking = q => q.status === 'working';
+  DATA.requests.forEach(q => {
+    if (q.kind === 'review_pr' && (q.status === 'pending' || isWorking(q))) {
+      // a started run outranks a newer queued one: it is what the agent is doing now
+      (q.targets || []).forEach(t => { const cur = runs[t];
+        if (!cur || isWorking(q) > isWorking(cur) || (isWorking(q) === isWorking(cur) && cur.when < q.when)) runs[t] = q; });
+      return;
+    }
+    const u = (q.targets || [])[0];
+    if (q.kind === 'decision' && u && BD_OUTCOME_DEC[(q.extra || {}).decision || q.decision] && (!lastDec[u] || lastDec[u].when < q.when)) lastDec[u] = q;
+  });
+  return { runs, lastDec };
+}
+/* A review leaves Ready to decide only with a landed receipt — the Reviews view's rule: the
+   status reads waiting-on-the-author or approved, or the server answered my decision request
+   as posted for this round of the review file. A skip needs no receipt (nothing is posted).
+   A click the master session still owns, or a refused one, stays in Ready to decide. */
+function bdOutcome(url, lastDec){
+  const rv = RV[url], standing = rvStanding(url);
+  const dec = lastDec ? ((lastDec.extra || {}).decision || lastDec.decision) : rvDec[url];
+  const skipped = BD_SKIPS.has(dec) && (!lastDec || lastDec.status !== 'error');
+  // a re-review written after the answer starts a new round the answer does not cover
+  const answeredThisRound = lastDec?.status === 'done' && !(Date.parse(rv?.mtime) > Date.parse(lastDec.when));
+  const landed = BD_DONE_STANDINGS.has(standing) || (answeredThisRound && (standing === 'verdict' || standing === 'staged'));
+  if (!landed && !skipped) return null;
+  let outcome = BD_OUTCOME_GH[GH_MY_REVIEW[url]] || BD_OUTCOME_DEC[dec] || BD_OUTCOME_FILE[rv?.status] || 'comment';
+  if (outcome === 'comment' && rv?.verdict === 'needs-discussion') outcome = 'discuss';
+  // a post the next collect has not caught up with still reads verdict: the card derives its status from the outcome
+  return { outcome, standing: BD_DONE_STANDINGS.has(standing) ? standing : null, at: lastDec?.when || rv?.mtime || '' };
+}
+function bdPlace(r, run, lastDec, prog){
+  const rv = RV[r.url], moved = rvHeadMoved(r.url);
+  const open = !!run && !bdRunFinished(r.url, run.when);
+  // The reviewer's own report proves the run started, even while the request still says
+  // `pending` (a place in the master's queue); `working` is the master's word for the same.
+  const live = !!prog && !bdRunFinished(r.url, prog.started_at);
+  if (live && !prog.error || open && run.status === 'working') return { col:'running' };
+  // a click after the failure is a retry: it shows as queued, not as the old failure
+  const failed = live && !(open && Date.parse(run.when) > Date.parse(prog.updated_at)) ? prog.error : null;
+  if (failed) return { col:'needs', moved, failed };
+  // GitHub's own review counts before the review file: an approval made there files as done
+  const o = bdOutcome(r.url, lastDec);
+  if (o) return days(o.at || r.updatedAt) > BOARD_RECENT_DAYS ? null : { col:'done', ...o };
+  if (!rv || moved || open) return { col:'needs', moved: !!rv && moved, queued: open };
+  return { col:'ready', sending: lastDec?.status === 'pending' };
+}
+function bdReviewCards(){
+  const { runs, lastDec } = bdIndexRequests();
+  for (const [u, at] of bdInFlight) if (lastDec[u] && lastDec[u].when >= at) bdInFlight.delete(u);
+  const cards = [];
+  bdRows().forEach(r => {
+    const p = bdPlace(r, runs[r.url], lastDec[r.url], bdProgEntry(r.url)); if (!p) return;
+    const rv = RV[r.url], opened = r.createdAt || r.updatedAt;
+    cards.push({ ...p, r, rv, run: runs[r.url], key: r.url, repo: repoShort(r.repository.nameWithOwner), opened,
+      hay: `${r.title} ${r.repository.nameWithOwner} #${r.number}`.toLowerCase(),
+      openedTs: Date.parse(opened) || 0, updatedTs: Date.parse(r.updatedAt || rv?.mtime) || 0,
+      score: BD_SCORE[r.url] ?? null, size: r.additions != null ? { a: r.additions, d: r.deletions || 0 } : bdSizeOf(rv),
+      verdictKey: (BD_VERDICT[rv?.verdict] || [])[1] || '' });
+  });
+  return cards;
+}
+const bdPill = (label, hue, title) => `<span class="bd-pill ${hue}"${title ? ` title="${esc(title)}"` : ''}>${label}</span>`;
+const BD_UP = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>';
+const BD_SPIN = '<span class="bd-spin" aria-hidden="true"></span>';
+function bdDepth(rv){
+  const d = BD_DEPTH[rv?.depth]; if (!d) return '';
+  return `<span class="bd-depth" title="${esc(rv.depth_why || 'reviewer’s depth call')}"><span class="bd-bars" aria-hidden="true">${[1,2,3].map(n => `<i class="${n <= d[1] ? 'on' : ''}"></i>`).join('')}</span>${d[0]}</span>`;
+}
+const bdStatusPill = (url, standing) => { const st = rvStatusOf(url, standing); return st ? bdPill(st.txt, BD_STATUS_HUE[st.cls], st.tip) : ''; };
+// Only a direct request earns a label; team and watched-repo provenance is the Reviews filter's job.
+const bdDirect = r => !r.rvOnly && rrProv(r) === 'direct';
+const bdDirectPill = r => bdDirect(r) ? bdPill('Requested from you', 'violet') : '';
+function bdChips(c){
+  const { r, rv } = c;
+  if (c.col === 'running') return bdDirectPill(r);
+  if (c.col === 'needs') {
+    // the status says "author pushed" itself; a head that moved under an undecided review is the Board's own fact
+    const pushed = rvStanding(r.url) === 'pushed';
+    const status = c.failed ? bdPill(`Review failed: ${esc(c.failed)}`, 'red fail', c.failed)
+      : c.moved && !pushed ? bdPill(`${BD_UP}Head moved since your review`, 'yellow', 'The review is stale; a re-review brings it up to date')
+      : c.queued ? '' : bdStatusPill(r.url);
+    return status + bdDirectPill(r);
+  }
+  if (c.col === 'ready') {
+    const ranks = (rv.findings || []).map(f => sevRank(f.sev));
+    const v = BD_VERDICT[rv.verdict];
+    return bdStatusPill(r.url)
+      + BD_SEVS.map(([lbl, hue, hit]) => { const n = ranks.filter(hit).length; return n ? bdPill(`${n} ${lbl}`, hue) : ''; }).join('')
+      + (v ? bdPill(`Suggests ${v[0].toLowerCase()}`, 'grey', 'The review agent’s suggested verdict') : '');
+  }
+  // done: the status the Reviews row shows; an answered post the next collect has not caught up with reads the same
+  const standing = c.standing || (c.outcome === 'skipped' ? null : c.outcome === 'approved' ? 'approved' : 'waiting');
+  const did = BD_OUTCOME[c.outcome];
+  return (standing ? bdStatusPill(r.url, standing) : '') + (did ? bdPill(did, 'grey') : '');
+}
+function bdNeedsActions(c){
+  const u = esc(c.r.url);
+  if (c.queued && hrs(c.run.when) * 60 > BOARD_QUEUE_STALE_MIN)
+    return `<div class="bd-acts"><button type="button" class="bd-btn stale" disabled title="Queued ${ageText(c.run.when)} ago and not picked up — the master session reads the queue">Still queued · is the master running?</button></div>`;
+  return c.queued
+    ? `<div class="bd-acts"><button type="button" class="bd-btn" disabled>${BD_SPIN}Queued…</button></div>`
+    : `<div class="bd-acts"><button type="button" class="bd-btn primary" data-write data-bdrun="${u}" title="Run the offline review agent on this PR — ~150k tokens">Review</button></div>`;
+}
+/* GitHub writes take two clicks on the card: the first arms the button for a few seconds. */
+function bdReadyActions(c){
+  const url = c.r.url, u = esc(url);
+  if (bdInFlight.has(url)) return `<div class="bd-acts"><span class="bd-run">${BD_SPIN}Posting…</span></div>`;
+  if (c.sending) return `<div class="bd-acts"><span class="bd-run" title="The master session posts it; the card moves to Reviewed once it lands">${BD_SPIN}Sent · the master session posts it</span></div>`;
+  if (bdSkip === url) return `<div class="bd-acts"><input class="bd-why" data-bdwhy="${u}" placeholder="skip because…" aria-label="Why skip this review">`
+    + `<button type="button" class="bd-btn primary" data-write data-bdskipgo="${u}" title="Drop the review — Claude removes you as reviewer">Skip</button><button type="button" class="bd-btn ghost" data-bdskipx>Cancel</button></div>`;
+  const action = BD_PRIMARY[c.rv.verdict];
+  const ready = action && !(RV_NEEDS_DRAFTS.has(action) && !rvDefaultDrafts(c.rv).length);
+  const armed = ready && bdArmed?.url === url && bdArmed.action === action;
+  const primary = !ready ? `<button type="button" class="bd-btn primary" data-bdopen="${u}">Open review</button>`
+    : `<button type="button" class="bd-btn ${armed ? 'armed' : 'primary'}" data-write data-bdact="${action}" data-bdurl="${u}" title="Posts to GitHub with the High/Med drafts the review card pre-ticks">${armed ? `Confirm ${BD_ACTION_LABEL[action].toLowerCase()}?` : BD_ACTION_LABEL[action]}</button>`;
+  return `<div class="bd-acts">${primary}<button type="button" class="bd-btn ghost" data-write data-bdskip="${u}">Skip</button></div>`;
+}
+function bdCardHtml(c){
+  const { r, rv } = c, u = esc(r.url);
+  const now = new Date(), prog = c.col === 'running' ? bdProgress(r.url) : null;
+  const age = c.col === 'done' ? bdPill(`${ageText(c.at)} ago`, 'grey')
+    : c.col === 'running' ? bdPill(`Started ${ageText(prog?.startedAt || c.run.when, now)} ago`, 'grey')
+    : bdPill(`${ageText(c.opened)} waiting`, bdAgeHue(c.opened), `opened ${c.opened}`);
+  const stalled = prog && !prog.fresh;
+  const track = prog?.pct == null ? '' : `<div class="bd-track${stalled ? ' stalled' : ''}"><span style="width:${prog.pct}%"></span></div>`;
+  const run = c.col !== 'running' ? ''
+    : stalled ? `<div class="bd-run stalled" title="The reviewer has not reported a step for ${BOARD_PROGRESS_STALE_MIN}+ minutes">Stalled · last step ${esc(prog.step)} ${ageText(prog.updatedAt, now)} ago</div>${track}`
+    : `<div class="bd-run"><span class="bd-live" aria-hidden="true"></span>${prog ? esc(prog.label) : 'Reviewing…'}</div>${track}`;
+  const chips = bdChips(c);
+  const acts = c.col === 'needs' ? bdNeedsActions(c) : c.col === 'ready' ? bdReadyActions(c) : '';
+  const size = c.size ? `<span class="bd-size"><span class="a">+${c.size.a}</span><span class="d">−${c.size.d}</span></span>` : '';
+  return `<article class="bd-card" data-bdcard="${u}">`
+    + `<div class="bd-row"><button type="button" class="bd-ref" data-bdopen="${u}" title="Open the review drawer">${esc(c.repo)} #${r.number}</button>${age}</div>`
+    + (c.col === 'ready' ? bdDepth(rv) : '')
+    + `<a class="bd-title" href="${u}" target="_blank" rel="noopener">${esc(r.title)}</a>${run}`
+    + (chips ? `<div class="bd-chips">${chips}</div>` : '') + acts
+    + `<div class="bd-foot"><span class="who">${esc(r.author.login)}</span>${size}</div></article>`;
+}
+function bdLaneHtml(col, cards, cardHtml){
+  const active = col.filters ? (bdColF[col.id] || 'all') : 'all';
+  const list = active === 'all' ? cards : cards.filter(c => col.keyOf(c) === active);
+  const mini = col.filters ? `<div class="bd-mini" role="group" aria-label="${esc(col.label)} filter">${col.filters.map(([k, l]) => `<button type="button" data-bdcol="${col.id}" data-bdcolf="${k}" aria-pressed="${active === k}">${l}</button>`).join('')}</div>` : '';
+  return `<div class="bd-lane" role="region" aria-label="${esc(col.label)}"><div class="bd-lh"><span class="bd-dot" style="background:var(--${col.hue})"></span><h3>${col.label}</h3><span class="bd-count">${list.length}</span><span class="hint">${col.hint}</span></div>`
+    + `<div class="bd-bar" style="background:var(--${col.hue})"></div>${mini}`
+    + (list.length ? list.sort(BD_SORTS[bdSort][1]).map(cardHtml).join('') : '<div class="bd-empty">Nothing here</div>') + `</div>`;
+}
+/* ---------- board: My work — my tickets and PRs, one card per piece of work ---------- */
+const BD_WORK_COLS = [
+  { id:'todo', label:'To do', hue:'grey', hint:'Not started' },
+  { id:'doing', label:'In progress', hue:'blue', hint:'Ticket or draft' },
+  { id:'review', label:'In review', hue:'violet', hint:'Waiting on others' },
+  { id:'needs', label:'Needs you', hue:'red', hint:'Conflicts, red CI, changes' },
+  { id:'merge', label:'Ready to merge', hue:'green', hint:'Approved and green' },
+];
+// In these lanes the clock that matters is how long the PR has been open, not the last touch.
+const BD_OPEN_AGE_COLS = new Set(['review', 'needs', 'merge']);
+const BD_CI_RED = new Set(['FAILURE', 'ERROR']);
+const BD_CI_PILL = { SUCCESS:['CI passing','green'], PENDING:['CI running','blue'] };
+const BD_PRIO = [[/Critical|Highest|Blocker/i, 'red'], [/High/i, 'orange'], [/Low/i, 'grey']];
+// Ticket keys as Jira prints them, found in branch names ("pro-123-fix") and titles; the
+// look-arounds keep PRO-12 from matching inside PRO-123 or a word like "abc-1x".
+const BD_TICKET_KEY_RE = /(?<![A-Za-z0-9])[A-Za-z][A-Za-z0-9]*-\d+(?!\d)/g;
+// Decisions a To do card sends at once (armed first); the rest need the drawer's form.
+const BD_DIRECT_ACTS = new Set(['do', 'close']);
+const BD_TODO_ACTS = [['do', DECS.do[0], DECS.do[2]], ['defer', DECS.defer[0], DECS.defer[2]]];
+/* The Home queue rows behind the cards: the drawer and the decision buttons act on them. */
+const BD_ITEM = {}; items.forEach(it => { if (it.src === 'pr') BD_ITEM[it.url] = it; else if (it.src === 'jira') BD_ITEM[it.key] = it; });
+const BD_QW = Object.fromEntries(QWI.map(i => [i.key, i]));
+const bdJumpable = s => !s.host && (s.kind || 'background') === 'interactive';
+function bdPrLane(p, ci){
+  if (p.isDraft) return 'doing';  // my own WIP: conflicts or red CI on a draft block nobody yet
+  if (p.mergeable === 'CONFLICTING' || BD_CI_RED.has(ci) || p.reviewDecision === 'CHANGES_REQUESTED') return 'needs';
+  if (p.reviewDecision === 'APPROVED' && ci === 'SUCCESS' && p.mergeable === 'MERGEABLE') return 'merge';
+  return 'review';
+}
+const bdTicketLane = j => /Stuck/.test(j.status) ? 'needs' : /Review/.test(j.status) ? 'review' : /Progress|Blocked/.test(j.status) ? 'doing' : 'todo';
+/* A PR naming a ticket stands for it: the ticket rides on the PR card and gets no card of its own. */
+function bdWorkCards(){
+  const linked = new Set(), cards = [];
+  DATA.my_prs.forEach(p => {
+    const ci = prCi(p), repo = repoShort(p.repository.nameWithOwner);
+    const keys = [...new Set((`${p.headRefName} ${p.title}`.match(BD_TICKET_KEY_RE) || []).map(k => k.toUpperCase()))].filter(k => jiraByKey[k]);
+    keys.forEach(k => linked.add(k));
+    const { wt, s } = prSession(p.url, p.headRefName);
+    cards.push({ key: p.url, col: bdPrLane(p, ci), p, j: jiraByKey[keys[0]] || null, keys, ci, wt, s,
+      type: p.isDraft ? 'Drafts' : 'PRs', repo, ref: `${repo} #${p.number}`, title: p.title, url: p.url,
+      opened: p.createdAt || p.updatedAt, updated: p.updatedAt, score: prRank(p).score,
+      size: { a: p.additions || 0, d: p.deletions || 0 },
+      hay: `${p.title} ${p.repository.nameWithOwner} #${p.number} ${p.headRefName} ${keys.join(' ')}`.toLowerCase() });
+  });
+  DATA.jira.forEach(j => {
+    if (linked.has(j.key)) return;
+    cards.push({ key: j.key, col: bdTicketLane(j), p: null, j, keys: [], ci: null, wt: null, s: sessFind([j.key], null),
+      type: 'Tickets', repo: `Jira ${j.project}`, ref: j.key, title: j.summary, url: jiraLink(j.key),
+      opened: j.updated, updated: j.updated, score: jiraRank(j).score, size: null,
+      hay: `${j.key} ${j.summary} ${j.status}`.toLowerCase() });
+  });
+  cards.forEach(c => { c.openedTs = Date.parse(c.opened) || 0; c.updatedTs = Date.parse(c.updated) || 0; });
+  return cards;
+}
+/* What I already decided on a ticket card from this browser, as the Tickets tab names it. */
+function bdTook(c){
+  if (c.p) return null;
+  const d = qwDone[c.key] || done[BD_ITEM[c.key]?.id]?.decision;
+  return d ? (QW_DEC[d] || DECS[d])[0] : null;
+}
+const bdOpenThreads = p => (p.reviewThreads?.nodes || []).filter(t => !t.isResolved).length;
+function bdWorkChips(c){
+  const { p, j } = c, out = c.keys.map(k => bdPill(esc(k), 'grey', jiraByKey[k].summary));
+  if (p) {
+    if (p.isDraft) out.push(bdPill('Draft', 'grey'));
+    if (p.mergeable === 'CONFLICTING') out.push(bdPill('Merge conflicts', 'red'));
+    if (BD_CI_RED.has(c.ci)) out.push(bdPill('CI failing', 'red'));
+    if (p.reviewDecision === 'CHANGES_REQUESTED') { const n = bdOpenThreads(p); out.push(bdPill(`Changes requested${n ? ` · ${n} open thread${n === 1 ? '' : 's'}` : ''}`, 'red')); }
+    else if (p.reviewDecision === 'APPROVED') out.push(bdPill('Approved', 'green'));
+    else if (c.col === 'review' && !prHumanReviews(p).length) out.push(bdPill('No human review yet', 'grey'));
+    const ci = BD_CI_PILL[c.ci]; if (ci) out.push(bdPill(ci[0], ci[1]));
+  }
+  if (j) {
+    if (/Blocked/.test(j.status)) out.push(bdPill('Blocked', 'red'));
+    else if (/Stuck/.test(j.status)) out.push(bdPill('Stuck', 'red'));
+    else if (!p && /Review/.test(j.status)) out.push(bdPill('Review ready', 'violet'));
+    const pr = BD_PRIO.find(([re]) => re.test(j.priority || ''));
+    if (pr) out.push(bdPill(esc(j.priority.replace(/[^\w\s]/gu, '').trim()), pr[1]));
+    const qw = BD_QW[j.key];
+    if (qw?.verdict === 'quick_win') out.push(bdPill(`Quick win${qw.estimate ? ` · ${esc(qw.estimate)}` : ''}`, 'green', qw.reason));
+  }
+  const took = bdTook(c); if (took) out.push(bdPill(took, 'grey', 'Decided from this browser'));
+  return out.join('');
+}
+const bdLinkBtn = (href, label, cls = 'primary') => `<a class="bd-btn ${cls}" href="${esc(href)}"${href.startsWith('ms://') ? ' data-write' : ' target="_blank" rel="noopener"'}>${label}</a>`;
+function bdWorkActions(c){
+  if (c.col === 'needs') {
+    const go = c.s && bdJumpable(c.s) ? bdLinkBtn(sessJump(c.s), 'Jump to session') : c.url ? bdLinkBtn(c.url, c.p ? 'Open PR' : 'Open ticket') : '';
+    return go && `<div class="bd-acts">${go}</div>`;
+  }
+  if (c.col === 'merge') return `<div class="bd-acts">${bdLinkBtn(c.url, 'Open PR')}</div>`;
+  if (c.col !== 'todo' || bdTook(c) || !(BD_QW[c.key] || BD_ITEM[c.key])) return '';
+  const qw = BD_QW[c.key], acts = qw ? (QW_ACT[qw.verdict] || []).slice(0, 2) : BD_TODO_ACTS, k = esc(c.key);
+  return `<div class="bd-acts">${acts.map(([a, label, tip], i) => {
+    const armed = bdArmed?.url === c.key && bdArmed.action === a;
+    return `<button type="button" class="bd-btn ${armed ? 'armed' : i ? '' : 'primary'}" data-write data-bdwact="${a}" data-bdurl="${k}" title="${esc(tip)}">${armed ? `Confirm ${esc(label.toLowerCase())}?` : esc(label)}</button>`;
+  }).join('')}</div>`;
+}
+function bdWorkFoot(c){
+  if (c.s) {
+    const working = c.s.status !== 'idle', doing = SS[c.s.name]?.doing || '';
+    return `<span class="bd-claude${working ? '' : ' idle'}" title="${esc(c.s.name + (doing ? ' — ' + doing : ''))}"><span class="bd-pulse" aria-hidden="true"></span>`
+      + `<b>${working ? 'Claude working' : 'Claude idle'}</b>${doing ? `<span class="doing">${esc(doing)}</span>` : ''}</span>`;
+  }
+  return c.wt ? `<span class="bd-wt" title="${esc(c.wt.path)}">${esc(c.wt.branch)}${c.wt.dirty ? ` · ${c.wt.dirty} dirty` : ''}</span>` : '';
+}
+function bdWorkCardHtml(c){
+  const k = esc(c.key);
+  const age = BD_OPEN_AGE_COLS.has(c.col) && c.p ? bdPill(`${ageText(c.opened)} open`, bdAgeHue(c.opened), `opened ${c.opened}`)
+    : c.updated ? bdPill(`Updated ${ageText(c.updated)} ago`, 'grey') : '';
+  const title = c.url ? `<a class="bd-title" href="${esc(c.url)}" target="_blank" rel="noopener">${esc(c.title)}</a>` : `<span class="bd-title">${esc(c.title)}</span>`;
+  const chips = bdWorkChips(c);
+  const size = c.size ? `<span class="bd-size"><span class="a">+${c.size.a}</span><span class="d">−${c.size.d}</span></span>` : '';
+  return `<article class="bd-card" data-bdcard="${k}">`
+    + `<div class="bd-row"><button type="button" class="bd-ref" data-bdopen="${k}" title="Open the drawer">${esc(c.ref)}</button>${age}</div>`
+    + title + (chips ? `<div class="bd-chips">${chips}</div>` : '') + bdWorkActions(c)
+    + `<div class="bd-foot">${bdWorkFoot(c)}${size}</div></article>`;
+}
+/* The drawer the Tickets and Home tabs open for the same item; a PR or ticket that arrived
+   after the page loaded has no queue row yet, so it opens on GitHub or Jira instead. */
+function bdWorkOpen(key){
+  if (BD_QW[key]) { openQwDrawer(key, null); return; }
+  if (BD_ITEM[key]) { openRowDrawer(BD_ITEM[key].id, null); return; }
+  const url = /^https?:\/\//.test(key) ? key : jiraLink(key);
+  if (url) window.open(url, '_blank', 'noopener');
+}
+function bdWorkSend(key, action){
+  document.activeElement?.blur?.();
+  if (BD_QW[key]) qwDecide(BD_QW[key], action, {}); else decide(BD_ITEM[key], action, {});
+  renderBoard();
+}
+function bdWorkAct(key, action){
+  if (BD_DIRECT_ACTS.has(action)) { bdArmOrSend(key, action, bdWorkSend); return; }
+  if (BD_QW[key]) openQwDrawer(key, action); else openDecision(BD_ITEM[key].id, action);
+}
+const BD_VIEWS = {
+  reviews: { cols: BD_COLS, filters: ['repos', 'people'], card: bdCardHtml, open: bdOpen, panel: 'reviews',
+             refreshTip: 'Re-collect review requests and review files — scripts only, no model' },
+  work:    { cols: BD_WORK_COLS, filters: ['repos', 'types'], card: bdWorkCardHtml, open: bdWorkOpen, panel: 'prs',
+             refreshTip: 'Re-collect my PRs — CI, reviews, conflicts — scripts only, no model' },
+};
+const bdActionable = cards => cards.filter(c => c.col !== 'done').length;
+/* The sidebar's Board count: review cards whose next move is mine — a verdict to give (not one
+   already sent), or a review to run on a direct request, a failed run, a stale head — plus My
+   work's Needs you and Ready to merge. Queued, running and draft PRs wait on someone else. */
+const BD_WORK_MINE = new Set(['needs', 'merge']);
+function bdMine(c){
+  if (c.col === 'ready') return !c.sending && !bdInFlight.has(c.key);
+  return c.col === 'needs' && !c.queued && !RR_DRAFT.has(c.key) && !!(c.failed || c.rv || bdDirect(c.r));
+}
+const BD_FOCUS_KEYS = ['bdopen', 'bdact', 'bdwact', 'bdrun', 'bdskip', 'bddd'];
+/* A repaint replaces the cards, so the focused control is found again by what it does. */
+function bdFocusKey(){
+  const el = document.activeElement; if (!el?.closest?.('#bd-body, #bd-tools')) return null;
+  const k = BD_FOCUS_KEYS.find(k => el.dataset[k] != null);
+  return k ? `[data-${k}="${CSS.escape(el.dataset[k])}"]` : null;
+}
+function bdCardRects(urls){
+  const out = {};
+  $('#bd-body').querySelectorAll('.bd-card').forEach(el => { if (urls.has(el.dataset.bdcard)) out[el.dataset.bdcard] = el.getBoundingClientRect(); });
+  return out;
+}
+/* FLIP: a card that changed lane starts where it was and slides to its new place. */
+function bdAnimateMoves(before){
+  if (BD_REDUCED_MOTION.matches) return;
+  $('#bd-body').querySelectorAll('.bd-card').forEach(el => {
+    const old = before[el.dataset.bdcard]; if (!old?.width) return;
+    const now = el.getBoundingClientRect();
+    el.animate([{ transform: `translate(${old.left - now.left}px, ${old.top - now.top}px)` }, { transform: 'none' }], { duration: BOARD_MOVE_MS, easing: 'ease' });
+  });
+}
+function renderBoard(){
+  clearTimeout(bdTimer);
+  // never pull the skip reason out from under the user's hands
+  if (document.activeElement?.matches?.('#bd-body input')) { scheduleBoard(); return; }
+  const view = BD_VIEWS[bdView];
+  // both views are built every paint: the toggle shows each one's count
+  const reviewCards = bdReviewCards(), workCards = bdWorkCards();
+  const cards = bdView === 'work' ? workCards : reviewCards;
+  const last = bdLastCol?.view === bdView ? bdLastCol.at : null;
+  const movedKeys = new Set(last ? cards.filter(c => last[c.key] && last[c.key] !== c.col).map(c => c.key) : []);
+  const before = movedKeys.size ? bdCardRects(movedKeys) : null;
+  const focus = bdFocusKey();
+  const filters = view.filters.map(k => [k, BD_FILTERS[k]]);
+  const picked = {};
+  for (const [k, f] of filters) {
+    const counts = {}; cards.forEach(c => { const v = f.of(c); counts[v] = (counts[v] || 0) + 1; });
+    bdSel[k].forEach(v => { counts[v] ||= 0; });
+    bdOptions[k] = Object.entries(counts).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+    picked[k] = new Set(bdSel[k]);
+  }
+  const q = query.trim().toLowerCase();
+  const shown = cards.filter(c => filters.every(([k, f]) => !picked[k].size || picked[k].has(f.of(c)))
+    && (!q || c.hay.includes(q)));
+  const byCol = {}; view.cols.forEach(col => byCol[col.id] = []);
+  shown.forEach(c => byCol[c.col].push(c));
+  const nAct = bdActionable(reviewCards);
+  const inLane = id => workCards.filter(c => c.col === id).length;
+  $('#bd-tools').innerHTML = `<div class="bd-seg" role="group" aria-label="Board view">`
+    + `<button type="button" data-bdview="work" aria-pressed="${bdView === 'work'}">My work<span class="bd-count">${workCards.length}</span></button>`
+    + `<button type="button" data-bdview="reviews" aria-pressed="${bdView === 'reviews'}">Reviews<span class="bd-count">${nAct}</span></button></div>`
+    + filters.map(([k]) => bdDropdownBtn(k)).join('')
+    + `<select class="chip sel" data-bdsort aria-label="Sort cards">${Object.entries(BD_SORTS).map(([k, [l]]) => `<option value="${k}" ${bdSort === k ? 'selected' : ''}>${l}</option>`).join('')}</select>`
+    + `<button type="button" class="chip" data-write data-bdrefresh ${bdRefreshing ? 'disabled' : ''} title="${view.refreshTip}">${bdRefreshing ? BD_SPIN + 'Refreshing…' : '&#8635; Refresh'}</button>`;
+  $('#bd-cnt').textContent = bdView === 'reviews' ? `${nAct} to act on · ${cards.length - nAct} reviewed in ${BOARD_RECENT_DAYS}d`
+    : `${inLane('needs')} need you · ${inLane('merge')} ready to merge · ${cards.length} in all`;
+  $('#bd-body').innerHTML = `<div class="bd-cols">${view.cols.map(col => bdLaneHtml(col, byCol[col.id], view.card)).join('')}</div>`;
+  bdLastCol = { view: bdView, at: Object.fromEntries(cards.map(c => [c.key, c.col])) };
+  if (before) bdAnimateMoves(before);
+  if (focus) $('#s-board').querySelector(focus)?.focus();
+  bdPollEnsure();
+}
+function bdDropdownBtn(k){
+  const f = BD_FILTERS[k], sel = bdSel[k];
+  const summary = !sel.length || sel.length === bdOptions[k].length ? f.all : sel.length === 1 ? sel[0] : `${sel.length} selected`;
+  return `<button type="button" class="chip bd-dd" data-bddd="${k}" aria-haspopup="listbox" aria-expanded="${bdDD === k}" aria-controls="bd-pop">${f.label}: <b>${esc(summary)}</b><span class="caret" aria-hidden="true">▾</span></button>`;
+}
+/* The popover lives outside the repainted toolbar, so a data poll never closes it or eats the search text. */
+function bdOpenPop(k, btn){
+  const f = BD_FILTERS[k], sel = new Set(bdSel[k]), opts = bdOptions[k];
+  const pop = document.createElement('div');
+  pop.className = 'bd-pop'; pop.id = 'bd-pop'; pop.dataset.bdpop = k;
+  pop.setAttribute('role', 'group'); pop.setAttribute('aria-label', `Filter ${f.label.toLowerCase()}`);
+  pop.innerHTML = (opts.length > BD_POP_SEARCH_MIN ? `<input type="search" class="bd-pop-q" data-bdpopq placeholder="Search ${f.label.toLowerCase()}…" aria-label="Search ${f.label.toLowerCase()}">` : '')
+    + `<div class="bd-pop-acts"><button type="button" data-bdpopall>Select all</button><button type="button" data-bdpopnone>Clear</button></div>`
+    + `<div class="bd-opts">${opts.map(([v, n]) => `<label class="bd-opt"><input type="checkbox" data-bdopt value="${esc(v)}" ${sel.has(v) ? 'checked' : ''}><span class="nm">${esc(v)}</span><span class="n">${n}</span></label>`).join('')}</div>`;
+  const host = $('#s-board'), hr = host.getBoundingClientRect(), br = btn.getBoundingClientRect();
+  pop.style.top = `${br.bottom - hr.top + 4}px`;
+  pop.style.left = `${Math.max(0, Math.min(br.left - hr.left, hr.width - 260))}px`;
+  host.appendChild(pop);
+  bdDD = k; btn.setAttribute('aria-expanded', 'true');
+  pop.querySelector('input')?.focus();
+}
+function bdClosePop(returnFocus){
+  if (!bdDD) return;
+  const k = bdDD; bdDD = null;
+  $('#bd-pop')?.remove();
+  const btn = $(`#bd-tools [data-bddd="${k}"]`);
+  btn?.setAttribute('aria-expanded', 'false');
+  if (returnFocus) btn?.focus();
+}
+function bdPopSet(k, values){
+  bdSel[k] = values;
+  $('#bd-pop').querySelectorAll('input[data-bdopt]').forEach(i => { i.checked = values.includes(i.value); });
+  saveBoard(); renderBoard();
+}
+document.addEventListener('click', e => { if (bdDD && !e.target.closest?.('#bd-pop, [data-bddd]')) bdClosePop(false); });
+function scheduleBoard(){ clearTimeout(bdTimer); bdTimer = setTimeout(renderBoard, BOARD_REPAINT_MS); }
+/* Pull the review state the server keeps writing, without a page reload (that would drop the
+   lane animation and any armed button). `work` also pulls My work's files when that view is
+   not the one on screen (a fresh collect landed and both views' counts should follow). */
+async function bdReload({ work = bdView === 'work' } = {}){
+  // a module that is off has no file at all: keep what the page was built with
+  const fetchData = async (name, optional) => { const res = await fetch(`/data/${name}.json`, { cache:'no-store' });
+    if (optional && res.status === 404) return null;
+    if (!res.ok) throw new Error(`${name}.json: HTTP ${res.status}`); return res.json(); };
+  const [requests, reviews, reviewRequests, progress, myReviews, replies, myPrs, jira] = await Promise.all([
+    ...['requests', 'reviews', 'review_requests'].map(n => fetchData(n)),
+    ...['review_progress', 'my_reviews', 'my_review_replies'].map(n => fetchData(n, true)),
+    ...(work ? ['my_prs', 'jira'].map(n => fetchData(n, true)) : [])]);
+  DATA.requests = requests; DATA.review_requests = reviewRequests;
+  if (progress) DATA.review_progress = progress;
+  if (myReviews) DATA.my_reviews = myReviews;
+  if (myPrs) DATA.my_prs = myPrs.data?.viewer?.pullRequests?.nodes || [];
+  if (jira) { DATA.jira = jira; reindexJira(); }
+  // the page-wide review state is shared by reference: refill it in place, the status pill reads it
+  for (const k in RV) delete RV[k];
+  Object.assign(RV, reviews);
+  if (replies) { for (const k in RV_REPLIED) delete RV_REPLIED[k]; Object.assign(RV_REPLIED, replies); }
+  for (const k in GH_MY_REVIEW) delete GH_MY_REVIEW[k];
+  Object.assign(GH_MY_REVIEW, DATA.my_reviews || {});
+  reviewRequests.forEach(r => { if (r.my_review) GH_MY_REVIEW[r.url] = r.my_review; });
+  RR_DRAFT.clear(); reviewRequests.forEach(r => { if (r.isDraft) RR_DRAFT.add(r.url); });
+  rvQueuedSync();
+  renderBoard(); renderTabs(); renderRequests(); renderLog();
+}
+/* Poll only while something on the board is about to change, the tab is on screen, and a
+   local server is there to answer; idle boards cost nothing. */
+const bdBusy = () => bdInFlight.size > 0 || DATA.requests.some(q => (q.kind === 'review_pr' && (q.status === 'pending' || q.status === 'working'))
+  || (q.kind === 'decision' && q.status === 'pending' && q.item?.src === 'review'))
+  // a reported run moves its card on every step, and a stalled one may still wake up
+  || DATA.review_progress.some(p => !p.error)
+  // a running CI is about to move its card, once a collect rewrites my_prs.json
+  || (bdView === 'work' && DATA.my_prs.some(p => prCi(p) === 'PENDING'));
+function bdPollEnsure(){
+  if (bdPollTimer || !LOCAL || tab !== 'board' || document.hidden || !bdBusy()) return;
+  bdPollTimer = setTimeout(async () => {
+    bdPollTimer = null;
+    if (tab !== 'board' || document.hidden) return;
+    // A collect rewrites reviews.json in place, so one read can catch it half-written: keep
+    // polling, and say so once per failure streak instead of every 5s.
+    try { await bdReload(); bdPollFailing = false; }
+    catch (e) { if (!bdPollFailing) toast('Board update failed, retrying: ' + (e.message || e)); bdPollFailing = true; bdPollEnsure(); }
+  }, BOARD_POLL_MS);
+}
+document.addEventListener('visibilitychange', bdPollEnsure);
+/* The same collect the Reviews panel's refresh runs: collect.sh reviews + reviews_index +
+   prune_reviews, executed by the local server — no master session, no model. */
+async function bdRefresh(){
+  if (bdRefreshing) return;
+  bdRefreshing = true; renderBoard();
+  try {
+    const { panel } = BD_VIEWS[bdView];
+    const [rec] = await publishLocal([newReq('refresh', `Refresh the ${panel} panel.`, [], { panel })]);
+    if (rec?.status === 'done') await bdReload();
+  } catch (e) { toast('Board refresh failed: ' + (e.message || e)); }
+  finally { bdRefreshing = false; renderBoard(); }
+}
+/* A card with a review file opens the review card; one without opens the same drawer with
+   the row's pills, where the run-review button already lives. */
+function bdOpen(url){
+  if (RV[url]) { openReviewDrawer(url); return; }
+  const r = bdRows().find(x => x.url === url); if (!r) return;
+  const title = `#${r.number} ${r.title}`;
+  openDrawer(title, `<div class="rvcard" data-rvcard="${esc(url)}"><div class="rvh">${rvPills(url)}</div>`
+    + `<div class="sum">${esc(r.repository.nameWithOwner)} · by ${esc(r.author.login)} · open ${ageText(r.createdAt || r.updatedAt)}</div>`
+    + `<div class="decform">${sessBtnPR(url, r.title, '')}</div></div>`, { kind:'review', url });
+}
+/* Same decision request as the drawer's buttons, with the drafts its card pre-ticks. */
+function bdSend(url, action, why = ''){
+  const r = bdRows().find(x => x.url === url); if (!r || !RV[url]) return;
+  const sentAt = new Date().toISOString();
+  document.activeElement?.blur?.();
+  if (!rvDecide(url, action, { ids: rvDefaultDrafts(RV[url]), why, title: `#${r.number} ${r.title}` })) return;
+  bdInFlight.set(url, sentAt); bdSkip = null;
+  renderBoard();
+}
+function bdArmOrSend(url, action, send = bdSend){
+  clearTimeout(bdArmTimer);
+  if (bdArmed?.url === url && bdArmed.action === action) { bdArmed = null; send(url, action); return; }
+  bdArmed = { url, action };
+  bdArmTimer = setTimeout(() => { bdArmed = null; renderBoard(); }, BOARD_CONFIRM_MS);
+  renderBoard();
+}
+$('#s-board').addEventListener('click', e => {
+  if (e.target.closest('a, input, select')) return;  // the title link opens GitHub on its own
+  const b = e.target.closest('button');
+  if (!b) { const card = e.target.closest('.bd-card'); if (card) BD_VIEWS[bdView].open(card.dataset.bdcard); return; }
+  const d = b.dataset;
+  if (d.bdopen) { BD_VIEWS[bdView].open(d.bdopen); return; }
+  if (d.bdwact) { bdWorkAct(d.bdurl, d.bdwact); return; }
+  if (d.bdrun) { b.disabled = true; rvRun(d.bdrun); return; }
+  if (d.bdact) { bdArmOrSend(d.bdurl, d.bdact); return; }
+  if (d.bdskipgo) { bdSend(d.bdskipgo, 'skip_review', b.parentElement.querySelector('input[data-bdwhy]').value.trim()); return; }
+  if (d.bdskip) { bdSkip = d.bdskip; bdArmed = null; renderBoard(); $('#bd-body input[data-bdwhy]')?.focus(); return; }
+  if (d.bdskipx != null) { bdSkip = null; renderBoard(); return; }
+  if (d.bdrefresh != null) { bdRefresh(); return; }
+  if (d.bddd) { const open = bdDD === d.bddd; bdClosePop(open); if (!open) bdOpenPop(d.bddd, b); return; }
+  if (d.bdpopall != null) { const pop = $('#bd-pop'); bdPopSet(pop.dataset.bdpop, [...pop.querySelectorAll('.bd-opt:not([hidden]) input')].map(i => i.value)); return; }
+  if (d.bdpopnone != null) { bdPopSet($('#bd-pop').dataset.bdpop, []); return; }
+  if (d.bdview) { bdClosePop(false); bdView = d.bdview; }
+  else if (d.bdcolf) bdColF[d.bdcol] = d.bdcolf;
+  else return;
+  saveBoard(); renderBoard();
+});
+$('#s-board').addEventListener('keydown', e => {
+  if (e.key === 'Escape' && bdDD && e.target.closest?.('#bd-pop, [data-bddd]')) { e.preventDefault(); e.stopPropagation(); bdClosePop(true); return; }
+  // Enter on a focused card control is that control's click, not the Home queue's "open item" key.
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.closest?.('button')) { e.stopPropagation(); return; }
+  const why = e.target.closest?.('input[data-bdwhy]'); if (!why) return;
+  if (e.key === 'Enter') { e.preventDefault(); bdSend(why.dataset.bdwhy, 'skip_review', why.value.trim()); }
+  else if (e.key === 'Escape') { bdSkip = null; why.blur(); renderBoard(); }
+});
+$('#s-board').addEventListener('input', e => {
+  if (!e.target.matches('input[data-bdpopq]')) return;
+  const q = e.target.value.trim().toLowerCase();
+  $('#bd-pop').querySelectorAll('.bd-opt').forEach(l => { l.hidden = !!q && !l.textContent.toLowerCase().includes(q); });
+});
+$('#s-board').addEventListener('change', e => {
+  if (e.target.matches('select[data-bdsort]')) bdSort = e.target.value;
+  else if (e.target.matches('input[data-bdopt]')) {
+    const k = e.target.closest('#bd-pop').dataset.bdpop, v = e.target.value;
+    bdSel[k] = e.target.checked ? [...bdSel[k], v] : bdSel[k].filter(x => x !== v);
+  }
+  else return;
+  saveBoard(); renderBoard();
+});
+
 let rvSel = new Set();
 let rvUpdOnly = false;
 function renderReviews(){
@@ -2014,24 +2829,7 @@ function renderReviews(){
   // when only the decided-hide would swallow it).
   const hasNew = r => rvNewReplies(r.url).length > 0;
   const updCount = base.filter(hasNew).length;
-  // Decided = clicked on the board (rvDec, per browser) OR already approved on GitHub itself.
-  // A click stores rvDec locally at once, but the server can refuse the post (stale
-  // head) — so a local decision counts as decided only once it actually landed: the
-  // review file's status flipped to a posted state, or GitHub shows my review.
-  // A decision hides a row only with THAT decision's receipt — a refused click plus an
-  // old comment of mine must not read as decided, and "post drafts only" is no verdict.
-  const DEC_RECEIPT = { approve:['approved','APPROVED'], approve_with_comments:['approved','APPROVED'], request_changes:['changes-requested','CHANGES_REQUESTED'] };
-  const headMoved = r => rvHeadMoved(r.url);
-  const isDec = r => {
-    if (RV_REPLIED[r.url]) return false;  // the author answered after my review — the ball is back with me
-    const gh = GH_MY_REVIEW[r.url];
-    if (gh === 'CHANGES_REQUESTED' && headMoved(r)) return false;  // the author pushed the fix round
-    if (gh === 'APPROVED' || gh === 'CHANGES_REQUESTED') return true;
-    const d = rvDec[r.url]; if (!d) return false;
-    if (d === 'skip_review' || d === 'close_stale') return true;
-    const m = DEC_RECEIPT[d]; if (!m) return false;
-    return RV[r.url]?.status === m[0];
-  };
+  const isDec = r => rvIsDecided(r.url);
   const isAppr = r => GH_MY_REVIEW[r.url] === 'APPROVED' || RV[r.url]?.status === 'approved';
   const list = (rvUpdOnly ? base.filter(hasNew)
     : base.filter(r=>!authorF||r.author.login===authorF)
@@ -2070,6 +2868,9 @@ function renderReviews(){
   panel('#p-reviews', authorF?`Reviews from ${esc(authorF)}`:(rrMode==='direct'?'Reviews asked of me directly':rrMode==='team'?'Reviews asked of the team':rrMode==='watch'?'Open PRs in watched repos':'All review requests'),
     `${list.length}${authorF?' of '+base.length:''} · ${base.filter(r=>RV[r.url]).length} reviewed offline`, body, tools);
   const c = $('#rv-cnt'); if (c) c.textContent = `${DATA.review_requests.filter(r=>r.direct).length} asked of me · ${DATA.review_requests.length} requested · ${RR_ALL.length} total${RV_ONLY.length?` · ${RV_ONLY.length} reviewed without a request`:''}`;
+  // Every review-state change (a decision, a queued run, a drawer close, the / filter) already
+  // repaints through here, so the Board follows them all without its own call sites.
+  if (tab === 'board') scheduleBoard();
 }
 renderReviews();
 $('#p-reviews').addEventListener('change', e => {
@@ -2082,10 +2883,7 @@ $('#p-reviews').addEventListener('change', e => {
 });
 $('#p-reviews').addEventListener('click', e => {
   const b = e.target.closest('button');
-  if (b?.dataset.rvrun) {
-    if (RV_QUEUED.has(b.dataset.rvrun)) { toast('A review is already queued or running on this PR'); return; }
-    sendRequest('review_pr', `Review ${b.dataset.rvrun}`, [b.dataset.rvrun]); toast('Review queued — the verdict lands on this row when the agent finishes'); return;
-  }
+  if (b?.dataset.rvrun) { rvRun(b.dataset.rvrun); return; }
   const ck = e.target.closest('input[data-rvsel]'); if (ck) { ck.checked ? rvSel.add(ck.dataset.rvsel) : rvSel.delete(ck.dataset.rvsel); renderReviews(); return; }
   if (b?.id === 'rv-runall') {
     const urls = (rvSel.size ? [...rvSel]
@@ -2192,6 +2990,7 @@ const TAB_COUNT = {
   work: () => DATA.sessions.length + DATA.my_prs.length,
   log: () => decisions().filter(r=>r.status==='pending').length,
   more: () => DATA.calendar.filter(e=>(new Date(e.end)-NOW)>0).length + DATA.notes.length + DATA.artifacts.length,
+  board: () => bdReviewCards().filter(bdMine).length + bdWorkCards().filter(c => BD_WORK_MINE.has(c.col)).length,
 };
 function renderTabs(){
   $('#tabs').innerHTML = TABS.map(t => {
@@ -2219,6 +3018,7 @@ function setTab(next){
   if (location.hash !== '#' + tab) location.hash = '#' + tab;
   closeDrawer();
   renderTabs(); renderReviews(); renderLog();
+  if (tab === 'board') renderBoard();
   try { window.scrollTo(0, 0); } catch {}
 }
 window.addEventListener('hashchange', () => { const t = hashTab(location.hash); if (t && t !== tab) setTab(t); });
@@ -2299,6 +3099,8 @@ async function publishLocal(reqs){
     if (rec.reply) toast(rec.reply);
   }
   if (rvQueuedSync()) renderReviews();
+  // a request's answer is what moves a board card (Posting… → Reviewed)
+  if (tab === 'board') scheduleBoard();
   renderRequests(); renderLog(); renderTabs();
   return out;
 }
@@ -2358,12 +3160,21 @@ document.addEventListener('click', e => {
 /* The server re-collects the reviews panel every few minutes (reviewsRefreshSeconds).
    When fresh data landed, reload — but never under the user's hands: not with the
    drawer open, and not while they type. GET / rebuilds the page from the new data. */
-if (LOCAL) { let baseStamp = DATA.collected_at; setInterval(async () => {
+if (LOCAL) { let baseStamp = DATA.collected_at, boardStamp = baseStamp; setInterval(async () => {
   try {
     const res = await fetch('/freshness', { cache:'no-store' });
     if (!res.ok) return;
     const { collected_at } = await res.json();
     if (!collected_at || collected_at === baseStamp) return;
+    // The Board re-renders from the fresh files in place — a reload would drop its armed
+    // buttons, open filters, skip reason and lane animation. Its own poll, when running,
+    // fetches them anyway. The rest of the page still reloads on the first tick after you
+    // leave the Board, because baseStamp has not moved.
+    if (tab === 'board') {
+      if (collected_at !== boardStamp && !bdPollTimer) await bdReload({ work: true });
+      boardStamp = collected_at;
+      return;
+    }
     const typing = /^(TEXTAREA|INPUT)$/.test(document.activeElement?.tagName || '');
     if (document.body.hasAttribute('data-drawer-open') || typing) return;
     location.reload();
@@ -2371,6 +3182,7 @@ if (LOCAL) { let baseStamp = DATA.collected_at; setInterval(async () => {
 }, 60000); }
 /* Replies land in requests.json, written by the server or by the master session. */
 if (LOCAL) setInterval(async () => {
+  if (tab === 'board' && bdPollTimer) return;  // the Board's poll reads requests.json and repaints the log itself
   try {
     const res = await fetch('/data/requests.json', { cache:'no-store' });
     if (!res.ok) return;

@@ -11,6 +11,7 @@ import json, os, re, shutil, subprocess, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 from config import load_config  # noqa: E402
+import review_progress  # noqa: E402
 
 PR_URL = re.compile(r"https://github\.com/([^/]+)/([^/]+)/pull/(\d+)$")
 
@@ -54,6 +55,7 @@ def main():
     D = cfg["dataDir"]
     active = os.path.join(cfg["reviewsDir"], "active")
     archive = os.path.join(cfg["reviewsDir"], "archive")
+    review_progress.prune_stale(review_progress.progress_dir(cfg))
 
     rv = json.load(open(f"{D}/reviews.json"))
     urls = [u for u in rv if PR_URL.match(u)]

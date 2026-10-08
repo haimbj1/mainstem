@@ -82,6 +82,21 @@ When the target line is outside every diff hunk, drop `diff=1` and embed the pla
 - <today> reviewed at <sha> by offline agent
 ```
 
+## Progress for the board
+
+The board shows how far each PR got from `review_progress.py`, in the mainstem skill's scripts
+directory beside `config.py` (`~/.claude/skills/mainstem/scripts/` on an install). Call it as
+`python3 <scripts>/review_progress.py <command> <pr url> ...`, per PR:
+
+- `start <url>` — when you begin that PR, before step 1 below.
+- `step <url> <step>` — as each phase begins: `context` (step 1), `diff` (step 2), `files`
+  (step 3), `findings` (when you start writing Findings), `verdict` (when you pick the verdict).
+  During `files`, report `step <url> files --done N --total M` at most once per 5 files.
+- `finish <url>` — right after the review file is written.
+- `fail <url> "<why, one clause>"` — when you abort that PR.
+
+Call it at these points only. Progress is advisory: if a call fails, keep reviewing.
+
 ## How to review
 
 1. `gh pr view <n> -R <owner>/<repo> --json title,author,body,headRefOid,additions,deletions,changedFiles,createdAt,isDraft,baseRefName,reviewRequests,reviews,comments,mergeable,statusCheckRollup`

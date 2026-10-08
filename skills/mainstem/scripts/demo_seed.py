@@ -3,11 +3,12 @@
 import json
 import os
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 from config import load_config  # noqa: E402
+import review_progress  # noqa: E402
 
 NOW = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
@@ -15,6 +16,10 @@ NOW = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 def _write(data_dir, name, obj):
     with open(os.path.join(data_dir, name), "w") as f:
         json.dump(obj, f, indent=1)
+
+
+def _ago(minutes):
+    return (datetime.now(timezone.utc) - timedelta(minutes=minutes)).isoformat(timespec="seconds").replace("+00:00", "Z")
 
 
 def _proc(dt):
@@ -88,6 +93,27 @@ def write_demo_data(data_dir):
          "commits": {"nodes": [{"commit": {"statusCheckRollup": {"state": "SUCCESS"}}}]},
          "reviews": {"nodes": [{"state": "APPROVED", "author": {"login": "contributor-a"}}]},
          "comments": {"totalCount": 2}},
+        # The branch names DEMO-3, so the Board shows that ticket on this card, not on its own.
+        {"number": 13, "title": "Rate-limit the export endpoint",
+         "url": "https://github.com/example/demo-app/pull/13",
+         "isDraft": False, "updatedAt": "2026-09-08T07:00:00Z",
+         "createdAt": "2026-09-07T15:00:00Z", "headRefName": "demo-3-export-rate-limit",
+         "baseRefName": "main", "additions": 64, "deletions": 5,
+         "reviewDecision": "REVIEW_REQUIRED", "mergeable": "MERGEABLE",
+         "repository": {"nameWithOwner": "demo-org/demo-app"},
+         "commits": {"nodes": [{"commit": {"statusCheckRollup": {"state": "SUCCESS"}}}]},
+         "reviews": {"nodes": []}, "comments": {"totalCount": 0}},
+        {"number": 14, "title": "Move uploads to the job queue",
+         "url": "https://github.com/example/demo-app/pull/14",
+         "isDraft": False, "updatedAt": "2026-09-08T06:00:00Z",
+         "createdAt": "2026-09-05T11:00:00Z", "headRefName": "feat/upload-queue",
+         "baseRefName": "main", "additions": 210, "deletions": 90,
+         "reviewDecision": "CHANGES_REQUESTED", "mergeable": "MERGEABLE",
+         "repository": {"nameWithOwner": "demo-org/demo-app"},
+         "commits": {"nodes": [{"commit": {"statusCheckRollup": {"state": "FAILURE"}}}]},
+         "reviews": {"nodes": [{"state": "CHANGES_REQUESTED", "author": {"login": "contributor-a"}}]},
+         "reviewThreads": {"nodes": [{"isResolved": False, "comments": {"nodes": [{"author": {"login": "contributor-a"}}]}}]},
+         "comments": {"totalCount": 3}},
     ]}}}})
 
     # Shape = collect.sh's jq projection of the review-requested + watch-repo search results.
@@ -118,13 +144,31 @@ def write_demo_data(data_dir):
          "author": {"login": "contributor-c"},
          "repository": {"nameWithOwner": "demo-org/watched-repo"},
          "direct": False, "teams": [], "provenance": "watch"},
+        {"number": 15, "title": "Retry flaky uploads",
+         "url": "https://github.com/example/demo-app/pull/15",
+         "isDraft": False, "updatedAt": "2026-09-07T15:00:00Z",
+         "createdAt": "2026-09-04T09:00:00Z", "headRefName": "fix/upload-retry",
+         "baseRefName": "main", "my_review": "CHANGES_REQUESTED",
+         "author": {"login": "contributor-b"},
+         "repository": {"nameWithOwner": "demo-org/demo-app"},
+         "direct": True, "teams": [], "provenance": "direct"},
+        {"number": 21, "title": "Cache warmup on boot",
+         "url": "https://github.com/example/other-repo/pull/21",
+         "isDraft": False, "updatedAt": "2026-09-08T07:00:00Z",
+         "createdAt": "2026-09-03T09:00:00Z", "headRefName": "feat/cache-warmup",
+         "baseRefName": "main", "my_review": None,
+         "author": {"login": "contributor-c"},
+         "repository": {"nameWithOwner": "demo-org/other-repo"},
+         "direct": False, "teams": ["core-team"], "provenance": "team"},
     ])
 
     _write(data_dir, "reviews.json", {
         "https://github.com/example/demo-app/pull/12": {
             "url": "https://github.com/example/demo-app/pull/12", "repo": "demo-app", "pr": 12,
             "title": "Widget resize follow-up", "author": "contributor-a", "status": "drafted",
-            "verdict": "pending", "size": "S", "last_reviewed": NOW,
+            "verdict": "approve-with-comments", "size": "S (+24/\u22126, 2 files)",
+            "depth": "skim-diff", "depth_why": "small diff, one bound to check",
+            "last_reviewed": NOW, "mtime": NOW, "live_head": "deadbeef",
             "last_head_sha": "deadbeef", "summary": "One finding: an off-by-one in resize math.",
             "findings": [{"n": "1", "sev": "med", "conf": "high", "status": "📋 drafted",
                           "loc": "src/widgets.js:42", "issue": "off-by-one in resize bound"}],
@@ -140,7 +184,26 @@ def write_demo_data(data_dir):
                         "file_url": "https://github.com/example/demo-app/pull/12/files"
                                     "#diff-3a7f...R42"}],
             "questions": [],
-        }
+        },
+        "https://github.com/example/demo-app/pull/15": {
+            "url": "https://github.com/example/demo-app/pull/15", "repo": "demo-app", "pr": 15,
+            "title": "Retry flaky uploads", "author": "contributor-b", "status": "posted",
+            "verdict": "request-changes", "size": "M (+140/\u221232, 4 files)",
+            "depth": "read-code", "depth_why": "retry loop touches error handling",
+            "last_reviewed": NOW, "mtime": NOW, "live_head": "c0ffee12",
+            "last_head_sha": "c0ffee12", "summary": "Retries never back off.",
+            "findings": [{"n": "1", "sev": "High", "conf": "high", "status": "\U0001F4AC posted",
+                          "loc": "src/upload.js:88", "issue": "retry loop has no backoff"}],
+            "sev_counts": {"High": 1}, "drafts": [], "questions": [],
+        },
+        "https://github.com/example/other-repo/pull/21": {
+            "url": "https://github.com/example/other-repo/pull/21", "repo": "other-repo", "pr": 21,
+            "title": "Cache warmup on boot", "author": "contributor-c", "status": "drafted",
+            "verdict": "approve", "size": "XS (+9/\u22121, 1 files)", "depth": "decide-here",
+            "last_reviewed": NOW, "mtime": NOW, "live_head": "bbbb2222",
+            "last_head_sha": "aaaa1111", "summary": "Clean; the author pushed since.",
+            "findings": [], "sev_counts": {}, "drafts": [], "questions": [],
+        },
     })
 
     # Not collector-sourced: when present it's an object ({prs, posted, close_after}), not a
@@ -148,7 +211,15 @@ def write_demo_data(data_dir):
     # own default when the file is absent.
     _write(data_dir, "nudges.json", None)
 
-    _write(data_dir, "jira.json", [])
+    # Shape = jira_fetch.sh's projection; one ticket per My work lane the PRs above leave empty.
+    _write(data_dir, "jira.json", [
+        {"key": "DEMO-1", "summary": "Document the widget API", "status": "To Do", "priority": "Low",
+         "type": "Task", "updated": "2026-09-02T10:00:00Z", "project": "DEMO", "due": None, "labels": []},
+        {"key": "DEMO-2", "summary": "Cache the health check result", "status": "In Progress", "priority": "High",
+         "type": "Story", "updated": "2026-09-08T08:30:00Z", "project": "DEMO", "due": None, "labels": []},
+        {"key": "DEMO-3", "summary": "Rate-limit exports", "status": "In Progress", "priority": "Medium",
+         "type": "Story", "updated": "2026-09-07T15:00:00Z", "project": "DEMO", "due": None, "labels": []},
+    ])
     _write(data_dir, "calendar.json", [])
     _write(data_dir, "gmail.json", [])
     # A fresh stamp, so the demo never shows the staleness banner.
@@ -160,11 +231,39 @@ def write_demo_data(data_dir):
     _write(data_dir, "requests.json", [
         {"id": "r1", "when": NOW, "kind": "chat", "text": "how's the widget PR looking?",
          "targets": [], "status": "done", "reply": "Approved, one nit left as a comment."},
+        {"id": "r2", "when": NOW, "kind": "decision", "text": "Request changes on #15 Retry flaky uploads.",
+         "targets": ["https://github.com/example/demo-app/pull/15"], "status": "done",
+         "decision": "request_changes", "reply": "Request Changes posted on demo-app#15.",
+         "extra": {"decision": "request_changes", "drafts": ["F1"],
+                   "item": {"id": "review:https://github.com/example/demo-app/pull/15", "src": "review",
+                            "title": "#15 Retry flaky uploads",
+                            "url": "https://github.com/example/demo-app/pull/15"}}},
+        {"id": "r3", "when": NOW, "kind": "review_pr",
+         "text": "Review https://github.com/example/other-repo/pull/44",
+         "targets": ["https://github.com/example/other-repo/pull/44"], "status": "working", "reply": ""},
+        {"id": "r4", "when": NOW, "kind": "review_pr",
+         "text": "Review https://github.com/example/watched-repo/pull/7",
+         "targets": ["https://github.com/example/watched-repo/pull/7"], "status": "pending", "reply": ""},
     ])
 
+    # One run mid-way through the files (the pending r4 already shows in Reviewing) and one
+    # that went quiet past the board's staleness window, so --demo shows both card states.
+    pdir = os.path.join(data_dir, review_progress.PROGRESS_SUBDIR)
+    for url, started, updated, step, done, total in (
+        ("https://github.com/example/watched-repo/pull/7", 3, 0.3, "files", 6, 14),
+        ("https://github.com/example/other-repo/pull/44", 40, 25, "diff", None, None),
+    ):
+        review_progress.write_entry(pdir, {
+            "url": url, "started_at": _ago(started), "updated_at": _ago(updated),
+            "step": step, "done": done, "total": total, "error": None})
+
     _write(data_dir, "quickwins.json", {
-        "generated_at": NOW, "counts": {"close": 0, "quick_win": 0, "stale": 0, "keep": 0},
-        "items": [],
+        "generated_at": NOW, "counts": {"close": 0, "quick_win": 1, "stale": 0, "keep": 0},
+        "items": [
+            {"key": "DEMO-1", "summary": "Document the widget API", "status": "To Do", "priority": "Low", "verdict": "quick_win",
+             "estimate": "30m", "confidence": "high", "reason": "The API is merged; only the README section is missing.",
+             "action": "Add the widget API section to the README", "evidence": [], "plan": ""},
+        ],
     })
 
     _write(data_dir, "artifacts.json", [])

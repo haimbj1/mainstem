@@ -9,6 +9,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 from config import load_config  # noqa: E402
+import review_progress  # noqa: E402
 
 DAILY = {"jira": "jira.json", "calendar": "calendar.json", "gmail": "gmail.json"}
 PENDING_DRAFT_MAX_BYTES = 61440
@@ -73,6 +74,7 @@ def build(cfg, readonly=False):
         "calendar": load(data_dir, "calendar.json", []),
         "gmail": load(data_dir, "gmail.json", []),
         "requests": load(data_dir, "requests.json", []),
+        "review_progress": review_progress.load_all(review_progress.progress_dir(cfg)),
         "quickwins": load(data_dir, "quickwins.json", {}),
         "tips": load(data_dir, "tips.json", {}),
         "artifacts": load(data_dir, "artifacts.json", []),
