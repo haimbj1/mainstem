@@ -167,6 +167,8 @@ def collect(panel=None):
     """Run the local collectors. A panel narrows collect.sh to one section."""
     steps = [["bash", os.path.join(SKILL_DIR, "collect.sh")] + ([panel] if panel else [])]
     if panel in (None, "reviews"):
+        # before the index, so a pending review submitted on GitHub itself clears here
+        steps.append([sys.executable, os.path.join(SKILL_DIR, "pending_sync.py")])
         steps.append([sys.executable, os.path.join(SKILL_DIR, "reviews_index.py")])
         steps.append([sys.executable, os.path.join(SKILL_DIR, "prune_reviews.py")])
     if panel in (None, "sessions"):
