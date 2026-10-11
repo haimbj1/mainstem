@@ -230,8 +230,9 @@ def execute(rec):
     rid = json.loads(out).get("id", "?")
     if event == "PENDING":
         _set_pending_fm(path, rid, staged=[f for f, _ in chosen])
-        return "done", "Pre-review staged on %s#%d (pending review %s): %d inline, %d in the body (%s) — visible only to you on GitHub; >> lines in a comment talk to the reviewer.%s" % (
-            repo.split("/")[-1], pr, rid, len(comments), len(moved), ", ".join(f for f, _ in chosen), note)
+        where = " Body comments cover files outside the diff — open the green Submit review button on the PR to read them." if moved else ""
+        return "done", "Pre-review staged on %s#%d (pending review %s): %d inline, %d in the body (%s) — visible only to you on GitHub; >> lines in a comment talk to the reviewer.%s%s" % (
+            repo.split("/")[-1], pr, rid, len(comments), len(moved), ", ".join(f for f, _ in chosen), where, note)
     status = "approved" if event == "APPROVE" else "posted"
     verdict = {"APPROVE": "approved", "REQUEST_CHANGES": "request-changes"}.get(event)
     _mark(path, [f for f, _ in chosen], status=status, verdict=verdict)

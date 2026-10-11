@@ -981,6 +981,15 @@ function stackPills(url){
   if (st.children) h += st.children.map(c => `<a class="pill neutral" href="${esc(c.url)}" target="_blank" rel="noopener" title="#${c.number} is stacked on this PR — merging this first keeps that diff honest">⧉ base of #${c.number}</a>`).join('');
   return h;
 }
+/* A staged pre-review must stay visible whatever the row's standing says: 'replied'
+   outranks 'staged' in the status slot, so the row gets this pill as well. Comments on
+   files outside the diff sit in the pending review's BODY, which GitHub shows only
+   inside the green "Submit review" dropdown — the tooltip says where to look. */
+function rvStagedPill(url){
+  const rv = RV[url]; if (!rv?.pending_review) return '';
+  const st = (rv.staged || []).join(' ');
+  return `<span class="pill info" title="Pre-review staged on GitHub${st?` (${esc(st)})`:''} — a pending review only you can see. Inline comments sit on the diff; comments on files outside the diff sit in the review body — open the green Submit review button on the PR to read them. Annotate with >> lines, then click Reread pre-review.">👁 staged${(rv.staged||[]).length?` · ${(rv.staged||[]).length}`:''}</span>`;
+}
 function rvPills(url){
   const rv = RV[url], dec = rvDec[url] && (RV_DEC[rvDec[url]] || ['sent','neutral']);
   const decp = dec ? `<span class="pill ${dec[1]}">${dec[0]}</span>` : '';
@@ -994,7 +1003,7 @@ function rvPills(url){
   const dft = (RR_DRAFT.has(url) ? `<span class="pill neutral" title="Draft PR — the author is not asking for review yet; reviewing it now wastes time and tokens">✎ draft</span>` : '')
     + (RV_QUEUED.has(url) ? `<span class="pill warn" title="The review agent is queued or running on this PR — the verdict replaces this pill">⌛ review running</span>` : '')
     + (RV_REPLIED[url] ? `<span class="pill accent" title="${esc(RV_REPLIED[url].by)} answered ${esc(ageText(RV_REPLIED[url].at))} ago, after your last review — posting again clears this">💬 author replied</span>` : '')
-    + (RV[url]?.pending_review ? `<span class="pill info" title="Your staged comments sit on GitHub as a pending review only you can see — annotate with >> lines, then click Reread pre-review">👁 pre-review staged</span>` : '');
+    + rvStagedPill(url);
   if (!rv) return dft + waitPill(url) + ghReviewPill(url) + stackPills(url) + `<span class="pill neutral" title="no offline review file for this PR yet">not reviewed</span>`
     + (LOCAL && !RV_QUEUED.has(url) ? `<button class="pill model" data-write data-rvrun="${esc(url)}" title="Run the offline review agent on this PR — ~150k tokens">✦ review</button>` : '')
     + `${nudgePill(url)}${decp}${nrp}`;
@@ -1859,7 +1868,7 @@ function renderNeeds(){
   const el = $('#needs'); if (!el) return;
   const items = [];
   RR_ALL.forEach(r => { if (rvNeedsMe(r.url)) items.push({
-    html: `<div class="needs-row"><div class="t"><a href="${esc(r.url)}" target="_blank" rel="noopener">#${r.number} ${esc(r.title)}</a></div><span class="meta">${esc(repoShort(r.repository.nameWithOwner))} · ${esc(r.author.login)}</span>${rvStatus(r.url)}<span class="meta">${ageText(r.createdAt||r.updatedAt)}</span></div>`,
+    html: `<div class="needs-row"><div class="t"><a href="${esc(r.url)}" target="_blank" rel="noopener">#${r.number} ${esc(r.title)}</a></div><span class="meta">${esc(repoShort(r.repository.nameWithOwner))} · ${esc(r.author.login)}</span>${rvStatus(r.url)}${rvStagedPill(r.url)}<span class="meta">${ageText(r.createdAt||r.updatedAt)}</span></div>`,
     at: r.updatedAt || r.createdAt }); });
   (DATA.pending || []).filter(p => !p.status || p.status === 'pending').forEach(p => items.push({
     html: `<div class="needs-row"><div class="t">${esc(p.what || p.id)}</div><span class="pill warn">pending approval — open the card</span></div>`, at: p.when || '' }));
@@ -2867,7 +2876,7 @@ function renderReviews(){
   const body = list.map(r=>{
     const rv = RV[r.url];
     const ck = (LOCAL && !rv && !r.isDraft && !RV_QUEUED.has(r.url)) ? `<input type="checkbox" class="rvck" data-rvsel="${esc(r.url)}" ${rvSel.has(r.url)?'checked':''} title="Select for review">` : '';
-    return `<div class="row ${r.isDraft ? 'rvdim' : isDec(r) && !rvNewReplies(r.url).length ? 'rvdim':''} ${rvOpenP===r.url?'checked':''}" style="grid-template-columns:auto 1fr auto"><div>${ck}</div><div><div class="t"><a href="${esc(r.url)}" target="_blank" rel="noopener">#${r.number} ${esc(r.title)}</a></div><div class="s">${esc(repoShort(r.repository.nameWithOwner))} · <button class="chip" style="padding:0 7px" data-author="${esc(r.author.login)}">${esc(r.author.login)}</button>${rv?` · <button class="dec" data-rv="${esc(r.url)}" title="Read the offline review in the drawer">Review</button>`:''}</div></div><div class="r">${rvStatus(r.url)}${pdPill(r.url)}<span class="${ageCls(r.createdAt||r.updatedAt,7,21)}" title="opened">${ageText(r.createdAt||r.updatedAt)}</span></div></div>`;
+    return `<div class="row ${r.isDraft ? 'rvdim' : isDec(r) && !rvNewReplies(r.url).length ? 'rvdim':''} ${rvOpenP===r.url?'checked':''}" style="grid-template-columns:auto 1fr auto"><div>${ck}</div><div><div class="t"><a href="${esc(r.url)}" target="_blank" rel="noopener">#${r.number} ${esc(r.title)}</a></div><div class="s">${esc(repoShort(r.repository.nameWithOwner))} · <button class="chip" style="padding:0 7px" data-author="${esc(r.author.login)}">${esc(r.author.login)}</button>${rv?` · <button class="dec" data-rv="${esc(r.url)}" title="Read the offline review in the drawer">Review</button>`:''}</div></div><div class="r">${rvStatus(r.url)}${rvStagedPill(r.url)}${pdPill(r.url)}<span class="${ageCls(r.createdAt||r.updatedAt,7,21)}" title="opened">${ageText(r.createdAt||r.updatedAt)}</span></div></div>`;
   }).join('');
   const nUnrev = base.filter(r => !RV[r.url] && !r.isDraft && !RV_QUEUED.has(r.url)).length;
   const tools = REFRESH_BTN('reviews')
