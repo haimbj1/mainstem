@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.4.0
+
+The board release: work moves onto kanban lanes, and the page always shows what runs,
+what is staged, and what the master costs.
+
+- Board view (⇧7): two kanban boards. Reviews lanes: Needs review / Reviewing / Ready to
+  decide / Reviewed. My work lanes: To do / In progress / In review / Needs you / Ready
+  to merge. Cards carry quick actions with a two-step confirm, multi-select filters,
+  sort, and a token-free refresh; cards slide between lanes when polled data changes.
+- Live reviewer progress: ms-reviewer reports per-PR steps (`review_progress.py`, served
+  at `/data/review_progress.json`); the Reviewing lane shows the agent working.
+- Per-finding lifecycle in the card lead: each open finding says where it stands —
+  "staged for you on GitHub — the author has not seen it", "posted — awaiting the
+  author", or "draft — only on this board". Every Summary now opens with a 2–3 line
+  `State:` paragraph.
+- Rotate-master lifecycle: the ♻ button turns to "⟳ Rotating…" on click and returns to
+  "New master" when the fresh master arms (the page watches the master session id through
+  `/freshness`); a rotation that never lands clears itself after 20 minutes.
+- The ✦ master counter stays fresh without model tokens: the server re-reads the current
+  master's transcript on every collect cycle; the start ritual flips the session pointer
+  right after the new master arms.
+- Staged pre-review pill: every review row shows "👁 staged · n" while a pending review
+  sits on GitHub, whatever the row's status says; the posting reply points at the green
+  Submit review button for body comments (files outside the diff).
+- Fixes: the review card lead computes open findings from the table.
+
 ## 0.3.0
 
 The shell release: the board looks and reads like a macOS app, and the assistant starts
