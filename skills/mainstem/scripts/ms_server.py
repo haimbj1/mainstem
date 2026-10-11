@@ -173,6 +173,9 @@ def collect(panel=None):
         steps.append([sys.executable, os.path.join(SKILL_DIR, "session_status_from_notes.py")])
         # after status, so ledger entries carry the freshest refs
         steps.append([sys.executable, os.path.join(SKILL_DIR, "session_ledger.py"), DATA_DIR])
+    # The master counter must not depend on the master spending tokens: re-read the
+    # current master's transcript on every cycle (one local file, no guessing).
+    steps.append([sys.executable, os.path.join(SKILL_DIR, "master_usage.py"), "--refresh-current"])
     for cmd in steps:
         name = os.path.basename(cmd[1])
         rc, out, err = run(cmd)
@@ -642,7 +645,16 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 if os.path.exists(p):
                     with open(p) as f:
                         stamp = f.read().strip()
-                self._send(200, json.dumps({"collected_at": stamp}), "application/json")
+                # the master session id lets the page see a rotation complete
+                # (the handoff flips it without touching collected_at)
+                master = ""
+                try:
+                    mu = json.load(open(os.path.join(DATA_DIR, "master_usage.json")))
+                    master = (mu.get("current") or {}).get("session") or ""
+                except (OSError, ValueError):
+                    pass
+                self._send(200, json.dumps({"collected_at": stamp, "master_session": master}),
+                           "application/json")
                 return
             if path == "/manifest.webmanifest":
                 # makes the board installable as a standalone app (Chrome: Install page as app)

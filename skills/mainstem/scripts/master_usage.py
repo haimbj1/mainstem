@@ -53,7 +53,36 @@ def context_tokens(path):
     return last
 
 
+def refresh_current():
+    """Re-read the KNOWN current master's transcript and update its token count.
+
+    Never guesses which session is the master and never rotates — the session
+    pointer only moves when the master itself runs handoff.sh. Safe for the
+    server to run on every collect cycle, so the board's master counter stays
+    fresh between handoffs. Quiet no-op when there is nothing to refresh.
+    """
+    if not os.path.exists(OUT):
+        return
+    d = json.load(open(OUT))
+    cur = d.get("current")
+    if not cur or not cur.get("session"):
+        return
+    path = os.path.join(PROJ, cur["session"] + ".jsonl")
+    if not os.path.exists(path):
+        return
+    tokens = context_tokens(path)
+    if tokens == cur.get("tokens"):
+        return
+    cur["tokens"] = tokens
+    cur["updated"] = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="minutes")
+    json.dump(d, open(OUT, "w"), indent=1)
+    print("master context refreshed: %dk" % round(tokens / 1000))
+
+
 def main():
+    if "--refresh-current" in sys.argv[1:]:
+        refresh_current()
+        return
     path = transcript_path()
     sid = os.path.basename(path)[:-len(".jsonl")]
     tokens = context_tokens(path)

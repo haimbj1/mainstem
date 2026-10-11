@@ -153,7 +153,10 @@ queue in `requests.json`, and drain the moment the new Monitor is armed — noth
    another master holds the lock — stop and follow the printed instructions; never arm a second
    Monitor around it.
 4. `curl -s <configured host:port>/health` — if the server is down, `bash install.sh` (repo root).
-5. That is all. Do not re-read old requests, do not refresh, do not message other sessions.
+5. `bash handoff.sh none "<asks carried over from the note>"` — this flips `master_usage.json`
+   to this session. The board's ✦ counter and the rotate button read that flip as
+   "rotation complete"; skip it and the page keeps showing the retired master.
+6. That is all. Do not re-read old requests, do not refresh, do not message other sessions.
 
 After every agent result: `python3 log_usage.py <tokens> <model> "<what>"` (feeds the ✦ widget).
 Master context cost is tracked for free: `handoff.sh` runs `master_usage.py`, which reads the

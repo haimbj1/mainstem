@@ -2124,9 +2124,34 @@ let ccZoom = Math.min(150, Math.max(80, +store.get('zoom', 100) || 100));
 /* zoom the content, not the chrome — the sidebar keeps its size like an app's */
 const applyZoom = () => { const m = document.querySelector('.main'); if (m) m.style.zoom = ccZoom + '%'; };
 applyZoom();
+/* The rotate button shows the rotation's lifecycle: the click arms a per-browser flag
+   holding the retiring master's session id; the button stays "Rotating…" until the
+   board sees a DIFFERENT master session (the new master's first handoff flips it),
+   then it returns to "New master". A 20-minute cap clears a rotation that never landed. */
+const ROTATE_FLAG = 'cc:rotating', ROTATE_MAX_MS = 20 * 60e3;
+const rotateFlag = () => { try { return JSON.parse(localStorage.getItem(ROTATE_FLAG) || 'null'); } catch { return null; } };
+function rotateDone(msg){
+  try { localStorage.removeItem(ROTATE_FLAG); } catch {}
+  const b = $('#rotate-master'); if (!b) return;
+  b.classList.remove('pending'); b.disabled = false; b.textContent = '♻ New master';
+  if (msg) toast(msg);
+}
+function rotateShowBusy(){
+  const b = $('#rotate-master'); if (!b) return;
+  b.classList.add('pending'); b.disabled = true; b.textContent = '⟳ Rotating…';
+}
+(function rotateInit(){
+  const f = rotateFlag(); if (!f) return;
+  const cur = DATA.master_usage?.current?.session || '';
+  if (f.sid && cur && cur !== f.sid) { rotateDone(`Master rotated — fresh session ${cur.slice(0,8)}…`); return; }
+  if (Date.now() - (f.when || 0) > ROTATE_MAX_MS) { rotateDone(); return; }
+  rotateShowBusy();
+})();
 $('#rotate-master')?.addEventListener('click', () => {
   if (!LOCAL) { toast('Rotation runs on the local board only'); return; }
   if (!window.confirm('Rotate the master session?\nThe current master retires and a fresh one boots in the same tab (or one is launched if none is running).')) return;
+  try { localStorage.setItem(ROTATE_FLAG, JSON.stringify({ sid: DATA.master_usage?.current?.session || '', when: Date.now() })); } catch {}
+  rotateShowBusy();
   sendRequest('rotate', 'Rotate the master session', []);
   toast('Rotating the master…');
 });
@@ -3164,7 +3189,14 @@ if (LOCAL) { let baseStamp = DATA.collected_at, boardStamp = baseStamp; setInter
   try {
     const res = await fetch('/freshness', { cache:'no-store' });
     if (!res.ok) return;
-    const { collected_at } = await res.json();
+    const { collected_at, master_session } = await res.json();
+    // a rotation completes when the master session id moves — the handoff that moves
+    // it does not touch collected_at, so it needs its own reload trigger
+    const baked = DATA.master_usage?.current?.session || '';
+    if (master_session && baked && master_session !== baked) {
+      const typing = /^(TEXTAREA|INPUT)$/.test(document.activeElement?.tagName || '');
+      if (!document.body.hasAttribute('data-drawer-open') && !typing) { location.reload(); return; }
+    }
     if (!collected_at || collected_at === baseStamp) return;
     // The Board re-renders from the fresh files in place — a reload would drop its armed
     // buttons, open filters, skip reason and lane animation. Its own poll, when running,
